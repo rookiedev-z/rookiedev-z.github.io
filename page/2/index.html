@@ -223,7 +223,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-02 19:19:20" itemprop="dateModified" datetime="2020-08-02T19:19:20+08:00">2020-08-02</time>
+                <time title="Modified: 2020-08-02 20:45:31" itemprop="dateModified" datetime="2020-08-02T20:45:31+08:00">2020-08-02</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -247,15 +247,6 @@
 
       
           <p>Java 8 (又称为 jdk 1.8) 是 Java 语言开发的一个主要版本，Java 8 增加了许多的新特性，在此先记录一下 Lambda 表达式，接口默认方法和方法引用这三个特性。</p>
-<h2 id="Lambda-表达式"><a href="#Lambda-表达式" class="headerlink" title="Lambda 表达式"></a>Lambda 表达式</h2><p>Lambda 表达式，也可称为闭包，允许把函数作为一个方法的参数（函数作为参数传递进方法中），使用 Lambda 表达式可以使代码变的更加简洁紧凑。<br>语法格式：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">(parameters) -&gt; expression  或  (parameters) -&gt;&#123; statements; &#125;</span><br></pre></td></tr></table></figure>
-<p>主要特征：</p>
-<ul>
-<li>可选类型声明，不需要声明参数类型，编译器可以统一识别参数值。</li>
-<li>可选的参数圆括号，一个参数无需定义圆括号，但多个参数需要定义圆括号。</li>
-<li>可选的大括号，如果主体只包含一个语句，就不需要使用大括号。</li>
-<li>可选的返回关键字，如果主体只有一个表达式返回值则编译器会自动返回值，大括号的话需要指明表达式返回了一个数值。</li>
-</ul>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/Java-8-%E7%89%B9%E6%80%A7-Lambda-%E8%A1%A8%E8%BE%BE%E5%BC%8F%E3%80%81%E6%8E%A5%E5%8F%A3%E9%BB%98%E8%AE%A4%E6%96%B9%E6%B3%95%E4%BB%A5%E5%8F%8A%E6%96%B9%E6%B3%95%E5%BC%95%E7%94%A8/#more" rel="contents">
@@ -313,7 +304,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-02 19:20:59" itemprop="dateModified" datetime="2020-08-02T19:20:59+08:00">2020-08-02</time>
+                <time title="Modified: 2020-08-02 20:47:38" itemprop="dateModified" datetime="2020-08-02T20:47:38+08:00">2020-08-02</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -337,13 +328,6 @@
 
       
           <p>前两天在开发中遇到一个问题，就是一个服务部署在 Window 系统上的，而另一个服务部署在 Linux 系统上，Linux 系统上的服务需要通过 WebService 向 Window 系统上的服务获取数据，而这个数据是经过 AES 加密的，获取到密文之后需要进行解密，然后拿到解密之后的数据进行处理，但是在 Linux 系统服务上进行解密时却报错了，下面就是报错信息。</p>
-<p><img src="Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B-AES-%E8%A7%A3%E5%AF%86%E6%8A%A5%E9%94%99%E9%97%AE%E9%A2%98/AES-Error.png" alt="解密时报错信息"></p>
-<p>遇到错误第一时间找度娘 ( 其实应该找 Google )，结果发现原来是操作系统的原因，Linux 系统下在进行 AES 加解密时生成 key 时是有问题的，key 值的生成方式如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">KeyGenerator generator &#x3D; KeyGenerator.getInstance(&quot;AES&quot;);</span><br><span class="line">&#x2F;&#x2F;password 为加解密使用的密钥</span><br><span class="line">generator.init(128, new SecureRandom(password.getBytes()));</span><br><span class="line">Key key &#x3D; generator.generateKey();</span><br></pre></td></tr></table></figure>
-
-<p>SecureRandom 的实现尝试完全随机化生成器本身的内部状态，因此随操作系统本身的內部状态而定，该实现在 windows 上每次生成的 key 都相同，但是在 linux 系统上则不同，除非调用方在调用 getInstance 方法之后又调用了 setSeed 方法，将上述生成 key 值的方式改为如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">KeyGenerator generator &#x3D; KeyGenerator.getInstance(&quot;AES&quot;);</span><br><span class="line">&#x2F;&#x2F;generator.init(128, new SecureRandom(password.getBytes()));</span><br><span class="line">SecureRandom secureRandom &#x3D; SecureRandom.getInstance(&quot;SHA1PRNG&quot;);</span><br><span class="line">&#x2F;&#x2F;password 为加解密使用的密钥</span><br><span class="line">secureRandom.setSeed(password.getBytes());</span><br><span class="line">generator.init(128, secureRandom);</span><br><span class="line">Key key &#x3D; generator.generateKey();</span><br></pre></td></tr></table></figure>
-<p>上面只是修改了 key 值的生成方式，这样就能够避免在 Linux 系统上加解密失败的错误了。完整的 AES 加解密工具类如下：</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B-AES-%E8%A7%A3%E5%AF%86%E6%8A%A5%E9%94%99%E9%97%AE%E9%A2%98/#more" rel="contents">
@@ -482,7 +466,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-02 19:21:31" itemprop="dateModified" datetime="2020-08-02T19:21:31+08:00">2020-08-02</time>
+                <time title="Modified: 2020-08-02 20:48:16" itemprop="dateModified" datetime="2020-08-02T20:48:16+08:00">2020-08-02</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -506,9 +490,6 @@
 
       
           <p>在平常开发部署中，我们可能经常需要远程连接到服务器上执行一些操作，有时还需要拷贝相应的文件过去，这里记录下平常自己用的比较多的远程连接命令以及远程拷贝文件的命令。</p>
-<h3 id="远程连接-ssh-命令"><a href="#远程连接-ssh-命令" class="headerlink" title="远程连接 ssh 命令"></a>远程连接 ssh 命令</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh zhouxh@192.168.0.134</span><br></pre></td></tr></table></figure>
-<p>上面是通过默认 22 端口连接，如果需要指定端口连接，加上 -p 参数指定相应端口：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ssh -p 33109 zhouxh@192.168.0.134</span><br></pre></td></tr></table></figure>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5%E5%92%8C%E8%BF%9C%E7%A8%8B%E6%8B%B7%E8%B4%9D%E5%91%BD%E4%BB%A4/#more" rel="contents">
@@ -566,7 +547,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-02 19:23:22" itemprop="dateModified" datetime="2020-08-02T19:23:22+08:00">2020-08-02</time>
+                <time title="Modified: 2020-08-02 20:51:35" itemprop="dateModified" datetime="2020-08-02T20:51:35+08:00">2020-08-02</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -589,9 +570,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>对于开发人员来说，个人强烈推荐使用 Linux 系统进行开发，至于为什么，这里贴出自己刚开始尝试使用 Linux 系统时看的一个博主写的文章，可以说就是因为看了这位博主的文章才立即决定装上 Linux 系统，开始了我的 Linux 系统之旅，从此停不下来了。下面就是这位博主写的文章地址，里面详细阐述了为什么要使用 Linux 系统。<br><a target="_blank" rel="noopener" href="http://ghosertblog.github.io/blog/2012/10/14/ubuntu-living-handbook/">http://ghosertblog.github.io/blog/2012/10/14/ubuntu-living-handbook/</a><br><a target="_blank" rel="noopener" href="http://ghosertblog.github.io/blog/2012/10/14/ubuntu-living-handbook/">Ubuntu桌面生存指南 (1) — 选择 Linux</a></p>
-<p>这位博主写了 5 篇文章关于 Linux 系统的，建议从第一篇开始看，一直看下去，看完之后如果还是不想进入 Linux 系统的世界，那么可能 Linux 系统与你无缘，这里并无冒犯的意思，纯属个人喜好。</p>
-<p>博主从零开始全面的介绍了 Linux 系统，（当然还是要有点 Linux 系统的基础去看更好）一直到 Linux 系统的安装以及后面的维护和备份，值得去好好的看一遍，那么这里我主要是想记录下自己的安装过程以及开发中的一些必要软件安装和配置，以防以后重复去搜索资源。</p>
+          <p>对于开发人员来说，个人强烈推荐使用 Linux 系统进行开发，至于为什么，这里贴出自己刚开始尝试使用 Linux 系统时看的一个博主写的文章，可以说就是因为看了这位博主的文章才立即决定装上 Linux 系统，开始了我的 Linux 系统之旅，从此停不下来了。下面就是这位博主写的文章地址，里面详细阐述了为什么要使用 Linux 系统。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/Ubuntu-%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E4%B8%80%E4%BA%9B%E5%BC%80%E5%8F%91%E4%B8%AD%E5%BF%85%E8%A6%81%E7%9A%84%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/#more" rel="contents">
@@ -649,7 +628,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-02 19:21:17" itemprop="dateModified" datetime="2020-08-02T19:21:17+08:00">2020-08-02</time>
+                <time title="Modified: 2020-08-02 20:47:57" itemprop="dateModified" datetime="2020-08-02T20:47:57+08:00">2020-08-02</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -674,7 +653,6 @@
       
           <p>之前一直不是很明白 Linux 系统下的软链接 (soft link) 和硬链接 (hard link) 的区别和用法，今天刚好又用到了，特意花了点时间去了解了一下，暂且在这里记录一下吧。</p>
 <p>在介绍硬链接和软链接之前先介绍一下 Linux 系统下面的文件结构，文件在 Linux 下可以分为两个部分：元数据和用户数据。元数据中主要包含文件的一些附加属性，比如：文件大小，创建时间，所有者信息以及 文件的 inode 索引号，inode 索引号是文件索引节点号，也是文件的唯一标识，我们平常看到的文件名并非是用来区分文件而是一个别名便于我们识别和记忆；用户数据则是文件的数据块内容，也就是该文件保存的真正内容。</p>
-<h3 id="硬链接"><a href="#硬链接" class="headerlink" title="硬链接"></a>硬链接</h3><p>(1) 含义<br>硬链接表示的是一个文件的 inode 索引号对应于多个文件名，也就是说我们对一个文件创建了多个文件名，它们都对应于同一个 inode 索引号标识的文件，当我们删除其中任意一个文件名，都不会对其他文件名有影响，每删一个文件名，该文件的链接数减一，只有当该文件的链接数为 0 时系统会将其数据块和 inode 索引号回收。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B%E7%9A%84%E8%BD%AF%E9%93%BE%E6%8E%A5%E5%92%8C%E7%A1%AC%E9%93%BE%E6%8E%A5/#more" rel="contents">
@@ -732,7 +710,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-02 19:23:48" itemprop="dateModified" datetime="2020-08-02T19:23:48+08:00">2020-08-02</time>
+                <time title="Modified: 2020-08-02 20:51:55" itemprop="dateModified" datetime="2020-08-02T20:51:55+08:00">2020-08-02</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -757,16 +735,6 @@
       
           <h3 id="Ubuntu-安装-MySQL"><a href="#Ubuntu-安装-MySQL" class="headerlink" title="Ubuntu 安装 MySQL###"></a>Ubuntu 安装 MySQL###</h3><p>最好先执行一次更新操作：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get update</span><br></pre></td></tr></table></figure>
-
-<p>然后执行以下三条命令：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get install mysql-server</span><br><span class="line">sudo apt-get isntall mysql-client</span><br><span class="line">sudo apt-get install libmysqlclient-dev</span><br></pre></td></tr></table></figure>
-
-<p>安装成功后可以通过下面的命令测试是否安装成功：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo netstat -tap | grep mysql</span><br></pre></td></tr></table></figure>
-
-<p>出现如下信息证明 MySQL 安装成功：<br>​<img src="Ubuntu-%E4%B8%8B-MySQL-%E9%85%8D%E7%BD%AE%E8%BF%9C%E7%A8%8B%E5%8F%AF%E8%AE%BF%E9%97%AE/mysql.png" alt="mysqld.cnf 文件"></p>
-<p>对于 Ubuntu 系统下安装 MySQL 后一般都不支持远程连接，只能通过 localhost 或者 127.0.0.1 进行连接，因此需要我们自己去配置，这里介绍两种方式：</p>
-<h3 id="创建一个新的访问用户，配置该用户可以远程访问。-推荐使用这种方式"><a href="#创建一个新的访问用户，配置该用户可以远程访问。-推荐使用这种方式" class="headerlink" title="创建一个新的访问用户，配置该用户可以远程访问。(推荐使用这种方式)"></a>创建一个新的访问用户，配置该用户可以远程访问。(推荐使用这种方式)</h3>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/Ubuntu-%E4%B8%8B-MySQL-%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E9%85%8D%E7%BD%AE%E5%8F%AF%E8%BF%9C%E7%A8%8B%E8%AE%BF%E9%97%AE/#more" rel="contents">
@@ -824,7 +792,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-02 19:24:11" itemprop="dateModified" datetime="2020-08-02T19:24:11+08:00">2020-08-02</time>
+                <time title="Modified: 2020-08-02 20:52:09" itemprop="dateModified" datetime="2020-08-02T20:52:09+08:00">2020-08-02</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -848,9 +816,6 @@
 
       
           <h2 id="记录一下今天遇到的一个问题"><a href="#记录一下今天遇到的一个问题" class="headerlink" title="记录一下今天遇到的一个问题"></a>记录一下今天遇到的一个问题</h2><p>今天在阿里云服务器上部署应用时遇到一个小问题，每次执行完 sudo 命令都会出现一行错误信息，刚开始还以为执行命令出错了，但仔细一看不像是执行命令的报错信息，而且还发现命令其实已经执行成功了。</p>
-<p>执行命令之后的报错信息如下：</p>
-<p>![hosts 文件](Ubuntu-执行命令时报错-unable-to-resolve-host/resolve host3.png)</p>
-<p>于是去百度了一波，发现原来是**<em>因为 /etc/ 路径下 hosts 文件中的主机名和 hostname 文件中的主机名不一致**</em>所导致的错误。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/Ubuntu-%E6%89%A7%E8%A1%8C%E5%91%BD%E4%BB%A4%E6%97%B6%E6%8A%A5%E9%94%99-unable-to-resolve-host/#more" rel="contents">
@@ -908,7 +873,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-02 19:20:26" itemprop="dateModified" datetime="2020-08-02T19:20:26+08:00">2020-08-02</time>
+                <time title="Modified: 2020-08-02 20:46:57" itemprop="dateModified" datetime="2020-08-02T20:46:57+08:00">2020-08-02</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -932,9 +897,6 @@
 
       
           <h2 id="Java-中-equals-与-的区别"><a href="#Java-中-equals-与-的区别" class="headerlink" title="Java 中 equals 与 == 的区别"></a>Java 中 equals 与 == 的区别</h2><p>通俗的来说，“==” 比较的是地址，equals 比较的是内容。也就是说前者比较的是对象(堆)在(栈)内存中存放的内存地址，用来判断两个对象的地址是否相同，即是否是指向同一个对象。后者用来比较的是两个对象的内容是否相等，由于所有的类都是继承自java.lang.Object 类的，所以适用于所有对象，注意如果没有对该方法进行重写的话，调用的仍然是 Object 类中的方法，而 Object 中的 equals 方法返回的却是内存地址比较的结果，方法内容如下 ：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">public boolean equals(Object obj) &#123;</span><br><span class="line">    return (this &#x3D;&#x3D; obj);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h2 id="hashCode-和-equals-方法的区别与联系"><a href="#hashCode-和-equals-方法的区别与联系" class="headerlink" title="hashCode 和 equals 方法的区别与联系"></a>hashCode 和 equals 方法的区别与联系</h2><p>hashCode 和 equals 方法都是 Object 中的方法，其中 hashCode 方法是 Native 修饰，该方法是计算出对象实例的哈希码，又称哈希函数，计算方式依赖于对象实例的内存地址，所以一般来说，每个对象实例的哈希码都是唯一的，当然如果对该方法进行重写了，结果也就不一样了。而 equals 方法一般是用来比较两个对象实例的值是否相等，当然如果没有对该方法进行重写，比较的就是两个对象的地址是否相等。</p>
-<p>他们之间的联系就是当两个对象的 equals 相等那么 hashCode 一定相等，hashCode 不等那么equals 一定不等。反之 hashCode 相等，equals 不一定相等，因为哈希散列值有冲突的时候，当然好的哈希算法冲突的几率比较小。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/Java-%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97%E2%80%94%E2%80%94%E5%9F%BA%E7%A1%80%E7%AF%87-%E4%BA%8C/#more" rel="contents">
@@ -992,7 +954,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-02 19:20:40" itemprop="dateModified" datetime="2020-08-02T19:20:40+08:00">2020-08-02</time>
+                <time title="Modified: 2020-08-02 20:47:19" itemprop="dateModified" datetime="2020-08-02T20:47:19+08:00">2020-08-02</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1016,18 +978,6 @@
 
       
           <h2 id="面向对象的特征：封装、继承、多态、抽象"><a href="#面向对象的特征：封装、继承、多态、抽象" class="headerlink" title="面向对象的特征：封装、继承、多态、抽象"></a>面向对象的特征：封装、继承、多态、抽象</h2><p>封装给对象提供了隐藏内部特性和行为的能力，对象提供一些能被其他对象访问的方法来改变它内部的数据。在 Java 当中，有 4 种访问权限，对应有三个修饰符 : public、private 、protected，每一种修饰符给其他的位于同一个包或者不同包下面对象赋予了不同的访问权限。下面列出了使用封装的一些好处:</p>
-<ul>
-<li>通过隐藏对象的属性来保护对象内部的状态</li>
-<li>提高了代码的可用性和可维护性,因为对象的行为可以被单独的改变或者是扩展</li>
-<li>禁止对象之间的不良交互提高模块化</li>
-</ul>
-<p>继承给对象提供了从基类获取字段和方法的能力、继承提供了代码的重用行、在不修改类的情况下给现存的类添加新特性。</p>
-<p>多态是编程语言给不同的底层数据类型做相同的接口展示的一种能力，一个多态类型上的操作可以应用到其他类型的值上面。</p>
-<p>抽象是把想法从具体的实例中分离出来的步骤,因此,要根据他们的功能而不是实现细节来创建类，Java 支持创建只暴漏接口而不包含方法实现的抽象的类，这种抽象技术的主要目的是把类的行为和实现细节分离开。</p>
-<p>** 备注: 抽象和封装是互补的概念。一方面,抽象关注对象的行为。另一方面,封装关注对象行为的 细节。一般是通过隐藏对象内部状态信息做到封装,因此,封装可以看成是用来提供抽象的一种策略。**</p>
-<h2 id="final-finally-finalize-的区别"><a href="#final-finally-finalize-的区别" class="headerlink" title="final, finally, finalize 的区别"></a>final, finally, finalize 的区别</h2><p>final : 修饰符(关键字)，如果一个类被声明为 final，意味着它不能再派生出新的子类，不能作为父类被继承。因此一个类不能既被声明为 abstract 的,又被声明为 final 的。将变量或方法声明为 final,可以保证它们在使用中不被改变。被声明为 final 的变量必须在声明时给定初值,而在以后的引用中只能读取,不可修改。被声明为 final 的方法也同样只能使用,不能重载。</p>
-<p>finally : 在异常处理时提供 finally 块来执行资源释放操作，如果抛出一个异常，那么相匹配的 catch 子句就会执行,然后就会进入 finally 块(如果有的话)。</p>
-<p>finalize : 方法名，Java 技术允许使用 finalize() 方法在垃圾收集器将对象从内存中清除出去之前做必要的清理工作，这个方法是由垃圾收集器在确定这个对象没有被引用时在释放对象占用的内存之前会调用该方法，它是在 Object 类中定义的，因此所有的类都继承了它，子类覆盖 finalize() 方法以整理系统资源或者执行其他清理工作。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/Java-%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97%E2%80%94%E2%80%94%E5%9F%BA%E7%A1%80%E7%AF%87-%E4%B8%80/#more" rel="contents">

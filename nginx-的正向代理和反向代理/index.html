@@ -28,7 +28,7 @@
 <meta property="og:description" content="nginx 服务器在我们平常的软件开发中可能还是用到的比较多的，那么有一个问题我们就应该明白，也许让你去实现轻而易举，但说到其中的原理就有点不是很清楚了。下面就谈谈我自己对正向代理和反向代理的理解：首先有一个用户 C，三台服务器 S1，S2 和 S3，S1，S2，S3 在同一局域网内互相可访问，但 S1 对外网开放，S2 和 S3 不对外网开放，还有一份数据资源 D，资源 D 放在服务器 S2 和">
 <meta property="og:locale">
 <meta property="article:published_time" content="2018-06-20T16:38:39.000Z">
-<meta property="article:modified_time" content="2020-08-02T11:21:43.540Z">
+<meta property="article:modified_time" content="2020-08-02T12:49:14.928Z">
 <meta property="article:author" content="rookiedev">
 <meta property="article:tag" content="Java MySQL Life">
 <meta name="twitter:card" content="summary">
@@ -225,7 +225,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-02 19:21:43" itemprop="dateModified" datetime="2020-08-02T19:21:43+08:00">2020-08-02</time>
+                <time title="Modified: 2020-08-02 20:49:14" itemprop="dateModified" datetime="2020-08-02T20:49:14+08:00">2020-08-02</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -256,10 +256,10 @@
 
       
         <p>nginx 服务器在我们平常的软件开发中可能还是用到的比较多的，那么有一个问题我们就应该明白，也许让你去实现轻而易举，但说到其中的原理就有点不是很清楚了。下面就谈谈我自己对正向代理和反向代理的理解：首先有一个用户 C，三台服务器 S1，S2 和 S3，S1，S2，S3 在同一局域网内互相可访问，但 S1 对外网开放，S2 和 S3 不对外网开放，还有一份数据资源 D，资源 D 放在服务器 S2 和 S3 上。</p>
-<h2 id="nginx-正向代理"><a href="#nginx-正向代理" class="headerlink" title="nginx 正向代理"></a>nginx 正向代理</h2><p>这时用户 C 明确知道自己想访问的数据资源 D 在服务器 S2 上，用户 C 想要访问这份资源但是没办法直接访问服务器 S2，用户 C 想到服务器 S1 和 S2 在同一局域网并且互相可访问，而自己能够访问服务器 S1，所以用户 C 就通过服务器 S1 去访问服务器 S2 上的资源 D。那么正向代理就是对于用户 C 来说他是明确知道他要访问的数据资源 D 在哪个服务器上；对于服务器 S1 来说他只充当了用户 C 的中间代理角色；而对于服务器 S2 来说他只知道访问他的资源的是服务器 S1，根本不知道用户 C 的存在。</p>
-<p>正向代理的整个流程就是用户 C 访问服务器 S2 上的数据资源 D，但是是通过借助服务器 S1 来进行访问，服务器 S1 得到数据资源后再返回给用户 C。</p>
 <a id="more"></a>
 
+<h2 id="nginx-正向代理"><a href="#nginx-正向代理" class="headerlink" title="nginx 正向代理"></a>nginx 正向代理</h2><p>这时用户 C 明确知道自己想访问的数据资源 D 在服务器 S2 上，用户 C 想要访问这份资源但是没办法直接访问服务器 S2，用户 C 想到服务器 S1 和 S2 在同一局域网并且互相可访问，而自己能够访问服务器 S1，所以用户 C 就通过服务器 S1 去访问服务器 S2 上的资源 D。那么正向代理就是对于用户 C 来说他是明确知道他要访问的数据资源 D 在哪个服务器上；对于服务器 S1 来说他只充当了用户 C 的中间代理角色；而对于服务器 S2 来说他只知道访问他的资源的是服务器 S1，根本不知道用户 C 的存在。</p>
+<p>正向代理的整个流程就是用户 C 访问服务器 S2 上的数据资源 D，但是是通过借助服务器 S1 来进行访问，服务器 S1 得到数据资源后再返回给用户 C。</p>
 <h2 id="nginx-反向代理"><a href="#nginx-反向代理" class="headerlink" title="nginx 反向代理"></a>nginx 反向代理</h2><p>还是刚开始上面说的这些：用户 C，服务器 S1，S2 和 S3，以及服务器 S2 和 S3 上的数据资源 D。这时用户 C 并不知道数据资源 D 在服务器 S2 和 S3 上面，他只知道访问服务器 S1 可以得到自己想要的内容，于是他每次都是直接访问服务器 S1，只不过提供给用户 C 数据资源的都是服务器 S2 或者 S3。那么反向代理就是对于用户 C 来说他是不知道数据资源 D 具体在哪里，是由谁提供的；对于服务器 S1 来说每次都接收用户的请求，然后再把请求交给真正能提供资源的服务器 S2 或 S3；对于服务器 S2 和 S3 来说同样也都不知道访问这份资源的真实用户是谁，只是和服务器 S1 进行交互。</p>
 <p>反向代理的整个流程就是用户 C 访问服务器 S1 获取数据资源 D，服务器 S1 将请求转交给服务器 S2 或 S3，然后得到相应的资源后再返回给用户 C。</p>
 <p>总之，正向代理就是客户端知道服务器端，带过代理连接服务器端。反向代理就是客户端不知道服务器端，通过代理连接服务器端，具体是由哪个服务器端提供服务取决于代理的调度方式，即 nginx 中的负载均衡策略。</p>

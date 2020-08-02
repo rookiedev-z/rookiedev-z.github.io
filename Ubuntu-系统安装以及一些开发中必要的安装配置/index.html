@@ -20,19 +20,19 @@
     var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="对于开发人员来说，个人强烈推荐使用 Linux 系统进行开发，至于为什么，这里贴出自己刚开始尝试使用 Linux 系统时看的一个博主写的文章，可以说就是因为看了这位博主的文章才立即决定装上 Linux 系统，开始了我的 Linux 系统之旅，从此停不下来了。下面就是这位博主写的文章地址，里面详细阐述了为什么要使用 Linux 系统。http:&#x2F;&#x2F;ghosertblog.github.io&#x2F;blog">
+  <meta name="description" content="对于开发人员来说，个人强烈推荐使用 Linux 系统进行开发，至于为什么，这里贴出自己刚开始尝试使用 Linux 系统时看的一个博主写的文章，可以说就是因为看了这位博主的文章才立即决定装上 Linux 系统，开始了我的 Linux 系统之旅，从此停不下来了。下面就是这位博主写的文章地址，里面详细阐述了为什么要使用 Linux 系统。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Ubuntu 系统安装以及一些开发中必要的安装配置">
 <meta property="og:url" content="http://gittab.net/Ubuntu-%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E4%B8%80%E4%BA%9B%E5%BC%80%E5%8F%91%E4%B8%AD%E5%BF%85%E8%A6%81%E7%9A%84%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/index.html">
 <meta property="og:site_name" content="rookiedev">
-<meta property="og:description" content="对于开发人员来说，个人强烈推荐使用 Linux 系统进行开发，至于为什么，这里贴出自己刚开始尝试使用 Linux 系统时看的一个博主写的文章，可以说就是因为看了这位博主的文章才立即决定装上 Linux 系统，开始了我的 Linux 系统之旅，从此停不下来了。下面就是这位博主写的文章地址，里面详细阐述了为什么要使用 Linux 系统。http:&#x2F;&#x2F;ghosertblog.github.io&#x2F;blog">
+<meta property="og:description" content="对于开发人员来说，个人强烈推荐使用 Linux 系统进行开发，至于为什么，这里贴出自己刚开始尝试使用 Linux 系统时看的一个博主写的文章，可以说就是因为看了这位博主的文章才立即决定装上 Linux 系统，开始了我的 Linux 系统之旅，从此停不下来了。下面就是这位博主写的文章地址，里面详细阐述了为什么要使用 Linux 系统。">
 <meta property="og:locale">
 <meta property="og:image" content="http://gittab.net/Ubuntu-%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E4%B8%80%E4%BA%9B%E5%BC%80%E5%8F%91%E4%B8%AD%E5%BF%85%E8%A6%81%E7%9A%84%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/Ubuntu-%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E4%B8%80%E4%BA%9B%E5%BC%80%E5%8F%91%E4%B8%AD%E5%BF%85%E8%A6%81%E7%9A%84%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/download.png">
 <meta property="og:image" content="http://gittab.net/Ubuntu-%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E4%B8%80%E4%BA%9B%E5%BC%80%E5%8F%91%E4%B8%AD%E5%BF%85%E8%A6%81%E7%9A%84%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/Ubuntu-%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E4%B8%80%E4%BA%9B%E5%BC%80%E5%8F%91%E4%B8%AD%E5%BF%85%E8%A6%81%E7%9A%84%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/make-usb.jpg">
 <meta property="og:image" content="http://gittab.net/Ubuntu-%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E4%B8%80%E4%BA%9B%E5%BC%80%E5%8F%91%E4%B8%AD%E5%BF%85%E8%A6%81%E7%9A%84%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/Ubuntu-%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E4%B8%80%E4%BA%9B%E5%BC%80%E5%8F%91%E4%B8%AD%E5%BF%85%E8%A6%81%E7%9A%84%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/success.jpg">
 <meta property="og:image" content="http://gittab.net/Ubuntu-%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E4%B8%80%E4%BA%9B%E5%BC%80%E5%8F%91%E4%B8%AD%E5%BF%85%E8%A6%81%E7%9A%84%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/Ubuntu-%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E4%B8%80%E4%BA%9B%E5%BC%80%E5%8F%91%E4%B8%AD%E5%BF%85%E8%A6%81%E7%9A%84%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/install.png">
 <meta property="article:published_time" content="2018-05-07T15:46:03.000Z">
-<meta property="article:modified_time" content="2020-08-02T11:23:22.661Z">
+<meta property="article:modified_time" content="2020-08-02T12:51:35.038Z">
 <meta property="article:author" content="rookiedev">
 <meta property="article:tag" content="Java MySQL Life">
 <meta name="twitter:card" content="summary">
@@ -230,7 +230,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-02 19:23:22" itemprop="dateModified" datetime="2020-08-02T19:23:22+08:00">2020-08-02</time>
+                <time title="Modified: 2020-08-02 20:51:35" itemprop="dateModified" datetime="2020-08-02T20:51:35+08:00">2020-08-02</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -260,11 +260,12 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>对于开发人员来说，个人强烈推荐使用 Linux 系统进行开发，至于为什么，这里贴出自己刚开始尝试使用 Linux 系统时看的一个博主写的文章，可以说就是因为看了这位博主的文章才立即决定装上 Linux 系统，开始了我的 Linux 系统之旅，从此停不下来了。下面就是这位博主写的文章地址，里面详细阐述了为什么要使用 Linux 系统。<br><a target="_blank" rel="noopener" href="http://ghosertblog.github.io/blog/2012/10/14/ubuntu-living-handbook/">http://ghosertblog.github.io/blog/2012/10/14/ubuntu-living-handbook/</a><br><a target="_blank" rel="noopener" href="http://ghosertblog.github.io/blog/2012/10/14/ubuntu-living-handbook/">Ubuntu桌面生存指南 (1) — 选择 Linux</a></p>
-<p>这位博主写了 5 篇文章关于 Linux 系统的，建议从第一篇开始看，一直看下去，看完之后如果还是不想进入 Linux 系统的世界，那么可能 Linux 系统与你无缘，这里并无冒犯的意思，纯属个人喜好。</p>
-<p>博主从零开始全面的介绍了 Linux 系统，（当然还是要有点 Linux 系统的基础去看更好）一直到 Linux 系统的安装以及后面的维护和备份，值得去好好的看一遍，那么这里我主要是想记录下自己的安装过程以及开发中的一些必要软件安装和配置，以防以后重复去搜索资源。</p>
+        <p>对于开发人员来说，个人强烈推荐使用 Linux 系统进行开发，至于为什么，这里贴出自己刚开始尝试使用 Linux 系统时看的一个博主写的文章，可以说就是因为看了这位博主的文章才立即决定装上 Linux 系统，开始了我的 Linux 系统之旅，从此停不下来了。下面就是这位博主写的文章地址，里面详细阐述了为什么要使用 Linux 系统。</p>
 <a id="more"></a>
 
+<p><a target="_blank" rel="noopener" href="http://ghosertblog.github.io/blog/2012/10/14/ubuntu-living-handbook/">http://ghosertblog.github.io/blog/2012/10/14/ubuntu-living-handbook/</a><br><a target="_blank" rel="noopener" href="http://ghosertblog.github.io/blog/2012/10/14/ubuntu-living-handbook/">Ubuntu桌面生存指南 (1) — 选择 Linux</a></p>
+<p>这位博主写了 5 篇文章关于 Linux 系统的，建议从第一篇开始看，一直看下去，看完之后如果还是不想进入 Linux 系统的世界，那么可能 Linux 系统与你无缘，这里并无冒犯的意思，纯属个人喜好。</p>
+<p>博主从零开始全面的介绍了 Linux 系统，（当然还是要有点 Linux 系统的基础去看更好）一直到 Linux 系统的安装以及后面的维护和备份，值得去好好的看一遍，那么这里我主要是想记录下自己的安装过程以及开发中的一些必要软件安装和配置，以防以后重复去搜索资源。</p>
 <h3 id="Ubuntu-系统的安装"><a href="#Ubuntu-系统的安装" class="headerlink" title="Ubuntu 系统的安装"></a>Ubuntu 系统的安装</h3><p>U 盘启动盘制作<br>对于 Linux 系统的启动盘制作很简单，只需要下载一个制作工具即可，下载链接如下：</p>
 <p><a target="_blank" rel="noopener" href="http://www.pendrivelinux.com/universal-usb-installer-easy-as-1-2-3/#button">U 盘启动盘制作软件</a></p>
 <p><img src="Ubuntu-%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E4%B8%80%E4%BA%9B%E5%BC%80%E5%8F%91%E4%B8%AD%E5%BF%85%E8%A6%81%E7%9A%84%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/download.png" alt="制作工具下载网页"></p>
