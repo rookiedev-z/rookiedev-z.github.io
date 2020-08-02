@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="作为程序员来说，养成写博客的习惯真的是一件值得去做的事，尽管刚开始可能没有那么高质量的知识输出，但是不是有这样一句话吗？「知识的输入应转化为输出」，也就是说你应该把你所学到的都转化为输出，只有这样你才能更好的掌握你所学的知识，并且在这个过程中你也会对你所学的知识点进行很好的补充。既然要写博文，是不是刚开始就随便写写呢？当然不是，一篇排版好内容不是很好的博文相比于内容好排版很乱的博文能够让人更乐于看">
+<meta property="og:type" content="article">
+<meta property="og:title" content="极力推荐的博文排版指南">
+<meta property="og:url" content="http://gittab.net/%E6%9E%81%E5%8A%9B%E6%8E%A8%E8%8D%90%E7%9A%84%E5%8D%9A%E6%96%87%E6%8E%92%E7%89%88%E6%8C%87%E5%8D%97/index.html">
+<meta property="og:site_name" content="rookiedev">
+<meta property="og:description" content="作为程序员来说，养成写博客的习惯真的是一件值得去做的事，尽管刚开始可能没有那么高质量的知识输出，但是不是有这样一句话吗？「知识的输入应转化为输出」，也就是说你应该把你所学到的都转化为输出，只有这样你才能更好的掌握你所学的知识，并且在这个过程中你也会对你所学的知识点进行很好的补充。既然要写博文，是不是刚开始就随便写写呢？当然不是，一篇排版好内容不是很好的博文相比于内容好排版很乱的博文能够让人更乐于看">
+<meta property="og:locale">
+<meta property="article:published_time" content="2018-07-23T15:32:52.000Z">
+<meta property="article:modified_time" content="2020-08-02T11:17:14.260Z">
+<meta property="article:author" content="rookiedev">
+<meta property="article:tag" content="Java MySQL Life">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://gittab.net/%E6%9E%81%E5%8A%9B%E6%8E%A8%E8%8D%90%E7%9A%84%E5%8D%9A%E6%96%87%E6%8E%92%E7%89%88%E6%8C%87%E5%8D%97/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'default'
+  };
+</script>
+
+  <title>极力推荐的博文排版指南 | rookiedev</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">rookiedev</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">just do it</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E6%9E%81%E5%8A%9B%E6%8E%A8%E8%8D%90%E7%9A%84%E5%8D%9A%E6%96%87%E6%8E%92%E7%89%88%E6%8C%87%E5%8D%97/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          极力推荐的博文排版指南
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-07-23 23:32:52" itemprop="dateCreated datePublished" datetime="2018-07-23T23:32:52+08:00">2018-07-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-08-02 19:17:14" itemprop="dateModified" datetime="2020-08-02T19:17:14+08:00">2020-08-02</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%86%99%E4%BD%9C/" itemprop="url" rel="index"><span itemprop="name">写作</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>作为程序员来说，养成写博客的习惯真的是一件值得去做的事，尽管刚开始可能没有那么高质量的知识输出，但是不是有这样一句话吗？「知识的输入应转化为输出」，也就是说你应该把你所学到的都转化为输出，只有这样你才能更好的掌握你所学的知识，并且在这个过程中你也会对你所学的知识点进行很好的补充。既然要写博文，是不是刚开始就随便写写呢？当然不是，一篇排版好内容不是很好的博文相比于内容好排版很乱的博文能够让人更乐于看下去，尤其是那些对代码有洁癖的程序员我相信你更看不下去，那么以下便是我极力推荐的博客排版指南：</p>
+<a id="more"></a>
+
+<h3 id="空格的使用"><a href="#空格的使用" class="headerlink" title="空格的使用"></a>空格的使用</h3><p>「有研究显示，打字的时候不喜欢在中文和英文之间加空格的人，感情路都走得很辛苦，有七成的比例会在 34 岁的时候跟自己不爱的人结婚，而其余三成的人最后只能把遗产留给自己的猫。毕竟爱情跟书写都需要适时地留白。」</p>
+<ol>
+<li><p>中英文之间加空格<br>eg. 相信每个程序员都会去全球最大的同性交友网站 GitHub 上逛逛。</p>
+</li>
+<li><p>中文和数字之间加空格<br>eg. 那些排版很乱的博文估计你连 1 分钟都看不下去。</p>
+</li>
+<li><p>数字和单位之间不加空格<br>eg. 现在的安卓手机运行内存没有 6G 都装不了几个应用了。<br>eg. 今天的气温又超过了 40°。<br>eg. 之前买的基金昨天一天跌了 5%。</p>
+</li>
+<li><p>推荐在链接前后加一个空格<br>eg.  我的公众号和博客名称都是 rookiezhou，搜索 rookiezhou 关注我，点击这里 <a target="_blank" rel="noopener" href="http://www.rookiezhou.top/">rookiezhou</a> 访问个人博客。</p>
+</li>
+</ol>
+<h3 id="标点符号的细节"><a href="#标点符号的细节" class="headerlink" title="标点符号的细节"></a>标点符号的细节</h3><ol>
+<li><p>不用为了夸张重复使用标点符号<br>eg. 今年法国夺冠了，华帝刚开始打的一手好牌到最后却变成了一副烂牌，你敢信吗？</p>
+</li>
+<li><p>中文段落中尽量使用中文标点符号<br>eg. 一篇好的博文绝对离不开好的排版，所以这篇博文应该算是好文了吧。</p>
+</li>
+<li><p>推荐将引号换成直角引号<br>eg. 你竟然没看过「Java 编程思想」这本书。</p>
+</li>
+<li><p>推荐引号中还有引号替换成直角双引号<br>eg. 经常有人带着疑惑的目光对我说「你竟然没看过『Java 编程思想』这本书？」</p>
+</li>
+<li><p>完整的英文整句使用英文标点符号<br>eg. 引用乔布斯说的那句话：「Stay hungry, stay foolish.」</p>
+</li>
+</ol>
+<h3 id="专有名词大小写尽量规范"><a href="#专有名词大小写尽量规范" class="headerlink" title="专有名词大小写尽量规范"></a>专有名词大小写尽量规范</h3><p>eg. Java、MySQL 都是后端开发人员必须要会的，当然也要会一些前端的技术，比如说：HTML5、CSS、JavaScript、jQuery。</p>
+<p>还有就是对于一些博文可能存在一篇博文下来就只有一段，看起来很紧凑，如果说在每写完一个知识点隔开一行看起来是不是会更好看些呢，这样一来对于我们从小养成的每一段首行空两格的习惯是不是也可以改了呢，其实你去注意一下那些排版比较好的博文，应该大部分都是这么做的，当然这取决于个人，不喜勿喷。</p>
+<p>参考：</p>
+<p><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/538faa30b17d">https://www.jianshu.com/p/538faa30b17d</a><br><a target="_blank" rel="noopener" href="https://github.com/mzlogin/chinese-copywriting-guidelines">https://github.com/mzlogin/chinese-copywriting-guidelines</a></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F%E7%9A%84%E5%9F%BA%E6%9C%AC%E8%BF%90%E7%94%A8/" rel="prev" title="正则表达式的基本运用">
+      <i class="fa fa-chevron-left"></i> 正则表达式的基本运用
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A9%BA%E6%A0%BC%E7%9A%84%E4%BD%BF%E7%94%A8"><span class="nav-number">1.</span> <span class="nav-text">空格的使用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%87%E7%82%B9%E7%AC%A6%E5%8F%B7%E7%9A%84%E7%BB%86%E8%8A%82"><span class="nav-number">2.</span> <span class="nav-text">标点符号的细节</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%93%E6%9C%89%E5%90%8D%E8%AF%8D%E5%A4%A7%E5%B0%8F%E5%86%99%E5%B0%BD%E9%87%8F%E8%A7%84%E8%8C%83"><span class="nav-number">3.</span> <span class="nav-text">专有名词大小写尽量规范</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">rookiedev</p>
+  <div class="site-description" itemprop="description">daily development technology summary</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">21</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rookiedev-z" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rookiedev-z" rel="noopener" target="_blank"><i class="github fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rookiedev</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

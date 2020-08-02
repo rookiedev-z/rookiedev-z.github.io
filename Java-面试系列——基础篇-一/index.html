@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="面向对象的特征：封装、继承、多态、抽象封装给对象提供了隐藏内部特性和行为的能力，对象提供一些能被其他对象访问的方法来改变它内部的数据。在 Java 当中，有 4 种访问权限，对应有三个修饰符 : public、private 、protected，每一种修饰符给其他的位于同一个包或者不同包下面对象赋予了不同的访问权限。下面列出了使用封装的一些好处:  通过隐藏对象的属性来保护对象内部的状态 提高了">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java 面试系列——基础篇(一)">
+<meta property="og:url" content="http://gittab.net/Java-%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97%E2%80%94%E2%80%94%E5%9F%BA%E7%A1%80%E7%AF%87-%E4%B8%80/index.html">
+<meta property="og:site_name" content="rookiedev">
+<meta property="og:description" content="面向对象的特征：封装、继承、多态、抽象封装给对象提供了隐藏内部特性和行为的能力，对象提供一些能被其他对象访问的方法来改变它内部的数据。在 Java 当中，有 4 种访问权限，对应有三个修饰符 : public、private 、protected，每一种修饰符给其他的位于同一个包或者不同包下面对象赋予了不同的访问权限。下面列出了使用封装的一些好处:  通过隐藏对象的属性来保护对象内部的状态 提高了">
+<meta property="og:locale">
+<meta property="article:published_time" content="2018-03-29T15:18:01.000Z">
+<meta property="article:modified_time" content="2020-08-02T11:20:40.722Z">
+<meta property="article:author" content="rookiedev">
+<meta property="article:tag" content="Java MySQL Life">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://gittab.net/Java-%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97%E2%80%94%E2%80%94%E5%9F%BA%E7%A1%80%E7%AF%87-%E4%B8%80/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'default'
+  };
+</script>
+
+  <title>Java 面试系列——基础篇(一) | rookiedev</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">rookiedev</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">just do it</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/Java-%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97%E2%80%94%E2%80%94%E5%9F%BA%E7%A1%80%E7%AF%87-%E4%B8%80/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Java 面试系列——基础篇(一)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-03-29 23:18:01" itemprop="dateCreated datePublished" datetime="2018-03-29T23:18:01+08:00">2018-03-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-08-02 19:20:40" itemprop="dateModified" datetime="2020-08-02T19:20:40+08:00">2020-08-02</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97/" itemprop="url" rel="index"><span itemprop="name">面试系列</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="面向对象的特征：封装、继承、多态、抽象"><a href="#面向对象的特征：封装、继承、多态、抽象" class="headerlink" title="面向对象的特征：封装、继承、多态、抽象"></a>面向对象的特征：封装、继承、多态、抽象</h2><p>封装给对象提供了隐藏内部特性和行为的能力，对象提供一些能被其他对象访问的方法来改变它内部的数据。在 Java 当中，有 4 种访问权限，对应有三个修饰符 : public、private 、protected，每一种修饰符给其他的位于同一个包或者不同包下面对象赋予了不同的访问权限。下面列出了使用封装的一些好处:</p>
+<ul>
+<li>通过隐藏对象的属性来保护对象内部的状态</li>
+<li>提高了代码的可用性和可维护性,因为对象的行为可以被单独的改变或者是扩展</li>
+<li>禁止对象之间的不良交互提高模块化</li>
+</ul>
+<p>继承给对象提供了从基类获取字段和方法的能力、继承提供了代码的重用行、在不修改类的情况下给现存的类添加新特性。</p>
+<p>多态是编程语言给不同的底层数据类型做相同的接口展示的一种能力，一个多态类型上的操作可以应用到其他类型的值上面。</p>
+<p>抽象是把想法从具体的实例中分离出来的步骤,因此,要根据他们的功能而不是实现细节来创建类，Java 支持创建只暴漏接口而不包含方法实现的抽象的类，这种抽象技术的主要目的是把类的行为和实现细节分离开。</p>
+<p>** 备注: 抽象和封装是互补的概念。一方面,抽象关注对象的行为。另一方面,封装关注对象行为的 细节。一般是通过隐藏对象内部状态信息做到封装,因此,封装可以看成是用来提供抽象的一种策略。**</p>
+<h2 id="final-finally-finalize-的区别"><a href="#final-finally-finalize-的区别" class="headerlink" title="final, finally, finalize 的区别"></a>final, finally, finalize 的区别</h2><p>final : 修饰符(关键字)，如果一个类被声明为 final，意味着它不能再派生出新的子类，不能作为父类被继承。因此一个类不能既被声明为 abstract 的,又被声明为 final 的。将变量或方法声明为 final,可以保证它们在使用中不被改变。被声明为 final 的变量必须在声明时给定初值,而在以后的引用中只能读取,不可修改。被声明为 final 的方法也同样只能使用,不能重载。</p>
+<p>finally : 在异常处理时提供 finally 块来执行资源释放操作，如果抛出一个异常，那么相匹配的 catch 子句就会执行,然后就会进入 finally 块(如果有的话)。</p>
+<p>finalize : 方法名，Java 技术允许使用 finalize() 方法在垃圾收集器将对象从内存中清除出去之前做必要的清理工作，这个方法是由垃圾收集器在确定这个对象没有被引用时在释放对象占用的内存之前会调用该方法，它是在 Object 类中定义的，因此所有的类都继承了它，子类覆盖 finalize() 方法以整理系统资源或者执行其他清理工作。</p>
+<a id="more"></a>
+
+<h2 id="Exception、Error、运行时异常与一般异常有何异同"><a href="#Exception、Error、运行时异常与一般异常有何异同" class="headerlink" title="Exception、Error、运行时异常与一般异常有何异同"></a>Exception、Error、运行时异常与一般异常有何异同</h2><p>error 表示程序运行出错了，它是一种比较严重的问题，比如说内存溢出，不可能指望程序能处理这样的情况。</p>
+<p>exception 表示程序运行过程中可能会出现的异常情况，如果程序运行正常的话不会发生的情况。</p>
+<p>异常表示程序运行过程中可能出现的非正常状态。运行时异常表示虚拟机的通常操作中可能遇到的异常,是一种常见运行错误，比如说 NullPointerException、IndexOutOfBoundsException、NumberFormatException、ClassCastException、IllegalArgumentException，这类异常的话 Java 虚拟机并不要求声明抛出或者捕获。而对于一般异常 Java 编译器要求方法必须声明抛出或者捕获，常见的这类异常有IOException、SQLException、InternetedException。</p>
+<h2 id="int-和-Integer-有什么区别，Integer-的值缓存范围"><a href="#int-和-Integer-有什么区别，Integer-的值缓存范围" class="headerlink" title="int 和 Integer 有什么区别，Integer 的值缓存范围"></a>int 和 Integer 有什么区别，Integer 的值缓存范围</h2><p>Java 中有八种基本数据类型，int 就是其中一种，而每一种基本数据类型都有其对应的包装类型，两者之间的转换也称为自动装箱和自动拆箱。</p>
+<p>对于 Integer 的值 Java 会进行缓存，值在 -128 - 127 之间的数字会进行缓存。</p>
+<h2 id="String、StringBuilder、StringBuffer-的理解"><a href="#String、StringBuilder、StringBuffer-的理解" class="headerlink" title="String、StringBuilder、StringBuffer 的理解"></a>String、StringBuilder、StringBuffer 的理解</h2><p>首先 String 字符串常量，被 final 所修饰，不可被继承，StringBuilder 字符串变量，非线程安全，StringBuffer 字符串变量，线程安全，由于 String 是字符串常量，不可变，当涉及到字符串的拼接时会频繁的创建对象，所以这时需要使用 StringBuilder 和 StringBuffer 这两个类了，当然如果没有涉及到多线程的话尽量使用 StringBuilder ，它比 StringBuffer 这个类处理速度要快，当然如果涉及到多线程的话就只能使用 StringBuffer 类了。</p>
+<h2 id="重载和重写的区别"><a href="#重载和重写的区别" class="headerlink" title="重载和重写的区别"></a>重载和重写的区别</h2><p>方法的重写 Overriding 是父类与子类之间多态性的一种表现，如果在子类中定义某方法与其父类有相同的名称和参数，我们说该方法被重写，子类重写的方法访问修饰符的限制一定要大于被重写方法的访问修饰符 (public&gt;protected&gt;default&gt;private)，重写方法一定不能抛出新的检查异常或者比被重写方法声明更加宽泛的检查型异常。</p>
+<p>重载 Overloading 是一个类中多态性的一种体现，子类的对象使用这个方法时，将调用子类中的定义，对它而言，父类中的定义如同被”屏蔽”了。如果在一个类中定义了多个同名的方法，它们有不同的参数个数或者有不同的参数类型，则称为方法的重载 Overloading，Overloaded 的方法是可以改变返回值的类型，也可以有不同的访问修饰符，还可以抛出不同的异常。</p>
+<h2 id="抽象类和接口有什么区别"><a href="#抽象类和接口有什么区别" class="headerlink" title="抽象类和接口有什么区别"></a>抽象类和接口有什么区别</h2><p>抽象类是对根源的抽象，它表示的是这个对象是什么。同时抽象类中可以没有抽象方法，抽象类中的变量可以任意定义，对于抽象方法是要被实现的，所以不能是静态的也不能是私有的，</p>
+<p>接口是对动作的抽象，接口表示的是这个对象能做什么。对于接口中的抽象方法默认是都是公开的，接口里定义的变量只能是公共的静态的常量，接口中一般只做方法的声明，不过在 Java 8 中可以有具体的实现，一种是由 static 修饰，另一种使用 default关键字修饰，对于 static 修饰的由接口名称直接调用，而对于 default 修饰的方法则需要对应的实现类去调用，如果一个类实现了多个接口，而且这些接口中都有相同的默认方法时，此时必须重写掉默认方法，否则编译失败。</p>
+<h2 id="反射的用途及实现"><a href="#反射的用途及实现" class="headerlink" title="反射的用途及实现"></a>反射的用途及实现</h2><p>当程序运行时，允许动态的改变程序结构或变量类型，通过反射我们可以在运行时获得程序或程序集中每一个类型成员和成员变量的信息。由于在运行时才动态加载的类或调用方法或属性，所以不需要事先（写代码的时候或编译期）知道运行对象是谁。<br>当我们在使用 IDE 时，当我们输入一个对象名或者类名并想调用它的属性和方法时，一按 (“.”) 点号，编译器就会自动列出它的属性和方法，这里就会用到反射。</p>
+<p>反射最重要的用途就是开发各种通用框架，很多框架（比如 Spring）都是配置化的（比如通过 XML文件配置 JavaBean，Action之类的），为了保证框架的通用性，他们可能根据配置文件加载不同的对象或类，调用不同的方法，这个时候就必须用到反射——运行时动态加载需要加载的对象。</p>
+<ul>
+<li><p>先获得一个类的 Class 对象 :<br>  Class<?> klass = Class.forName(class 全类名);
+Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
+又或者 Class<?> klass = 类名.TYPE;</p>
+</li>
+<li><p>再通过拿到的 Class 对象创建实例 :<br>  Object str = klass.getInstance(); 或者<br>  Constructor constructor = klass.getConstructor(String.class);<br>//根据构造器创建实例<br>Object obj = constructor.newInstance(“23333”);</p>
+</li>
+</ul>
+<h2 id="HTTP请求的-GET-与-POST-方式的区别"><a href="#HTTP请求的-GET-与-POST-方式的区别" class="headerlink" title="HTTP请求的 GET 与 POST 方式的区别"></a>HTTP请求的 GET 与 POST 方式的区别</h2><ul>
+<li>GET 方式会将请求的参数拼接在 URL 后面，会显示在地址栏中，而 POST 方式则是         放在请求体中</li>
+<li>GET方式提交的数据最多只能有 1024 字节，POST 方式没有限制</li>
+<li>HTTP 请求默认是 GET 方式，对于敏感的数据类型最好采用 POST 方式提交请求。</li>
+</ul>
+<h2 id="Session与Cookie区别"><a href="#Session与Cookie区别" class="headerlink" title="Session与Cookie区别"></a>Session与Cookie区别</h2><ul>
+<li>Cookie 和 Session 都是会话技术，Cookie 是运行在客户端，Session 是运行在服务器端，通过生成的 sessionId 来区分不同的客户，同时将 sessionId 的值通过 Cookie 返回给客户端。</li>
+<li>Cookie 有大小限制以及浏览器在存 Cookie 的个数也有限制，Session 是没有大小限制的，和服务器的内存大小有关。</li>
+<li>Cookie 有安全隐患，通过拦截或本地文件找得到你的 Cookie 后可以进行攻击。</li>
+<li>Session 是保存在服务器端会存在一段时间才会消失，如果 Session 过多会增加服务器的压力。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/" rel="prev" title="我的第一篇博客">
+      <i class="fa fa-chevron-left"></i> 我的第一篇博客
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/Java-%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97%E2%80%94%E2%80%94%E5%9F%BA%E7%A1%80%E7%AF%87-%E4%BA%8C/" rel="next" title="Java 面试系列——基础篇(二)">
+      Java 面试系列——基础篇(二) <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1%E7%9A%84%E7%89%B9%E5%BE%81%EF%BC%9A%E5%B0%81%E8%A3%85%E3%80%81%E7%BB%A7%E6%89%BF%E3%80%81%E5%A4%9A%E6%80%81%E3%80%81%E6%8A%BD%E8%B1%A1"><span class="nav-number">1.</span> <span class="nav-text">面向对象的特征：封装、继承、多态、抽象</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#final-finally-finalize-%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">2.</span> <span class="nav-text">final, finally, finalize 的区别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Exception%E3%80%81Error%E3%80%81%E8%BF%90%E8%A1%8C%E6%97%B6%E5%BC%82%E5%B8%B8%E4%B8%8E%E4%B8%80%E8%88%AC%E5%BC%82%E5%B8%B8%E6%9C%89%E4%BD%95%E5%BC%82%E5%90%8C"><span class="nav-number">3.</span> <span class="nav-text">Exception、Error、运行时异常与一般异常有何异同</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#int-%E5%92%8C-Integer-%E6%9C%89%E4%BB%80%E4%B9%88%E5%8C%BA%E5%88%AB%EF%BC%8CInteger-%E7%9A%84%E5%80%BC%E7%BC%93%E5%AD%98%E8%8C%83%E5%9B%B4"><span class="nav-number">4.</span> <span class="nav-text">int 和 Integer 有什么区别，Integer 的值缓存范围</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#String%E3%80%81StringBuilder%E3%80%81StringBuffer-%E7%9A%84%E7%90%86%E8%A7%A3"><span class="nav-number">5.</span> <span class="nav-text">String、StringBuilder、StringBuffer 的理解</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%87%8D%E8%BD%BD%E5%92%8C%E9%87%8D%E5%86%99%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">6.</span> <span class="nav-text">重载和重写的区别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8A%BD%E8%B1%A1%E7%B1%BB%E5%92%8C%E6%8E%A5%E5%8F%A3%E6%9C%89%E4%BB%80%E4%B9%88%E5%8C%BA%E5%88%AB"><span class="nav-number">7.</span> <span class="nav-text">抽象类和接口有什么区别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%8D%E5%B0%84%E7%9A%84%E7%94%A8%E9%80%94%E5%8F%8A%E5%AE%9E%E7%8E%B0"><span class="nav-number">8.</span> <span class="nav-text">反射的用途及实现</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HTTP%E8%AF%B7%E6%B1%82%E7%9A%84-GET-%E4%B8%8E-POST-%E6%96%B9%E5%BC%8F%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">9.</span> <span class="nav-text">HTTP请求的 GET 与 POST 方式的区别</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Session%E4%B8%8ECookie%E5%8C%BA%E5%88%AB"><span class="nav-number">10.</span> <span class="nav-text">Session与Cookie区别</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">rookiedev</p>
+  <div class="site-description" itemprop="description">daily development technology summary</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">21</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rookiedev-z" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rookiedev-z" rel="noopener" target="_blank"><i class="github fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rookiedev</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

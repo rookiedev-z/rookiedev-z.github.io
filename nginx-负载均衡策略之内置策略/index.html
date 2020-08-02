@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="nginx 服务器在开发中我们用的比较多的有 nginx 的负载均衡，nginx 负载均衡主要是利用反向代理来实现，也就是表面上我们访问的是这个服务，其实访问的是该服务背后支撑的众多服务器中的其中一台。比如说全世界同一时间有这么多人同时在访问百度这个网站，它是怎么能够承受的住这么大的访问量呢，这时我们就应该知道其实百度这个网站的背后有很多的服务器在支撑着众多的用户的访问。但是这里就引出一个问题，用">
+<meta property="og:type" content="article">
+<meta property="og:title" content="nginx 负载均衡策略之内置策略">
+<meta property="og:url" content="http://gittab.net/nginx-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5%E4%B9%8B%E5%86%85%E7%BD%AE%E7%AD%96%E7%95%A5/index.html">
+<meta property="og:site_name" content="rookiedev">
+<meta property="og:description" content="nginx 服务器在开发中我们用的比较多的有 nginx 的负载均衡，nginx 负载均衡主要是利用反向代理来实现，也就是表面上我们访问的是这个服务，其实访问的是该服务背后支撑的众多服务器中的其中一台。比如说全世界同一时间有这么多人同时在访问百度这个网站，它是怎么能够承受的住这么大的访问量呢，这时我们就应该知道其实百度这个网站的背后有很多的服务器在支撑着众多的用户的访问。但是这里就引出一个问题，用">
+<meta property="og:locale">
+<meta property="og:image" content="http://gittab.net/nginx-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5%E4%B9%8B%E5%86%85%E7%BD%AE%E7%AD%96%E7%95%A5/nginx-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5%E4%B9%8B%E5%86%85%E7%BD%AE%E7%AD%96%E7%95%A5/polling.png">
+<meta property="article:published_time" content="2018-06-22T15:26:45.000Z">
+<meta property="article:modified_time" content="2020-08-02T11:22:46.185Z">
+<meta property="article:author" content="rookiedev">
+<meta property="article:tag" content="Java MySQL Life">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://gittab.net/nginx-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5%E4%B9%8B%E5%86%85%E7%BD%AE%E7%AD%96%E7%95%A5/nginx-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5%E4%B9%8B%E5%86%85%E7%BD%AE%E7%AD%96%E7%95%A5/polling.png">
+
+<link rel="canonical" href="http://gittab.net/nginx-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5%E4%B9%8B%E5%86%85%E7%BD%AE%E7%AD%96%E7%95%A5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'default'
+  };
+</script>
+
+  <title>nginx 负载均衡策略之内置策略 | rookiedev</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">rookiedev</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">just do it</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/nginx-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5%E4%B9%8B%E5%86%85%E7%BD%AE%E7%AD%96%E7%95%A5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          nginx 负载均衡策略之内置策略
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-06-22 23:26:45" itemprop="dateCreated datePublished" datetime="2018-06-22T23:26:45+08:00">2018-06-22</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-08-02 19:22:46" itemprop="dateModified" datetime="2020-08-02T19:22:46+08:00">2020-08-02</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/nginx/" itemprop="url" rel="index"><span itemprop="name">nginx</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>nginx 服务器在开发中我们用的比较多的有 nginx 的负载均衡，nginx 负载均衡主要是利用反向代理来实现，也就是表面上我们访问的是这个服务，其实访问的是该服务背后支撑的众多服务器中的其中一台。比如说全世界同一时间有这么多人同时在访问百度这个网站，它是怎么能够承受的住这么大的访问量呢，这时我们就应该知道其实百度这个网站的背后有很多的服务器在支撑着众多的用户的访问。但是这里就引出一个问题，用户访问的这个服务是如何分发给它背后的众多的服务器呢，于是就出现了满足各种需求的负载均衡策略，其中有 nginx 自己内置的负载均衡策略，也有第三方提供的一些负载均衡策略。今天主要谈一下 nginx 内置的负载均衡策略，主要有四种：轮询（默认）、加权轮询、最少连接 least_conn、IP 哈希 ip_hash，下面将一一进行介绍。</p>
+<p>首先我们先安装好 nginx 服务器，下面是在 Ubuntu 16.04 系统测试的，采用的 nginx 版本是 nginx/1.12.0。</p>
+<h2 id="安装-nginx"><a href="#安装-nginx" class="headerlink" title="安装 nginx"></a>安装 nginx</h2><p>下载基于 Linux 系统的 nginx/1.12.0 版的 nginx 服务器进行解压编译安装，下面是安装命令。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">sudo wget http:&#x2F;&#x2F;nginx.org&#x2F;download&#x2F;nginx-1.12.0.tar.gz</span><br><span class="line">sudo tar xzf nginx-1.12.0.tar.gz</span><br><span class="line">cd nginx-1.12.0</span><br><span class="line">sudo .&#x2F;configure</span><br><span class="line">sudo make</span><br><span class="line">sudo make install</span><br></pre></td></tr></table></figure>
+
+<a id="more"></a>
+
+<p>上面安装成功后，nginx 默认安装在目录 /usr/local/nginx/ 下面，当然你也可以自定义安装目录，不过一般不建议这么做，以防以后都不知道到哪里去找配置文件，默认就好，安装成功后可以在 /usr/sbin/ 目录下创建一个软链接指向 /usr/local/nginx/sbin/nginx 文件，命令如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ln -s &#x2F;usr&#x2F;sbin&#x2F;nginx &#x2F;usr&#x2F;local&#x2F;nginx&#x2F;sbin&#x2F;nginx</span><br></pre></td></tr></table></figure>
+
+<p>这样我们就不用每次启动 nginx 服务都切换到 /usr/local/nginx/sbin/ 目录下去执行 nginx 的启动命令，配置好了这些后就可以启动 nginx 服务器进行测试了。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo nginx -c &#x2F;usr&#x2F;local&#x2F;nginx&#x2F;conf&#x2F;nginx.conf </span><br></pre></td></tr></table></figure>
+
+<p>执行上面的启动命令后在浏览器中输入 localhost 后回车出现对应的 nginx 服务器的欢迎页面就表示 nginx 服务器安装成功了，这里我们为了更好的测试首先将 nginx.conf 配置文件中 http 的默认端口 80 改成 10080，改了之后重新启动 nginx 服务器后接着在浏览器中输入 localhost:10080 后回车应该又会出现刚才的欢迎页面了。接下来就开始我们的 nginx 的负载均衡策略之旅吧。</p>
+<h2 id="轮询（默认）"><a href="#轮询（默认）" class="headerlink" title="轮询（默认）"></a>轮询（默认）</h2><p>轮询这个策略是 nginx 进行负载均衡时默认采用的策略，也就是最基本的负载均衡配置，打开 /usr/local/nginx/conf/ 目录下的 nginx.conf 配置文件，我们配置一个最简单的负载均衡方式，在配置文件中 http 模块里面也就是和 http 模块里面的 server 模块同级加上以下内容：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">upstream loadserver &#123;</span><br><span class="line">    server 192.168.1.110:10080;</span><br><span class="line">    server 192.168.1.111:10080;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后在 http 模块里面的 server 模块下面的 location 模块加上一行配置，如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">location &#x2F; &#123;</span><br><span class="line">    root   html;</span><br><span class="line">    index  index.html index.htm;</span><br><span class="line">    proxy_pass http:&#x2F;&#x2F;loadserver;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>部分配置文件截图如下：</p>
+<p><img src="nginx-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5%E4%B9%8B%E5%86%85%E7%BD%AE%E7%AD%96%E7%95%A5/polling.png" alt="轮询策略配置"></p>
+<p>这样也就配置好了最基本的负载均衡，默认采用轮询的策略将请求分发给后台服务器，当我们访问 localhost:10080 这个地址时页面轮流的展示 192.168.1.110 和 192.168.1.111 这两台主机的 nginx 服务器的欢迎页面，这里为了区分这两个欢迎页面需要修改一下这两台主机的 nginx 服务器的欢迎页面信息，欢迎页面默认存放在 /usr/local/nginx/html/ 目录下的 index.html 页面。我们只要稍微修改一下这两台主机的 nginx 欢迎页面使得每次访问的页面都是不同的，便于我们区分访问的是哪台主机的 nginx 服务器。</p>
+<h2 id="加权轮询"><a href="#加权轮询" class="headerlink" title="加权轮询"></a>加权轮询</h2><p>加权轮询则是在第一种轮询的基础上对后台的每台服务赋予权重，服务器的权重比例越大，被分发到的概率也就越大，配置如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">upstream loadserver &#123;</span><br><span class="line">    server 192.168.1.110:10080 weight&#x3D;3;</span><br><span class="line">    server 192.168.1.111:10080 weight&#x3D;1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面只是给每个后台服务加上了一个权重比例，拿上面的配置举例：用户将会每访问三次 192.168.1.110 这个服务访问一次 192.168.1.111 这个服务。这种适合后台的各个服务的性能不一样，这时我们就可以将性能好的服务器权重设置大一些，减轻一些性能不怎么样的服务器的压力。</p>
+<h2 id="最少连接-least-conn"><a href="#最少连接-least-conn" class="headerlink" title="最少连接 least_conn"></a>最少连接 least_conn</h2><p>最少连接是每次请求都将请求分发给后台服务连接数最少的那台服务上，当然如果每台服务还配置了权重，那么这时会取连接数和权重比值最小的那台服务，如果连接数和权重的比值都相同的话就会采取轮询的方式进行分发，配置如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">upstream loadserver &#123;</span><br><span class="line">    least_conn;</span><br><span class="line">    server 192.168.1.110:10080;</span><br><span class="line">    server 192.168.1.111:10080;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面的配置只是加了一个调度策略 least_conn，其他和轮询的方式一样，当然你也可以给每台服务加上权重比例，分发时就会选择 conn / weight 值最小的那台服务，这种方式适合请求处理时间长短不一造成服务器过载的情况。</p>
+<h2 id="IP-哈希-ip-hash"><a href="#IP-哈希-ip-hash" class="headerlink" title="IP 哈希 ip_hash"></a>IP 哈希 ip_hash</h2><p>ip_hash 这种负载策略是根据客户端的 IP 地址的 hash 结果来进行分发，这样的话能够确保每个访客访问后端固定的一台服务器，这种情况对于需要保存用户的 session 信息的应用就很方便了，它避免了同一个用户访问到不同的服务器上产生 session 共享的问题。配置如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">upstream loadserver &#123;</span><br><span class="line">    ip_hash;</span><br><span class="line">    server 192.168.1.110:10080;</span><br><span class="line">    server 192.168.1.111:10080;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面的配置只是加了一个调度策略 ip_hash，其他也和轮询的方式一样，这里你也可以给每台服务加上权重比例，分发时在该客户端 IP 第一次访问时就会优先选择 weight 值最大的那台服务。</p>
+<h2 id="其他配置说明"><a href="#其他配置说明" class="headerlink" title="其他配置说明"></a>其他配置说明</h2><p>其实每个后台服务器的配置除了权重 weight 还有一些配置，比如说下面的配置：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">upstream loadserver &#123;</span><br><span class="line">    least_conn;</span><br><span class="line">    server 192.168.1.110:10080 weight&#x3D;5 ;</span><br><span class="line">    server 192.168.1.111:10080 weight&#x3D;1;</span><br><span class="line">    server 192.168.1.112:10080 weight&#x3D;1 max_fails&#x3D;3 fail_timeout&#x3D;30s;</span><br><span class="line">    server 192.168.1.113:10080 down;</span><br><span class="line">    server 192.168.1.114:10080 backup;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>配置说明：<br>1.weight 的值默认为1，weight 越大，服务器负载的权重就越大，访问的概率越高。<br>2.down 表示当前服务器暂时不参与负载。<br>3.backup 表示其它所有的非 backup 服务器 down 或者忙的时候才会请求 backup 服务器，所以这台服务器压力最轻，一般这台服务器当做是备用服务器。<br>3.max_fails 表示允许请求失败的次数，默认为 1，当超过最大次数时，返回proxy_next_upstream 模块定义错误。<br>4.fail_timeout 表示每次失败后暂停的时间。</p>
+<p>到这里就全部介绍完了 nginx 负载均衡内置的一些策略，还有第三方扩展的一些策略，未完待续………</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/nginx-%E7%9A%84%E6%AD%A3%E5%90%91%E4%BB%A3%E7%90%86%E5%92%8C%E5%8F%8D%E5%90%91%E4%BB%A3%E7%90%86/" rel="prev" title="nginx 的正向代理和反向代理">
+      <i class="fa fa-chevron-left"></i> nginx 的正向代理和反向代理
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/nginx-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5%E4%B9%8B%E7%AC%AC%E4%B8%89%E6%96%B9%E6%89%A9%E5%B1%95%E7%AD%96%E7%95%A5/" rel="next" title="nginx 负载均衡策略之第三方扩展策略">
+      nginx 负载均衡策略之第三方扩展策略 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E8%A3%85-nginx"><span class="nav-number">1.</span> <span class="nav-text">安装 nginx</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BD%AE%E8%AF%A2%EF%BC%88%E9%BB%98%E8%AE%A4%EF%BC%89"><span class="nav-number">2.</span> <span class="nav-text">轮询（默认）</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8A%A0%E6%9D%83%E8%BD%AE%E8%AF%A2"><span class="nav-number">3.</span> <span class="nav-text">加权轮询</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9C%80%E5%B0%91%E8%BF%9E%E6%8E%A5-least-conn"><span class="nav-number">4.</span> <span class="nav-text">最少连接 least_conn</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#IP-%E5%93%88%E5%B8%8C-ip-hash"><span class="nav-number">5.</span> <span class="nav-text">IP 哈希 ip_hash</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B6%E4%BB%96%E9%85%8D%E7%BD%AE%E8%AF%B4%E6%98%8E"><span class="nav-number">6.</span> <span class="nav-text">其他配置说明</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">rookiedev</p>
+  <div class="site-description" itemprop="description">daily development technology summary</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">21</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rookiedev-z" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rookiedev-z" rel="noopener" target="_blank"><i class="github fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rookiedev</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

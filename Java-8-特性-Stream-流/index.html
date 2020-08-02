@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Java 8 API 添加了一个新的抽象称为流 Stream，可以让你以一种声明的方式处理数据，Stream 使用一种类似用 SQL 语句从数据库查询数据的直观方式来提供一种对 Java 集合运算和表达的高阶抽象。Stream API 可以极大提高 Java 程序员的生产力，让程序员写出高效率、干净、简洁的代码。这种风格将要处理的元素集合看作一种流， 流在管道中传输， 并且可以在管道的节点上进行处">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java 8 特性--Stream 流">
+<meta property="og:url" content="http://gittab.net/Java-8-%E7%89%B9%E6%80%A7-Stream-%E6%B5%81/index.html">
+<meta property="og:site_name" content="rookiedev">
+<meta property="og:description" content="Java 8 API 添加了一个新的抽象称为流 Stream，可以让你以一种声明的方式处理数据，Stream 使用一种类似用 SQL 语句从数据库查询数据的直观方式来提供一种对 Java 集合运算和表达的高阶抽象。Stream API 可以极大提高 Java 程序员的生产力，让程序员写出高效率、干净、简洁的代码。这种风格将要处理的元素集合看作一种流， 流在管道中传输， 并且可以在管道的节点上进行处">
+<meta property="og:locale">
+<meta property="article:published_time" content="2018-06-12T17:06:02.000Z">
+<meta property="article:modified_time" content="2020-08-02T11:20:05.743Z">
+<meta property="article:author" content="rookiedev">
+<meta property="article:tag" content="Java MySQL Life">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://gittab.net/Java-8-%E7%89%B9%E6%80%A7-Stream-%E6%B5%81/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'default'
+  };
+</script>
+
+  <title>Java 8 特性--Stream 流 | rookiedev</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">rookiedev</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">just do it</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/Java-8-%E7%89%B9%E6%80%A7-Stream-%E6%B5%81/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Java 8 特性--Stream 流
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-06-13 01:06:02" itemprop="dateCreated datePublished" datetime="2018-06-13T01:06:02+08:00">2018-06-13</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-08-02 19:20:05" itemprop="dateModified" datetime="2020-08-02T19:20:05+08:00">2020-08-02</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java-8/" itemprop="url" rel="index"><span itemprop="name">Java 8</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Java 8 API 添加了一个新的抽象称为流 Stream，可以让你以一种声明的方式处理数据，Stream 使用一种类似用 SQL 语句从数据库查询数据的直观方式来提供一种对 Java 集合运算和表达的高阶抽象。Stream API 可以极大提高 Java 程序员的生产力，让程序员写出高效率、干净、简洁的代码。这种风格将要处理的元素集合看作一种流， 流在管道中传输， 并且可以在管道的节点上进行处理， 比如筛选， 排序，聚合等。元素流在管道中经过中间操作（intermediate operation）的处理，最后由最终操作(terminal operation) 得到前面处理的结果。</p>
+<h2 id="Stream-的定义"><a href="#Stream-的定义" class="headerlink" title="Stream 的定义"></a>Stream 的定义</h2><p>Stream（流）是一个来自数据源的元素队列并支持聚合操作，元素是特定类型的对象，形成一个队列。 Java 中的 Stream 并不会存储元素，而是按需计算。</p>
+<ul>
+<li>数据源：流的来源。 可以是集合，数组，I/O channel， 产生器generator 等。</li>
+<li>聚合操作：类似SQL语句一样的操作， 比如filter, map, reduce, find, match, sorted等。</li>
+</ul>
+<p>和以前的 Collection 操作不同， Stream 操作还有两个基础的特征：</p>
+<ul>
+<li>Pipelining: 中间操作都会返回流对象本身。这样多个操作可以串联成一个管道， 如同流式风格（fluent style）。 这样做可以对操作进行优化， 比如延迟执行 (laziness) 和短路 (short-circuiting)。</li>
+<li>内部迭代： 以前对集合遍历都是通过 Iterator 或者 For-Each 的方式, 显式的在集合外部进行迭代， 这叫做外部迭代。 Stream提供了内部迭代的方式， 通过访问者模式 (Visitor) 实现。</li>
+</ul>
+<p>在 Java 8 中，集合接口有两个方法生成流：</p>
+<ul>
+<li>stream() − 为集合创建串行流。</li>
+<li>parallelStream() − 为集合创建并行流。</li>
+</ul>
+<a id="more"></a>
+
+<h2 id="过滤"><a href="#过滤" class="headerlink" title="过滤"></a>过滤</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">List&lt;String&gt; filtered &#x3D; strings.stream().filter(string -&gt; !string.isEmpty()).collect(Collectors.toList());</span><br><span class="line">System.out.println(&quot;筛选后的列表: &quot; + filtered);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 统计空字符串数量</span><br><span class="line">long count &#x3D; strings.stream().filter(String::isEmpty).count();</span><br><span class="line">System.out.println(&quot;空字符串数量为: &quot; + count);</span><br><span class="line">&#x2F;&#x2F; 流并行处理</span><br><span class="line">count &#x3D; strings.parallelStream().filter(String::isEmpty).count();</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 将字符串不为空的筛选出来并且以逗号分隔合并起来</span><br><span class="line">String mergedString &#x3D; strings.stream().filter(string -&gt; !string.isEmpty()).collect(Collectors.joining(&quot;, &quot;));</span><br><span class="line">System.out.println(&quot;合并字符串: &quot; + mergedString);</span><br></pre></td></tr></table></figure>
+
+<h2 id="map-映射"><a href="#map-映射" class="headerlink" title="map 映射"></a>map 映射</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">List&lt;Integer&gt; numbers &#x3D; Arrays.asList(3, 2, 2, 3, 7, 3, 5);</span><br><span class="line">&#x2F;&#x2F; 求各元素的平方</span><br><span class="line">List&lt;Integer&gt; squaresList &#x3D; numbers.stream().map(i -&gt; i * i).distinct().collect(Collectors.toList());</span><br><span class="line">System.out.println(&quot;Squares List: &quot; + squaresList);</span><br></pre></td></tr></table></figure>
+
+<h2 id="统计"><a href="#统计" class="headerlink" title="统计"></a>统计</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">List&lt;Integer&gt; integers &#x3D; Arrays.asList(1, 2, 13, 4, 15, 6, 17, 8, 19);</span><br><span class="line">IntSummaryStatistics stats &#x3D; integers.stream().mapToInt((x) -&gt; x).summaryStatistics();</span><br><span class="line">System.out.println(&quot;列表中最大的数 : &quot; + stats.getMax());</span><br><span class="line">System.out.println(&quot;列表中最小的数 : &quot; + stats.getMin());</span><br><span class="line">System.out.println(&quot;所有数之和 : &quot; + stats.getSum());</span><br><span class="line">System.out.println(&quot;平均数 : &quot; + stats.getAverage());</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="分组"><a href="#分组" class="headerlink" title="分组"></a>分组</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 根据景区等级分组</span><br><span class="line">List&lt;Scenic&gt; scenicList &#x3D; new ArrayList&lt;&gt;();</span><br><span class="line">scenicList.add(new Scenic(1L, &quot;西湖&quot;, 5));</span><br><span class="line">scenicList.add(new Scenic(2L, &quot;千岛湖&quot;, 5));</span><br><span class="line">scenicList.add(new Scenic(3L, &quot;乌镇&quot;, 4));</span><br><span class="line">scenicList.add(new Scenic(4L, &quot;雷峰塔&quot;, 3));</span><br><span class="line">scenicList.add(new Scenic(4L, &quot;灵隐寺&quot;, 4));</span><br><span class="line">Map&lt;Integer, List&lt;Scenic&gt;&gt; mapGroup &#x3D; scenicList.stream().collect(Collectors.groupingBy(Scenic::getScenicLevel));</span><br><span class="line">System.out.println(mapGroup);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="转成-Map"><a href="#转成-Map" class="headerlink" title="转成 Map"></a>转成 Map</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;**</span><br><span class="line">* toMap 如果集合对象有重复的key，会报错Duplicate key ....</span><br><span class="line">*&#x2F;</span><br><span class="line">&#x2F;&#x2F;Map&lt;Long, Scenic&gt; scenicMap &#x3D; scenicList.stream().collect(Collectors.toMap(Scenic::getId, a -&gt; a));</span><br><span class="line">&#x2F;&#x2F;System.out.println(scenicMap);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 可以用 (k1,k2)-&gt;k1 来设置，如果有重复的 key,则保留 key1,舍弃 key2</span><br><span class="line">Map&lt;Long, Scenic&gt; scenicMap &#x3D; scenicList.stream().collect(Collectors.toMap(Scenic::getId, a -&gt; a, (k1, k2) -&gt; k1));</span><br><span class="line">System.out.println(scenicMap);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="reduce-sum-求和"><a href="#reduce-sum-求和" class="headerlink" title="reduce sum 求和"></a>reduce sum 求和</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">List&lt;Integer&gt; integers &#x3D; Arrays.asList(1, 2, 3, 4, 5);</span><br><span class="line">&#x2F;&#x2F; 没有起始值时返回为Optional类型</span><br><span class="line">Optional&lt;Integer&gt; sumOptional &#x3D; integers.stream().reduce(Integer::sum);</span><br><span class="line">System.out.println(sumOptional.get());</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 可以给一个起始种子值</span><br><span class="line">Integer sumReduce &#x3D; integers.stream().reduce(0, Integer::sum);</span><br><span class="line">System.out.println(sumReduce);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;直接用sum方法</span><br><span class="line">Integer sum &#x3D; integers.stream().mapToInt(i -&gt; i).sum();</span><br><span class="line">System.out.println(sum);</span><br></pre></td></tr></table></figure>
+
+<h2 id="根据某个属性求平均数"><a href="#根据某个属性求平均数" class="headerlink" title="根据某个属性求平均数"></a>根据某个属性求平均数</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F; 等级平均数</span><br><span class="line">OptionalDouble average &#x3D; scenicList.stream().mapToInt(Scenic :: getScenicLevel).average();</span><br><span class="line">System.out.println(average.getAsDouble());</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/Java-8-%E7%89%B9%E6%80%A7-Optional-%E7%B1%BB%E3%80%81%E6%97%B6%E9%97%B4-API-%E4%BB%A5%E5%8F%8A-Base64-%E7%BC%96%E8%A7%A3%E7%A0%81/" rel="prev" title="Java 8 特性--Optional 类、时间 API 以及 Base64 编解码">
+      <i class="fa fa-chevron-left"></i> Java 8 特性--Optional 类、时间 API 以及 Base64 编解码
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/nginx-%E7%9A%84%E6%AD%A3%E5%90%91%E4%BB%A3%E7%90%86%E5%92%8C%E5%8F%8D%E5%90%91%E4%BB%A3%E7%90%86/" rel="next" title="nginx 的正向代理和反向代理">
+      nginx 的正向代理和反向代理 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Stream-%E7%9A%84%E5%AE%9A%E4%B9%89"><span class="nav-number">1.</span> <span class="nav-text">Stream 的定义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%87%E6%BB%A4"><span class="nav-number">2.</span> <span class="nav-text">过滤</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#map-%E6%98%A0%E5%B0%84"><span class="nav-number">3.</span> <span class="nav-text">map 映射</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%9F%E8%AE%A1"><span class="nav-number">4.</span> <span class="nav-text">统计</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E7%BB%84"><span class="nav-number">5.</span> <span class="nav-text">分组</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BD%AC%E6%88%90-Map"><span class="nav-number">6.</span> <span class="nav-text">转成 Map</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#reduce-sum-%E6%B1%82%E5%92%8C"><span class="nav-number">7.</span> <span class="nav-text">reduce sum 求和</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%A0%B9%E6%8D%AE%E6%9F%90%E4%B8%AA%E5%B1%9E%E6%80%A7%E6%B1%82%E5%B9%B3%E5%9D%87%E6%95%B0"><span class="nav-number">8.</span> <span class="nav-text">根据某个属性求平均数</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">rookiedev</p>
+  <div class="site-description" itemprop="description">daily development technology summary</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">21</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">11</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rookiedev-z" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rookiedev-z" rel="noopener" target="_blank"><i class="github fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rookiedev</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
