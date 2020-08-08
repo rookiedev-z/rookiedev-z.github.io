@@ -27,13 +27,13 @@
 <meta property="og:site_name" content="rookiedev">
 <meta property="og:description" content="前两天在开发中遇到一个问题，就是一个服务部署在 Window 系统上的，而另一个服务部署在 Linux 系统上，Linux 系统上的服务需要通过 WebService 向 Window 系统上的服务获取数据，而这个数据是经过 AES 加密的，获取到密文之后需要进行解密，然后拿到解密之后的数据进行处理，但是在 Linux 系统服务上进行解密时却报错了，下面就是报错信息。">
 <meta property="og:locale">
-<meta property="og:image" content="http://gittab.net/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B-AES-%E8%A7%A3%E5%AF%86%E6%8A%A5%E9%94%99%E9%97%AE%E9%A2%98/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B-AES-%E8%A7%A3%E5%AF%86%E6%8A%A5%E9%94%99%E9%97%AE%E9%A2%98/AES-Error.png">
+<meta property="og:image" content="http://images.rookiezhou.top/AES-Error.png">
 <meta property="article:published_time" content="2018-05-28T15:03:31.000Z">
-<meta property="article:modified_time" content="2020-08-02T12:47:38.580Z">
+<meta property="article:modified_time" content="2020-08-08T05:05:59.243Z">
 <meta property="article:author" content="rookiedev">
 <meta property="article:tag" content="Java MySQL Life">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://gittab.net/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B-AES-%E8%A7%A3%E5%AF%86%E6%8A%A5%E9%94%99%E9%97%AE%E9%A2%98/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B-AES-%E8%A7%A3%E5%AF%86%E6%8A%A5%E9%94%99%E9%97%AE%E9%A2%98/AES-Error.png">
+<meta name="twitter:image" content="http://images.rookiezhou.top/AES-Error.png">
 
 <link rel="canonical" href="http://gittab.net/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B-AES-%E8%A7%A3%E5%AF%86%E6%8A%A5%E9%94%99%E9%97%AE%E9%A2%98/">
 
@@ -227,7 +227,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-02 20:47:38" itemprop="dateModified" datetime="2020-08-02T20:47:38+08:00">2020-08-02</time>
+                <time title="Modified: 2020-08-08 13:05:59" itemprop="dateModified" datetime="2020-08-08T13:05:59+08:00">2020-08-08</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -260,7 +260,7 @@
         <p>前两天在开发中遇到一个问题，就是一个服务部署在 Window 系统上的，而另一个服务部署在 Linux 系统上，Linux 系统上的服务需要通过 WebService 向 Window 系统上的服务获取数据，而这个数据是经过 AES 加密的，获取到密文之后需要进行解密，然后拿到解密之后的数据进行处理，但是在 Linux 系统服务上进行解密时却报错了，下面就是报错信息。</p>
 <a id="more"></a>
 
-<p><img src="Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B-AES-%E8%A7%A3%E5%AF%86%E6%8A%A5%E9%94%99%E9%97%AE%E9%A2%98/AES-Error.png" alt="解密时报错信息"></p>
+<p><img src="http://images.rookiezhou.top/AES-Error.png" alt="解密时报错信息"></p>
 <p>遇到错误第一时间找度娘 ( 其实应该找 Google )，结果发现原来是操作系统的原因，Linux 系统下在进行 AES 加解密时生成 key 时是有问题的，key 值的生成方式如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">KeyGenerator generator &#x3D; KeyGenerator.getInstance(&quot;AES&quot;);</span><br><span class="line">&#x2F;&#x2F;password 为加解密使用的密钥</span><br><span class="line">generator.init(128, new SecureRandom(password.getBytes()));</span><br><span class="line">Key key &#x3D; generator.generateKey();</span><br></pre></td></tr></table></figure>
 
