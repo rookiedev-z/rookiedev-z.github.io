@@ -22,13 +22,13 @@
 
   <meta name="description" content="我们应该都使用过 JdbcTemplate 来查询数据库，一般用在配置了多数据源的情况下，在一个服务里面需要简单查询多个数据库的数据，这时通过 JdbcTemplate 来构建 SQL 查询数据库往往比较方便快捷些，不需要用封装的 repository 那一套东西。 举一个简单的例子，比如查询一个活动的浏览量。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="使用 JdbcTemplate 的 queryForObject 方法时需注意的地方">
+<meta property="og:title" content="使用 JdbcTemplate 的 queryForObject 方法时需注意的地方(一)">
 <meta property="og:url" content="http://gittab.net/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9/index.html">
 <meta property="og:site_name" content="rookiedev">
 <meta property="og:description" content="我们应该都使用过 JdbcTemplate 来查询数据库，一般用在配置了多数据源的情况下，在一个服务里面需要简单查询多个数据库的数据，这时通过 JdbcTemplate 来构建 SQL 查询数据库往往比较方便快捷些，不需要用封装的 repository 那一套东西。 举一个简单的例子，比如查询一个活动的浏览量。">
 <meta property="og:locale">
 <meta property="article:published_time" content="2020-08-10T14:38:56.000Z">
-<meta property="article:modified_time" content="2020-08-10T14:40:10.596Z">
+<meta property="article:modified_time" content="2020-08-11T08:24:20.222Z">
 <meta property="article:author" content="rookiedev">
 <meta property="article:tag" content="Java MySQL Life">
 <meta name="twitter:card" content="summary">
@@ -46,7 +46,7 @@
   };
 </script>
 
-  <title>使用 JdbcTemplate 的 queryForObject 方法时需注意的地方 | rookiedev</title>
+  <title>使用 JdbcTemplate 的 queryForObject 方法时需注意的地方(一) | rookiedev</title>
   
 
 
@@ -208,7 +208,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          使用 JdbcTemplate 的 queryForObject 方法时需注意的地方
+          使用 JdbcTemplate 的 queryForObject 方法时需注意的地方(一)
         </h1>
 
         <div class="post-meta">
@@ -217,10 +217,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2020-08-10 22:38:56 / Modified: 22:40:10" itemprop="dateCreated datePublished" datetime="2020-08-10T22:38:56+08:00">2020-08-10</time>
+              <time title="Created: 2020-08-10 22:38:56" itemprop="dateCreated datePublished" datetime="2020-08-10T22:38:56+08:00">2020-08-10</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-08-11 16:24:20" itemprop="dateModified" datetime="2020-08-11T16:24:20+08:00">2020-08-11</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -288,7 +294,10 @@
     <a href="/%E4%BD%BF%E7%94%A8-Docker-%E8%BF%90%E8%A1%8C-MySQL-%E6%9C%8D%E5%8A%A1/" rel="prev" title="使用 Docker 运行 MySQL 服务">
       <i class="fa fa-chevron-left"></i> 使用 Docker 运行 MySQL 服务
     </a></div>
-      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9-%E4%BA%8C/" rel="next" title="使用 JdbcTemplate 的 queryForObject 方法时需注意的地方(二)">
+      使用 JdbcTemplate 的 queryForObject 方法时需注意的地方(二) <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
       </footer>
     
@@ -360,7 +369,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">23</span>
+          <span class="site-state-item-count">25</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
