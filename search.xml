@@ -536,6 +536,51 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
       </categories>
   </entry>
   <entry>
+    <title>macOS 下使用 Docker 运行 MySQL 服务遇到的问题说明</title>
+    <url>/macOS-%E4%B8%8B%E4%BD%BF%E7%94%A8-Docker-%E8%BF%90%E8%A1%8C-MySQL-%E6%9C%8D%E5%8A%A1%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98%E8%AF%B4%E6%98%8E/</url>
+    <content><![CDATA[<p>在之前的使用 Docker 运行 MySQL 服务的这篇文章中，有个问题没有描述清楚，这里我纠正下当时的说法，并且详细解释下缘由。</p>
+<p>当时我做的测试是在 macOS 系统下完成的，当时使用 Docker 启动服务的时候报错了，报错信息如下:</p>
+<a id="more"></a>
+
+<p><img src="http://images.rookiezhou.top/blog/images/docker_run_error.png" alt="docker run error"></p>
+<p>当时我没太在意为什么会出现这种情况，我以为是跟我的目录包含大写字母的目录有关系，就直接去查了下解决办法，当时找到的解决方法是就是加上 mysqld –lower_case_table_names=0 这一串参数。</p>
+<p>但其实不是这样的，首先先说明跟我指定的数据存储的目录包含大写路径无关。出现这个错误的原因其实错误信息里面已经提示了，”lower_case_table_names” 设置不一致，server 上该参数的值是 2，数据目录是 0。</p>
+<p>首先我们先明白 lower_case_table_names 这个参数的作用，它的值可能有三种: 0，1，2.</p>
+<ul>
+<li>0: 表名和数据库名使用 CREATE TABLE 或 CREATE DATABASE 语句中指定的字母大小写存储在磁盘上，名称比较区分大小写</li>
+<li>1: 表名以小写形式存储在磁盘上，名称比较不区分大小写，MySQL 在存储和查找时将所有表名转换为小写，此行为也适用于数据库名称和表别名。</li>
+<li>2: 表名和数据库名使用 CREATE TABLE 或 CREATE DATABASE 语句中指定的字母大小写存储在磁盘上，但 MySQL 在查找时将它们转换为小写，名称比较不区分大小写，仅适用于不区分大小写的文件系统。</li>
+</ul>
+<p>上面是设置不同值下的作用，那么默认值是多少呢？这取决于我们运行 MySQL 所在的系统，在 Unix 上，lower_case_table_names 的默认值为 0。在 Windows 上，默认值为 1。在 macOS 上，默认值为 2。</p>
+<p>而且还有值得注意的一点是: 仅在初始化服务器时才能配置 lower_case_table_names，禁止在服务器初始化后更改 lower_case_table_names 设置。</p>
+<p>好了，在介绍完 lower_case_table_names 参数的作用以及注意事项之后，我们再回到之前的启动报错问题，这个就是 MySQL 初始化的时候数据目录挂在 macOS 下，该值的默认值是 2，而数据库启动的时候在 docker 容器中，容器中系统是 Unix，默认值是 0，这就是尝试在服务器初始化后更改 lower_case_table_names 设置，这是被禁止的，启动的时候和初始化时不一致所以报错了。</p>
+<p>知道原因之后，那我们就尝试在初始化的时候就指定，加上 mysqld –lower_case_table_names=0 这一串参数来指定 lower_case_table_names 的值为 0，所以我们启动成功了。</p>
+<p>但是我们一般都希望数据库名称或表名称在比较时不区分大小写，而且官方也有说明: “如果您在具有不区分大小写的文件名（例如 Windows 或 macOS）的系统上运行 MySQL，则不应将此变量设置为 0。如果在不区分大小写的文件系统上使用 –lower-case-table-names = 0 将此变量强制为 0，并使用不同的字母大小写访问 MyISAM 表名，则可能导致索引损坏”。</p>
+<p>所以我们还是将 lower_case_table_names 的值设置成 1。同时我们在创建数据库名或表名的时候也尽量不要大小写混用，这也是为了避免出现意外情况。其实在阿里的 Java 开发手册中是强制约束表名、字段名必须使用小写字母，也是为了避免节外生枝。</p>
+<p><img src="http://images.rookiezhou.top/blog/images/table_name_rule.png" alt="table name rule"></p>
+<p>好了，如果我们想要将 lower_case_table_names 的值设置成 1 该怎么做呢。是不是直接将参数改成 1 就可以了呢，我们可以试下，看看效果。试之前记得将挂载的数据库数据目录删除再做测试，不然会影响测试效果，或者重新挂载另一个目录也行，做完测试删掉就好了。</p>
+<p>我们执行下面命令:</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">d run -d -p 3307:3307 -v /Users/rookiedev/docker/mysql/data1:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=root --name mysql8.0-test mysql/mysql-server:8.0 mysqld --lower_case_table_names=1</span><br></pre></td></tr></table></figure>
+
+<p>这里要注意，不同的数据库版本测试效果不一样的，这里我测试的效果是启动成功了，也验证确实将 lower_case_table_names 参数设置为 1 了，我通过以下命令进入连接 mysql 服务并且查看该参数的值确实是 1。</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">docker exec -it a9 mysql -uroot -p</span><br><span class="line">show variables like &quot;%case_table%&quot;;</span><br></pre></td></tr></table></figure>
+
+<p><img src="http://images.rookiezhou.top/blog/images/mysql_case_table.png" alt="mysql case table"></p>
+<p>但有的版本是会失败的，我遇到过，但我没找出其中失败的规律，如果刚好你也碰到了，感兴趣的话可以研究看看，但我觉得大概率是不同版本的 mysql 启动配置文件可能不一样导致的，接下来我们就来介绍一下通过配置文件的方式来指定该参数值的方式。</p>
+<p>之前我们只是通过 -v 参数挂载了数据目录，我们也可以通过 -v 参数来挂载 mysql 的配置文件, -v /Users/rookiedev/docker/mysql/conf:/etc/mysql，完整启动命令如下:</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">d run -d -p 3307:3307 -v /Users/rookiedev/docker/mysql/data1:/var/lib/mysql -v /Users/rookiedev/docker/mysql/conf:/etc/mysql -e MYSQL_ROOT_PASSWORD=root --name mysql8.0-test mysql/mysql-server:8.0</span><br></pre></td></tr></table></figure>
+
+<p>/Users/rookiedev/docker/mysql/conf 目录下包含一个 my.cnf 配置文件，文件内容是:</p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line">[mysqld]</span><br><span class="line"># datadir=/home/data</span><br><span class="line"># log-error=/home/logs/error.log</span><br><span class="line">lower_case_table_names=1</span><br></pre></td></tr></table></figure>
+
+<p>上面的命令如果启动还是失败的话，可以加上 –restart=always 参数看看，参数的意思就是容器启动失败时会自动重启容器，同时 docker 重启时容器也会自动重启。同样启动成功之后可以进入容器连接 mysql 后看看是否设置成功了。</p>
+<p>总的来说，我说的通过 mysqld 参数指定还是通过配置文件的方式指定，可能不一定适合你，具体问题具体分析吧。但我觉得这里我们需要知道的是 lower_case_table_names 这个参数的含义，在我们遇到数据库名字或表名是大写的或大小写混合时，我们可能会碰到一些问题，这时注意下当前数据库 lower_case_table_names 的值，还是有利于排查问题的。</p>
+]]></content>
+      <categories>
+        <category>Docker</category>
+      </categories>
+  </entry>
+  <entry>
     <title>nginx location 路径匹配规则</title>
     <url>/nginx-location-%E8%B7%AF%E5%BE%84%E5%9F%BA%E6%9C%AC%E5%8C%B9%E9%85%8D%E8%A7%84%E5%88%99/</url>
     <content><![CDATA[<p>之前每次配置 nginx 中的 location 这个路径时都会很头疼，基本上每次都是靠碰运气，一个个去试，直到访问路径通了为止，这样一来到最后还是不知道怎么配置成功的，下次再配置时又需要一个个去试，既浪费时间又很没有效率，所以这次特意花了点时间去学习了一番，特此记录一下，也记录一下自己在测试的过程中踩过的一些坑。</p>
@@ -612,6 +657,22 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
       </categories>
   </entry>
   <entry>
+    <title>nginx 的正向代理和反向代理</title>
+    <url>/nginx-%E7%9A%84%E6%AD%A3%E5%90%91%E4%BB%A3%E7%90%86%E5%92%8C%E5%8F%8D%E5%90%91%E4%BB%A3%E7%90%86/</url>
+    <content><![CDATA[<p>nginx 服务器在我们平常的软件开发中可能还是用到的比较多的，那么有一个问题我们就应该明白，也许让你去实现轻而易举，但说到其中的原理就有点不是很清楚了。下面就谈谈我自己对正向代理和反向代理的理解：首先有一个用户 C，三台服务器 S1，S2 和 S3，S1，S2，S3 在同一局域网内互相可访问，但 S1 对外网开放，S2 和 S3 不对外网开放，还有一份数据资源 D，资源 D 放在服务器 S2 和 S3 上。</p>
+<a id="more"></a>
+
+<h2 id="nginx-正向代理"><a href="#nginx-正向代理" class="headerlink" title="nginx 正向代理"></a>nginx 正向代理</h2><p>这时用户 C 明确知道自己想访问的数据资源 D 在服务器 S2 上，用户 C 想要访问这份资源但是没办法直接访问服务器 S2，用户 C 想到服务器 S1 和 S2 在同一局域网并且互相可访问，而自己能够访问服务器 S1，所以用户 C 就通过服务器 S1 去访问服务器 S2 上的资源 D。那么正向代理就是对于用户 C 来说他是明确知道他要访问的数据资源 D 在哪个服务器上；对于服务器 S1 来说他只充当了用户 C 的中间代理角色；而对于服务器 S2 来说他只知道访问他的资源的是服务器 S1，根本不知道用户 C 的存在。</p>
+<p>正向代理的整个流程就是用户 C 访问服务器 S2 上的数据资源 D，但是是通过借助服务器 S1 来进行访问，服务器 S1 得到数据资源后再返回给用户 C。</p>
+<h2 id="nginx-反向代理"><a href="#nginx-反向代理" class="headerlink" title="nginx 反向代理"></a>nginx 反向代理</h2><p>还是刚开始上面说的这些：用户 C，服务器 S1，S2 和 S3，以及服务器 S2 和 S3 上的数据资源 D。这时用户 C 并不知道数据资源 D 在服务器 S2 和 S3 上面，他只知道访问服务器 S1 可以得到自己想要的内容，于是他每次都是直接访问服务器 S1，只不过提供给用户 C 数据资源的都是服务器 S2 或者 S3。那么反向代理就是对于用户 C 来说他是不知道数据资源 D 具体在哪里，是由谁提供的；对于服务器 S1 来说每次都接收用户的请求，然后再把请求交给真正能提供资源的服务器 S2 或 S3；对于服务器 S2 和 S3 来说同样也都不知道访问这份资源的真实用户是谁，只是和服务器 S1 进行交互。</p>
+<p>反向代理的整个流程就是用户 C 访问服务器 S1 获取数据资源 D，服务器 S1 将请求转交给服务器 S2 或 S3，然后得到相应的资源后再返回给用户 C。</p>
+<p>总之，正向代理就是客户端知道服务器端，带过代理连接服务器端。反向代理就是客户端不知道服务器端，通过代理连接服务器端，具体是由哪个服务器端提供服务取决于代理的调度方式，即 nginx 中的负载均衡策略。</p>
+]]></content>
+      <categories>
+        <category>Nginx</category>
+      </categories>
+  </entry>
+  <entry>
     <title>nginx 负载均衡策略之内置策略</title>
     <url>/nginx-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5%E4%B9%8B%E5%86%85%E7%BD%AE%E7%AD%96%E7%95%A5/</url>
     <content><![CDATA[<p>nginx 服务器在开发中我们用的比较多的有 nginx 的负载均衡，nginx 负载均衡主要是利用反向代理来实现，也就是表面上我们访问的是这个服务，其实访问的是该服务背后支撑的众多服务器中的其中一台。比如说全世界同一时间有这么多人同时在访问百度这个网站，它是怎么能够承受的住这么大的访问量呢，这时我们就应该知道其实百度这个网站的背后有很多的服务器在支撑着众多的用户的访问。</p>
@@ -655,22 +716,6 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">upstream loadserver &#123;</span><br><span class="line">    least_conn;</span><br><span class="line">    server 192.168.1.110:10080 weight&#x3D;5 ;</span><br><span class="line">    server 192.168.1.111:10080 weight&#x3D;1;</span><br><span class="line">    server 192.168.1.112:10080 weight&#x3D;1 max_fails&#x3D;3 fail_timeout&#x3D;30s;</span><br><span class="line">    server 192.168.1.113:10080 down;</span><br><span class="line">    server 192.168.1.114:10080 backup;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>配置说明：<br>1.weight 的值默认为1，weight 越大，服务器负载的权重就越大，访问的概率越高。<br>2.down 表示当前服务器暂时不参与负载。<br>3.backup 表示其它所有的非 backup 服务器 down 或者忙的时候才会请求 backup 服务器，所以这台服务器压力最轻，一般这台服务器当做是备用服务器。<br>3.max_fails 表示允许请求失败的次数，默认为 1，当超过最大次数时，返回proxy_next_upstream 模块定义错误。<br>4.fail_timeout 表示每次失败后暂停的时间。</p>
 <p>到这里就全部介绍完了 nginx 负载均衡内置的一些策略，还有第三方扩展的一些策略，未完待续………</p>
-]]></content>
-      <categories>
-        <category>Nginx</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>nginx 的正向代理和反向代理</title>
-    <url>/nginx-%E7%9A%84%E6%AD%A3%E5%90%91%E4%BB%A3%E7%90%86%E5%92%8C%E5%8F%8D%E5%90%91%E4%BB%A3%E7%90%86/</url>
-    <content><![CDATA[<p>nginx 服务器在我们平常的软件开发中可能还是用到的比较多的，那么有一个问题我们就应该明白，也许让你去实现轻而易举，但说到其中的原理就有点不是很清楚了。下面就谈谈我自己对正向代理和反向代理的理解：首先有一个用户 C，三台服务器 S1，S2 和 S3，S1，S2，S3 在同一局域网内互相可访问，但 S1 对外网开放，S2 和 S3 不对外网开放，还有一份数据资源 D，资源 D 放在服务器 S2 和 S3 上。</p>
-<a id="more"></a>
-
-<h2 id="nginx-正向代理"><a href="#nginx-正向代理" class="headerlink" title="nginx 正向代理"></a>nginx 正向代理</h2><p>这时用户 C 明确知道自己想访问的数据资源 D 在服务器 S2 上，用户 C 想要访问这份资源但是没办法直接访问服务器 S2，用户 C 想到服务器 S1 和 S2 在同一局域网并且互相可访问，而自己能够访问服务器 S1，所以用户 C 就通过服务器 S1 去访问服务器 S2 上的资源 D。那么正向代理就是对于用户 C 来说他是明确知道他要访问的数据资源 D 在哪个服务器上；对于服务器 S1 来说他只充当了用户 C 的中间代理角色；而对于服务器 S2 来说他只知道访问他的资源的是服务器 S1，根本不知道用户 C 的存在。</p>
-<p>正向代理的整个流程就是用户 C 访问服务器 S2 上的数据资源 D，但是是通过借助服务器 S1 来进行访问，服务器 S1 得到数据资源后再返回给用户 C。</p>
-<h2 id="nginx-反向代理"><a href="#nginx-反向代理" class="headerlink" title="nginx 反向代理"></a>nginx 反向代理</h2><p>还是刚开始上面说的这些：用户 C，服务器 S1，S2 和 S3，以及服务器 S2 和 S3 上的数据资源 D。这时用户 C 并不知道数据资源 D 在服务器 S2 和 S3 上面，他只知道访问服务器 S1 可以得到自己想要的内容，于是他每次都是直接访问服务器 S1，只不过提供给用户 C 数据资源的都是服务器 S2 或者 S3。那么反向代理就是对于用户 C 来说他是不知道数据资源 D 具体在哪里，是由谁提供的；对于服务器 S1 来说每次都接收用户的请求，然后再把请求交给真正能提供资源的服务器 S2 或 S3；对于服务器 S2 和 S3 来说同样也都不知道访问这份资源的真实用户是谁，只是和服务器 S1 进行交互。</p>
-<p>反向代理的整个流程就是用户 C 访问服务器 S1 获取数据资源 D，服务器 S1 将请求转交给服务器 S2 或 S3，然后得到相应的资源后再返回给用户 C。</p>
-<p>总之，正向代理就是客户端知道服务器端，带过代理连接服务器端。反向代理就是客户端不知道服务器端，通过代理连接服务器端，具体是由哪个服务器端提供服务取决于代理的调度方式，即 nginx 中的负载均衡策略。</p>
 ]]></content>
       <categories>
         <category>Nginx</category>
@@ -829,6 +874,35 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
       </categories>
   </entry>
   <entry>
+    <title>使用 JdbcTemplate 的 queryForObject 方法时需注意的地方(一)</title>
+    <url>/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9/</url>
+    <content><![CDATA[<p>我们应该都使用过 JdbcTemplate 来查询数据库，一般用在配置了多数据源的情况下，在一个服务里面需要简单查询多个数据库的数据，这时通过 JdbcTemplate 来构建 SQL 查询数据库往往比较方便快捷些，不需要用封装的 repository 那一套东西。</p>
+<p>举一个简单的例子，比如查询一个活动的浏览量。</p>
+<a id="more"></a>
+
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Long <span class="title">findByActivityId</span><span class="params">(String activityId)</span> </span>&#123;</span><br><span class="line">   String selectSql = <span class="string">&quot;select times_viewed from activity_stats where activity_id = ?&quot;</span>;</span><br><span class="line">   Long timesViewed = <span class="keyword">this</span>.jdbcTemplate.queryForObject(selectSql, Long.class,</span><br><span class="line">            activityId);</span><br><span class="line">   <span class="keyword">return</span> timesViewed;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其实我们咋一看上面这段代码，好像也没多大问题，只是一个普通的查询而已。在有数据的情况下，经过测试，程序也运行正常。但是如果你把你要查询的那个活动 id 的那条数据删除，这时再去测试会发现程序抛异常了，抛的异常类是 EmptyResultDataAccessException，从类的名字我们就可以看出，查询结果为空异常。</p>
+<p>这里为什么会产生这种情况呢，我们深入查看下源码就知道了。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> &lt;T&gt; <span class="function">T <span class="title">queryForObject</span><span class="params">(String sql, SqlParameterSource paramSource, RowMapper&lt;T&gt; rowMapper)</span></span></span><br><span class="line"><span class="function">            <span class="keyword">throws</span> DataAccessException </span>&#123;</span><br><span class="line"></span><br><span class="line">        List&lt;T&gt; results = getJdbcOperations().query(getPreparedStatementCreator(sql, paramSource), rowMapper);</span><br><span class="line">        <span class="keyword">return</span> DataAccessUtils.nullableSingleResult(results);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们点进去查看 queryForObject 的方法体可以看到，在返回查询结果前调用了 DataAccessUtils 类的 nullableSingleResult 方法，那么再继续点进去查看 nullableSingleResult 的方法体:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; <span class="function">T <span class="title">nullableSingleResult</span><span class="params">(<span class="meta">@Nullable</span> Collection&lt;T&gt; results)</span> <span class="keyword">throws</span> IncorrectResultSizeDataAccessException </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (CollectionUtils.isEmpty(results)) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> EmptyResultDataAccessException(<span class="number">1</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (results.size() &gt; <span class="number">1</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IncorrectResultSizeDataAccessException(<span class="number">1</span>, results.size());</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> results.iterator().next();</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从 nullableSingleResult 的方法体中可以看到，当查询的结果为空的时候，手动抛了一个 EmptyResultDataAccessException 异常，同时我们还可以看到当查询结果记录数大于 1 时，手动抛了一个 IncorrectResultSizeDataAccessException 异常，这时候我们就要注意了，如果当前我们要执行的 SQL 的查询结果可能为空，或者结果集可能大于 1 时就需要根据我们的业务需求来进行手动处理这两个异常，不然程序会由于异常无法进行下去。</p>
+<p>在这里个人觉得结果大于 1 的情况抛出异常还能理解，但是结果为空，其实在很多情况下我们都是希望代码正常运行下去，而不是直接抛出异常，有可能我们还有别的业务需要执行。所以不太清楚这里为什么需要做这个处理。</p>
+<p>对于结果为空时抛出异常的情况，处理方式也很简单，在调用 queryForObject 方法的地方用 try catch 包起来，对 EmptyResultDataAccessException 异常进行捕获，同时忽略异常信息就好。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Long <span class="title">queryByActivityId</span><span class="params">(String activityId)</span> </span>&#123;</span><br><span class="line">    String selectSql = <span class="string">&quot;select times_viewed from activity_stats where activity_id = ?&quot;</span>;</span><br><span class="line">    Long timesViewed = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        timesViewed = <span class="keyword">this</span>.jdbcTemplate.queryForObject(selectSql, Long.class,</span><br><span class="line">                activityId);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (EmptyResultDataAccessException ignored) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> timesViewed;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>同理，如果对结果集可能大于 1 的情况也要特殊处理的话，我们就直接捕获 IncorrectResultSizeDataAccessException 异常就好，因为你可以看到 EmptyResultDataAccessException 是继承 IncorrectResultSizeDataAccessException 的。所以就直接捕获 IncorrectResultSizeDataAccessException 就好。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Long <span class="title">queryByActivityId</span><span class="params">(String activityId)</span> </span>&#123;</span><br><span class="line">    String selectSql = <span class="string">&quot;select times_viewed from activity_stats where activity_id = ?&quot;</span>;</span><br><span class="line">    Long timesViewed = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        timesViewed = <span class="keyword">this</span>.jdbcTemplate.queryForObject(selectSql, Long.class,</span><br><span class="line">                activityId);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (IncorrectResultSizeDataAccessException ignored) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> timesViewed;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里再提下 JdbcTemplate 和 NamedParmeterJdbcTemplate 的主要区别:<br>对于 JdbcTemplate，sql 的查询条件参数是使用占位符 ? 表示，受到了顺序的限制，如果是需要多个参数，在传入数组参数的时候，必须按照占位符的顺序传入参数，一旦传入的顺序错误就可能会造成非预期的结果。</p>
+<p>而 NamedParmeterJdbcTemplate，在 sprintJdbc 框架中，通过这个 NameParameterJdbcTemplate 使用具名参数的方式来绑定 Sql 参数。具名参数的格式为 “ :parameterName”，多个具名参数通过 Map key value 的方式传入，key 和 parameterName 保持一致，这种情况下就和参数的顺序没有关系了，主要是通过 Map 的 key 来取值。</p>
+]]></content>
+      <categories>
+        <category>JdbcTemplate</category>
+      </categories>
+  </entry>
+  <entry>
     <title>使用 JdbcTemplate 的 queryForObject 方法时需注意的地方(二)</title>
     <url>/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9-%E4%BA%8C/</url>
     <content><![CDATA[<p>上一篇文章中提到了 JdbcTemplate 的 queryForObject 方法在使用时需要注意的地方，其实这里还有一个地方也是我们在使用时容易忽略的，为了避免踩坑，这里我也一并提出来。</p>
@@ -855,6 +929,68 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ActivityStat <span class="title">findById</span><span class="params">(Long id)</span> </span>&#123;</span><br><span class="line">        String sql = <span class="string">&quot;select * from activity_stats where activity_id = ?&quot;</span>;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.jdbcTemplate.queryForObject(sql, <span class="keyword">new</span> Object[]&#123;id&#125;, (rs, i) -&gt; &#123;</span><br><span class="line">            ActivityStat activityStat = <span class="keyword">new</span> ActivityStat();</span><br><span class="line">            activityStat.setActivityId(rs.getLong(<span class="string">&quot;activity_id&quot;</span>));</span><br><span class="line">            activityStat.setTimesViewed(rs.getLong(<span class="string">&quot;times_viewed&quot;</span>));</span><br><span class="line">            activityStat.setWorksCount(rs.getLong(<span class="string">&quot;works_count&quot;</span>));</span><br><span class="line">            activityStat.setUserCount(rs.getLong(<span class="string">&quot;user_count&quot;</span>));</span><br><span class="line">            <span class="keyword">return</span> activityStat;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
 
 <p>这里其实就是一个坑，稍不注意就会觉得代码好像也没啥问题，怎么会报错呢，同样的对于 queryForList 方法也会有这个问题，如果我们使用指定返回类型的话也是只能查询单列结果，需要返回多列时也需要我们自定义 RowMapper，感兴趣的可以自己去试试看。</p>
+]]></content>
+      <categories>
+        <category>JdbcTemplate</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>关于批量插入的数据重复问题</title>
+    <url>/%E5%85%B3%E4%BA%8E%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5%E7%9A%84%E6%95%B0%E6%8D%AE%E9%87%8D%E5%A4%8D%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<p>在上一篇文章中我们谈到了数据库批量插入，如果你已经亲自实践过了的话你会发现有个问题，就是我们在第一次执行完测试之后，再次执行的话会报错，除非你删掉数据库中的数据再执行。</p>
+<p>那是因为 activity_stats 表中 activity_id 是表的主键，第二次执行的话就会因为主键重复而报错了，当然你也可以选择去掉这个主键的限制来进行测试。</p>
+<p>但真正在项目中可就不能这么做了，项目中我们可能就是想要 activity_id 字段作为主键，不允许插入重复数据。</p>
+<a id="more"></a>
+
+<p>虽然说一般情况下不会有重复的，但毕竟是一般情况下，对于特殊情况我们也是需要考虑的。比如说 excel 中就是因为运营人员粗心弄了多条相同的数据，或者再次将同样的 excel 文件拿来上传，这时候就会有问题了。</p>
+<p>所以对于这种情况我们需要做到兼容，尽量给用户好的体验，不然说因为几条重复的数据就让用户去修改再次上传。对于这种普通的数据，可能就需要系统自动去重了，当然如果是涉及到金钱方面的数据那还是需要人工再次确认过的。</p>
+<p>下面我们就讨论下 key 重复的几种不同处理方式:<br>1.忽略重复 key 的数据，由于主键或者唯一键重复的记录，数据库自动忽略，在 insert 后面加上 ignore 关键字。</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">ignore</span> <span class="keyword">into</span> activity_stats (activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>);</span><br></pre></td></tr></table></figure>
+<p>上面的 SQL 执行时，如果主键重复或者唯一键重复，会忽略掉新插入的数据，受影响行数为0，表数据不变，这是比较简单暴力的方式，但对于大部分情况下都是适用的，具体看业务情况而定。</p>
+<p>2.使用最新数据，<br>对于 key 重复的数据，我们希望插入最新的数据到数据库中。要做到这个有两种方式: 一种是对重复数据进行更新，另一种是先删掉旧数据，然后再插入新数据。</p>
+<p>先看第一种: ON DUPLICATE KEY UPDATE</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> activity_stats (activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>)</span><br><span class="line"><span class="keyword">ON</span> <span class="keyword">DUPLICATE</span> <span class="keyword">KEY</span> </span><br><span class="line"><span class="keyword">UPDATE</span> times_viewed = <span class="keyword">values</span>(times_viewed), works_count = <span class="keyword">values</span>(works_count), user_count = <span class="keyword">values</span>(user_count);</span><br></pre></td></tr></table></figure>
+<p>这种方式就是对于有重复的数据采取更新操作，要更新的字段跟在 UPDATE 关键字后面。</p>
+<p>这里要注意一个受影响的行数的问题:</p>
+<ul>
+<li>没有重复 key 数据，直接插入新数据，受影响的行数为 1。</li>
+<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据不一样，受影响的行数为 2(???)，这里可能有点不好理解为什么是 2，这里我们先暂时记下是 2，待会我会详细说明。</li>
+<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据一致，受影响的行数为 1(???)，这个可能也不是很好理解，同样暂时先记下，马上为你娓娓道来。</li>
+</ul>
+<p>好了，现在看上面有两个地方打上了问号，这两个地方都是和我们正常所想的有点不一样。先看第一个打了问号的地方，也就是上面的第二点，按我们所想，key 重复，然后进行数据更新，这里只是进行了更新操作，受影响的行数应该是 1 才对，刚开始我对这个也是不太理解，后来通过查资料发现在 MySQL 的文档中关于 ON DUPLICATE KEY UPDATE 的使用中有下面这样一句话:<br>文档链接:<br><a href="https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html">https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html</a></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">With ON DUPLICATE KEY UPDATE, the affected-rows value per row is 1 if the row is inserted as a new row, 2 if an existing row is updated, and 0 if an existing row is set to its current values.If you specify the CLIENT_FOUND_ROWS flag to the mysql_real_connect() C API function when connecting to mysqld, the affected-rows value is 1 (not 0) if an existing row is set to its current values.</span><br></pre></td></tr></table></figure>
+
+<p>上面这句话前半句就能为我解答为什么我们在第二点中提到的疑惑，前半句的大概意思就是:<br>对于 ON DUPLICATE KEY UPDATE 的使用，如果没有 key 重复的新数据插入，每行受影响的行数是 1，如果有 key 重复的新数据更新，返回受影响的行数是 2，如果有 key 重复的数据并且存在的旧数据和要更新的数据一致，受影响的行数是 0。</p>
+<p>看到这里我们应该就能明白为什么受影响的行数是 2 了，我们可以理解为是 MySQL 为了在 ON DUPLICATE KEY UPDATE 的使用中区分插入和更新，所以对于插入返回 1，更新返回 2。</p>
+<p>但是不是说 “如果是有 key 重复的数据并且存在的旧数据和要更新的数据一致，受影响的行数是 0” 吗？可是我们在上面第三点中 MySQL 返回的受影响的行数是 1，而这也正是我们第三点所疑惑的地方，我们再去看上面那句话的后半句，大概意思是:<br>在连接 mysqld 的时候如果你为 mysql_real_connect() API 函数指定了 CLIENT_FOUND_ROWS 标志，那么对于已经存在的旧数据和要更新的数据一致时，受影响的数值为 1 而不是 0。</p>
+<p>对于第二个疑问，我们也大概明白为什么受影响的行数是 1 了，是因为我们使用的 MySQL 指定了 CLIENT_FOUND_ROWS 标志，而 mysql_real_connect 函数指定 CLIENT_FOUND_ROWS 标志的意思就是:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">CLIENT_FOUND_ROWS: Return the number of found (matched) rows, not the number of changed rows.</span><br></pre></td></tr></table></figure>
+<p>这段文字在上面文档链接中可以点击 mysql_real_connect 跳转到对 mysql_real_connect 函数的描述页面，里面有 CLIENT_FOUND_ROWS 相应介绍。感兴趣的可以去研究研究。</p>
+<hr>
+<p>再回到使用最新数据方式上，上面已经描述了对 key 重复的数据进行更新的方式，接下来我们看第二种:<br>对于 key 重复，先删掉旧数据，然后再插入新数据:  REPLACE INTO </p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">REPLACE</span> <span class="keyword">INTO</span> activity_stats (activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>);</span><br></pre></td></tr></table></figure>
+
+<p>这种方式就是如果没有重复 key，直接插入，效果和 insert into 一样，但如果有重复 key，它会先删除旧数据，再插入新数据。同样这种方式受影响的行数也有以下几种情况:</p>
+<ul>
+<li>没有重复 key 数据，直接插入新数据，受影响的行数为 1。</li>
+<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据不一样，受影响的行数为 2。这个很好理解，先删除旧数据，然后再插入新数据，所以受影响的行数为 2。</li>
+<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据一致，受影响的行数为 1。这里应该是数据没有发生变化，至于返回 1，我的理解是和上面一样的，返回匹配到的行数，并不是发生改变的行数(暂时没找到有关文档描述)。</li>
+</ul>
+<p>关于重复 key 数据的处理方式主要有上面提到的三种，忽略重复数据的 INSERT IGNORE，使用更新的方式插入最新数据的 ON DUPLICATE KEY UPDATE，还有先删除再插入最新数据的 REPLACE INTO。</p>
+<p>在我们使用这三种方式来避免插入重复数据的过程中，我们还需要注意下面几个问题:<br>首先，使用这三种方式的前提都是表中需要存在主键冲突或唯一键冲突，不然这三种都跟直接 INSERT INTO 没什么区别。</p>
+<p>第二，要注意存在多个键冲突(插入的数据既可能存在主键冲突，也可能存在其他唯一键冲突或者存在多个唯一键冲突)的情况，在这种情况下使用可能会出现其他结果(可以自己测试看看)，所以这种情况下不太建议使用。</p>
+<p>第三，这点比较重要，上面我的 activity_stats 表是有一个 activity_id 字段作为主键，这是存在主键冲突的情况。但如果我把 activity_id 字段改成唯一键并且新增一个字段 id 作为主键自增长，插入语句不变，这里因为 id 是自增长的，不存在冲突，所以这里是满足单一键冲突的情况，但是这里有个坑要注意，这种情况下使用上面三种方式都会产生主键 id 自增长不连续的问题。</p>
+<p>目前的 SQL 语句是这样的: </p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">ignore</span> <span class="keyword">into</span> activity_stat (<span class="keyword">id</span>, activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="literal">null</span>, <span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>);</span><br><span class="line">或者</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>对于 INSERT IGNORE 和 ON DUPLICATE KEY UPDATE，在存在 unique key 重复时，前者虽然重复的记录被忽略了没有执行插入操作，但是 id 还是会 +1。而后者是在 key 重复时执行更新操作，但 id 同样也会 +1，也就是说在存在 unique key 重复的情况下这两种方式不管有没有插入数据，自增长 id 都会增加。</p>
+<p>这样的话在主从库的场景下就会出现主从的 auto_increment 不一致，因为 slave 并不会同步 master 的 auto_increment，一旦当前 master 挂了，任意一个 slave 被选举为 master，再次执行 insert 语句就可能导致主键冲突。</p>
+<p>至于这里为什么会出现没有插入记录 auto_increment 却依然 +1 的情况，和 innodb_autoinc_lock_mode 的值有关。可以通过下面的 SQL 语句查看:</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> @@innodb_autoinc_lock_mode;</span><br></pre></td></tr></table></figure>
+
+<p>它的值可能是 0，1，2 其中一种，默认是 1，具体各个值的特征可以参看官方文档中的描述，下面是文档地址:<br><a href="https://dev.mysql.com/doc/refman/5.7/en/innodb-auto-increment-handling.html#innodb-auto-increment-lock-modes">https://dev.mysql.com/doc/refman/5.7/en/innodb-auto-increment-handling.html#innodb-auto-increment-lock-modes</a></p>
+<p>而对于 REPLACE INTO，那是因为在存在 unique key 重复时，会先删除再插入，执行了插入操作，id 肯定会增加。问题就在于重新插入了一条数据 id 发生了变化。如果别的表关联了这个表的主键 id 的话就会出现数据查找不到的情况。</p>
+<p>总之就是对于这三种避免插入重复数据的方式，如果是由于主键冲突的情况，基本上没什么问题，但如果是唯一键冲突的情况，都会导致 master 和 slave 的 auto_increment 不一致的问题，一旦主从的 auto_increment 不一致(这里是 master 的 auto_increment 要大于 slave)，只要 master 出现问题，任意一个 slave 升级成 master，由于当前新的 master 的 auto_increment 是小于数据中的 id 的值，所以再进行插入时就可能发生主键冲突。</p>
 ]]></content>
       <categories>
         <category>JdbcTemplate</category>
@@ -990,35 +1126,6 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 ]]></content>
       <categories>
         <category>Markdown</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>使用 JdbcTemplate 的 queryForObject 方法时需注意的地方(一)</title>
-    <url>/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9/</url>
-    <content><![CDATA[<p>我们应该都使用过 JdbcTemplate 来查询数据库，一般用在配置了多数据源的情况下，在一个服务里面需要简单查询多个数据库的数据，这时通过 JdbcTemplate 来构建 SQL 查询数据库往往比较方便快捷些，不需要用封装的 repository 那一套东西。</p>
-<p>举一个简单的例子，比如查询一个活动的浏览量。</p>
-<a id="more"></a>
-
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Long <span class="title">findByActivityId</span><span class="params">(String activityId)</span> </span>&#123;</span><br><span class="line">   String selectSql = <span class="string">&quot;select times_viewed from activity_stats where activity_id = ?&quot;</span>;</span><br><span class="line">   Long timesViewed = <span class="keyword">this</span>.jdbcTemplate.queryForObject(selectSql, Long.class,</span><br><span class="line">            activityId);</span><br><span class="line">   <span class="keyword">return</span> timesViewed;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>其实我们咋一看上面这段代码，好像也没多大问题，只是一个普通的查询而已。在有数据的情况下，经过测试，程序也运行正常。但是如果你把你要查询的那个活动 id 的那条数据删除，这时再去测试会发现程序抛异常了，抛的异常类是 EmptyResultDataAccessException，从类的名字我们就可以看出，查询结果为空异常。</p>
-<p>这里为什么会产生这种情况呢，我们深入查看下源码就知道了。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> &lt;T&gt; <span class="function">T <span class="title">queryForObject</span><span class="params">(String sql, SqlParameterSource paramSource, RowMapper&lt;T&gt; rowMapper)</span></span></span><br><span class="line"><span class="function">            <span class="keyword">throws</span> DataAccessException </span>&#123;</span><br><span class="line"></span><br><span class="line">        List&lt;T&gt; results = getJdbcOperations().query(getPreparedStatementCreator(sql, paramSource), rowMapper);</span><br><span class="line">        <span class="keyword">return</span> DataAccessUtils.nullableSingleResult(results);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>我们点进去查看 queryForObject 的方法体可以看到，在返回查询结果前调用了 DataAccessUtils 类的 nullableSingleResult 方法，那么再继续点进去查看 nullableSingleResult 的方法体:</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; <span class="function">T <span class="title">nullableSingleResult</span><span class="params">(<span class="meta">@Nullable</span> Collection&lt;T&gt; results)</span> <span class="keyword">throws</span> IncorrectResultSizeDataAccessException </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (CollectionUtils.isEmpty(results)) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> EmptyResultDataAccessException(<span class="number">1</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (results.size() &gt; <span class="number">1</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IncorrectResultSizeDataAccessException(<span class="number">1</span>, results.size());</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> results.iterator().next();</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>从 nullableSingleResult 的方法体中可以看到，当查询的结果为空的时候，手动抛了一个 EmptyResultDataAccessException 异常，同时我们还可以看到当查询结果记录数大于 1 时，手动抛了一个 IncorrectResultSizeDataAccessException 异常，这时候我们就要注意了，如果当前我们要执行的 SQL 的查询结果可能为空，或者结果集可能大于 1 时就需要根据我们的业务需求来进行手动处理这两个异常，不然程序会由于异常无法进行下去。</p>
-<p>在这里个人觉得结果大于 1 的情况抛出异常还能理解，但是结果为空，其实在很多情况下我们都是希望代码正常运行下去，而不是直接抛出异常，有可能我们还有别的业务需要执行。所以不太清楚这里为什么需要做这个处理。</p>
-<p>对于结果为空时抛出异常的情况，处理方式也很简单，在调用 queryForObject 方法的地方用 try catch 包起来，对 EmptyResultDataAccessException 异常进行捕获，同时忽略异常信息就好。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Long <span class="title">queryByActivityId</span><span class="params">(String activityId)</span> </span>&#123;</span><br><span class="line">    String selectSql = <span class="string">&quot;select times_viewed from activity_stats where activity_id = ?&quot;</span>;</span><br><span class="line">    Long timesViewed = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        timesViewed = <span class="keyword">this</span>.jdbcTemplate.queryForObject(selectSql, Long.class,</span><br><span class="line">                activityId);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (EmptyResultDataAccessException ignored) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> timesViewed;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>同理，如果对结果集可能大于 1 的情况也要特殊处理的话，我们就直接捕获 IncorrectResultSizeDataAccessException 异常就好，因为你可以看到 EmptyResultDataAccessException 是继承 IncorrectResultSizeDataAccessException 的。所以就直接捕获 IncorrectResultSizeDataAccessException 就好。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Long <span class="title">queryByActivityId</span><span class="params">(String activityId)</span> </span>&#123;</span><br><span class="line">    String selectSql = <span class="string">&quot;select times_viewed from activity_stats where activity_id = ?&quot;</span>;</span><br><span class="line">    Long timesViewed = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        timesViewed = <span class="keyword">this</span>.jdbcTemplate.queryForObject(selectSql, Long.class,</span><br><span class="line">                activityId);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (IncorrectResultSizeDataAccessException ignored) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> timesViewed;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>这里再提下 JdbcTemplate 和 NamedParmeterJdbcTemplate 的主要区别:<br>对于 JdbcTemplate，sql 的查询条件参数是使用占位符 ? 表示，受到了顺序的限制，如果是需要多个参数，在传入数组参数的时候，必须按照占位符的顺序传入参数，一旦传入的顺序错误就可能会造成非预期的结果。</p>
-<p>而 NamedParmeterJdbcTemplate，在 sprintJdbc 框架中，通过这个 NameParameterJdbcTemplate 使用具名参数的方式来绑定 Sql 参数。具名参数的格式为 “ :parameterName”，多个具名参数通过 Map key value 的方式传入，key 和 parameterName 保持一致，这种情况下就和参数的顺序没有关系了，主要是通过 Map 的 key 来取值。</p>
-]]></content>
-      <categories>
-        <category>JdbcTemplate</category>
       </categories>
   </entry>
   <entry>
@@ -1259,68 +1366,6 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <h2 id="常用正则表达式"><a href="#常用正则表达式" class="headerlink" title="常用正则表达式"></a>常用正则表达式</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">整数: ^-?\d+$</span><br><span class="line">正整数: ^\d+$</span><br><span class="line">负整数: ^-\d+$&#96;</span><br><span class="line">纯小写字母: ^([a-z])*$</span><br><span class="line">纯大写字母: ^([A-Z])*$</span><br><span class="line">用户名: ^[\w\d_.]&#123;4,16&#125;$</span><br><span class="line">数字和英文字母: ^[a-zA-Z0-9]*$</span><br><span class="line">数字和英文字母和空格: ^[a-zA-Z0-9 ]*$</span><br><span class="line">密码: ^(?&#x3D;^.&#123;6,&#125;$)((?&#x3D;.*[A-Za-z0-9])(?&#x3D;.*[A-Z])(?&#x3D;.*[a-z]))^.*$</span><br><span class="line">邮箱: ^([a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]&#123;2,4&#125;)*$</span><br><span class="line">IP4 地址: ^((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.)&#123;3&#125;(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))*$</span><br><span class="line">URL: ^(((http|https|ftp):\&#x2F;\&#x2F;)?([[a-zA-Z0-9]\-\.])+(\.)([[a-zA-Z0-9]])&#123;2,4&#125;([[a-zA-Z0-9]\&#x2F;+&#x3D;%&amp;_\.~?\-]*))*$</span><br></pre></td></tr></table></figure>]]></content>
       <categories>
         <category>正则表达式</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>关于批量插入的数据重复问题</title>
-    <url>/%E5%85%B3%E4%BA%8E%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5%E7%9A%84%E6%95%B0%E6%8D%AE%E9%87%8D%E5%A4%8D%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<p>在上一篇文章中我们谈到了数据库批量插入，如果你已经亲自实践过了的话你会发现有个问题，就是我们在第一次执行完测试之后，再次执行的话会报错，除非你删掉数据库中的数据再执行。</p>
-<p>那是因为 activity_stats 表中 activity_id 是表的主键，第二次执行的话就会因为主键重复而报错了，当然你也可以选择去掉这个主键的限制来进行测试。</p>
-<p>但真正在项目中可就不能这么做了，项目中我们可能就是想要 activity_id 字段作为主键，不允许插入重复数据。</p>
-<a id="more"></a>
-
-<p>虽然说一般情况下不会有重复的，但毕竟是一般情况下，对于特殊情况我们也是需要考虑的。比如说 excel 中就是因为运营人员粗心弄了多条相同的数据，或者再次将同样的 excel 文件拿来上传，这时候就会有问题了。</p>
-<p>所以对于这种情况我们需要做到兼容，尽量给用户好的体验，不然说因为几条重复的数据就让用户去修改再次上传。对于这种普通的数据，可能就需要系统自动去重了，当然如果是涉及到金钱方面的数据那还是需要人工再次确认过的。</p>
-<p>下面我们就讨论下 key 重复的几种不同处理方式:<br>1.忽略重复 key 的数据，由于主键或者唯一键重复的记录，数据库自动忽略，在 insert 后面加上 ignore 关键字。</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">ignore</span> <span class="keyword">into</span> activity_stats (activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>);</span><br></pre></td></tr></table></figure>
-<p>上面的 SQL 执行时，如果主键重复或者唯一键重复，会忽略掉新插入的数据，受影响行数为0，表数据不变，这是比较简单暴力的方式，但对于大部分情况下都是适用的，具体看业务情况而定。</p>
-<p>2.使用最新数据，<br>对于 key 重复的数据，我们希望插入最新的数据到数据库中。要做到这个有两种方式: 一种是对重复数据进行更新，另一种是先删掉旧数据，然后再插入新数据。</p>
-<p>先看第一种: ON DUPLICATE KEY UPDATE</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> activity_stats (activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>)</span><br><span class="line"><span class="keyword">ON</span> <span class="keyword">DUPLICATE</span> <span class="keyword">KEY</span> </span><br><span class="line"><span class="keyword">UPDATE</span> times_viewed = <span class="keyword">values</span>(times_viewed), works_count = <span class="keyword">values</span>(works_count), user_count = <span class="keyword">values</span>(user_count);</span><br></pre></td></tr></table></figure>
-<p>这种方式就是对于有重复的数据采取更新操作，要更新的字段跟在 UPDATE 关键字后面。</p>
-<p>这里要注意一个受影响的行数的问题:</p>
-<ul>
-<li>没有重复 key 数据，直接插入新数据，受影响的行数为 1。</li>
-<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据不一样，受影响的行数为 2(???)，这里可能有点不好理解为什么是 2，这里我们先暂时记下是 2，待会我会详细说明。</li>
-<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据一致，受影响的行数为 1(???)，这个可能也不是很好理解，同样暂时先记下，马上为你娓娓道来。</li>
-</ul>
-<p>好了，现在看上面有两个地方打上了问号，这两个地方都是和我们正常所想的有点不一样。先看第一个打了问号的地方，也就是上面的第二点，按我们所想，key 重复，然后进行数据更新，这里只是进行了更新操作，受影响的行数应该是 1 才对，刚开始我对这个也是不太理解，后来通过查资料发现在 MySQL 的文档中关于 ON DUPLICATE KEY UPDATE 的使用中有下面这样一句话:<br>文档链接:<br><a href="https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html">https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html</a></p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">With ON DUPLICATE KEY UPDATE, the affected-rows value per row is 1 if the row is inserted as a new row, 2 if an existing row is updated, and 0 if an existing row is set to its current values.If you specify the CLIENT_FOUND_ROWS flag to the mysql_real_connect() C API function when connecting to mysqld, the affected-rows value is 1 (not 0) if an existing row is set to its current values.</span><br></pre></td></tr></table></figure>
-
-<p>上面这句话前半句就能为我解答为什么我们在第二点中提到的疑惑，前半句的大概意思就是:<br>对于 ON DUPLICATE KEY UPDATE 的使用，如果没有 key 重复的新数据插入，每行受影响的行数是 1，如果有 key 重复的新数据更新，返回受影响的行数是 2，如果有 key 重复的数据并且存在的旧数据和要更新的数据一致，受影响的行数是 0。</p>
-<p>看到这里我们应该就能明白为什么受影响的行数是 2 了，我们可以理解为是 MySQL 为了在 ON DUPLICATE KEY UPDATE 的使用中区分插入和更新，所以对于插入返回 1，更新返回 2。</p>
-<p>但是不是说 “如果是有 key 重复的数据并且存在的旧数据和要更新的数据一致，受影响的行数是 0” 吗？可是我们在上面第三点中 MySQL 返回的受影响的行数是 1，而这也正是我们第三点所疑惑的地方，我们再去看上面那句话的后半句，大概意思是:<br>在连接 mysqld 的时候如果你为 mysql_real_connect() API 函数指定了 CLIENT_FOUND_ROWS 标志，那么对于已经存在的旧数据和要更新的数据一致时，受影响的数值为 1 而不是 0。</p>
-<p>对于第二个疑问，我们也大概明白为什么受影响的行数是 1 了，是因为我们使用的 MySQL 指定了 CLIENT_FOUND_ROWS 标志，而 mysql_real_connect 函数指定 CLIENT_FOUND_ROWS 标志的意思就是:</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">CLIENT_FOUND_ROWS: Return the number of found (matched) rows, not the number of changed rows.</span><br></pre></td></tr></table></figure>
-<p>这段文字在上面文档链接中可以点击 mysql_real_connect 跳转到对 mysql_real_connect 函数的描述页面，里面有 CLIENT_FOUND_ROWS 相应介绍。感兴趣的可以去研究研究。</p>
-<hr>
-<p>再回到使用最新数据方式上，上面已经描述了对 key 重复的数据进行更新的方式，接下来我们看第二种:<br>对于 key 重复，先删掉旧数据，然后再插入新数据:  REPLACE INTO </p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">REPLACE</span> <span class="keyword">INTO</span> activity_stats (activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>);</span><br></pre></td></tr></table></figure>
-
-<p>这种方式就是如果没有重复 key，直接插入，效果和 insert into 一样，但如果有重复 key，它会先删除旧数据，再插入新数据。同样这种方式受影响的行数也有以下几种情况:</p>
-<ul>
-<li>没有重复 key 数据，直接插入新数据，受影响的行数为 1。</li>
-<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据不一样，受影响的行数为 2。这个很好理解，先删除旧数据，然后再插入新数据，所以受影响的行数为 2。</li>
-<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据一致，受影响的行数为 1。这里应该是数据没有发生变化，至于返回 1，我的理解是和上面一样的，返回匹配到的行数，并不是发生改变的行数(暂时没找到有关文档描述)。</li>
-</ul>
-<p>关于重复 key 数据的处理方式主要有上面提到的三种，忽略重复数据的 INSERT IGNORE，使用更新的方式插入最新数据的 ON DUPLICATE KEY UPDATE，还有先删除再插入最新数据的 REPLACE INTO。</p>
-<p>在我们使用这三种方式来避免插入重复数据的过程中，我们还需要注意下面几个问题:<br>首先，使用这三种方式的前提都是表中需要存在主键冲突或唯一键冲突，不然这三种都跟直接 INSERT INTO 没什么区别。</p>
-<p>第二，要注意存在多个键冲突(插入的数据既可能存在主键冲突，也可能存在其他唯一键冲突或者存在多个唯一键冲突)的情况，在这种情况下使用可能会出现其他结果(可以自己测试看看)，所以这种情况下不太建议使用。</p>
-<p>第三，这点比较重要，上面我的 activity_stats 表是有一个 activity_id 字段作为主键，这是存在主键冲突的情况。但如果我把 activity_id 字段改成唯一键并且新增一个字段 id 作为主键自增长，插入语句不变，这里因为 id 是自增长的，不存在冲突，所以这里是满足单一键冲突的情况，但是这里有个坑要注意，这种情况下使用上面三种方式都会产生主键 id 自增长不连续的问题。</p>
-<p>目前的 SQL 语句是这样的: </p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">ignore</span> <span class="keyword">into</span> activity_stat (<span class="keyword">id</span>, activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="literal">null</span>, <span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>);</span><br><span class="line">或者</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>对于 INSERT IGNORE 和 ON DUPLICATE KEY UPDATE，在存在 unique key 重复时，前者虽然重复的记录被忽略了没有执行插入操作，但是 id 还是会 +1。而后者是在 key 重复时执行更新操作，但 id 同样也会 +1，也就是说在存在 unique key 重复的情况下这两种方式不管有没有插入数据，自增长 id 都会增加。</p>
-<p>这样的话在主从库的场景下就会出现主从的 auto_increment 不一致，因为 slave 并不会同步 master 的 auto_increment，一旦当前 master 挂了，任意一个 slave 被选举为 master，再次执行 insert 语句就可能导致主键冲突。</p>
-<p>至于这里为什么会出现没有插入记录 auto_increment 却依然 +1 的情况，和 innodb_autoinc_lock_mode 的值有关。可以通过下面的 SQL 语句查看:</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> @@innodb_autoinc_lock_mode;</span><br></pre></td></tr></table></figure>
-
-<p>它的值可能是 0，1，2 其中一种，默认是 1，具体各个值的特征可以参看官方文档中的描述，下面是文档地址:<br><a href="https://dev.mysql.com/doc/refman/5.7/en/innodb-auto-increment-handling.html#innodb-auto-increment-lock-modes">https://dev.mysql.com/doc/refman/5.7/en/innodb-auto-increment-handling.html#innodb-auto-increment-lock-modes</a></p>
-<p>而对于 REPLACE INTO，那是因为在存在 unique key 重复时，会先删除再插入，执行了插入操作，id 肯定会增加。问题就在于重新插入了一条数据 id 发生了变化。如果别的表关联了这个表的主键 id 的话就会出现数据查找不到的情况。</p>
-<p>总之就是对于这三种避免插入重复数据的方式，如果是由于主键冲突的情况，基本上没什么问题，但如果是唯一键冲突的情况，都会导致 master 和 slave 的 auto_increment 不一致的问题，一旦主从的 auto_increment 不一致(这里是 master 的 auto_increment 要大于 slave)，只要 master 出现问题，任意一个 slave 升级成 master，由于当前新的 master 的 auto_increment 是小于数据中的 id 的值，所以再进行插入时就可能发生主键冲突。</p>
-]]></content>
-      <categories>
-        <category>JdbcTemplate</category>
       </categories>
   </entry>
 </search>
