@@ -184,52 +184,6 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
       </categories>
   </entry>
   <entry>
-    <title>JdbcTemplate 实现批量插入</title>
-    <url>/JdbcTemplate-%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5/</url>
-    <content><![CDATA[<p>项目中有时候我们会遇到 excel 导入的需求, excle 文件的每一行记录对应的可能都是数据库中的一条记录，一个 excel 中可能有很多行，所以导入一个 excel 就意味着 excel 里面有多少行，我们就要插入多少条记录。如果我们采用一条一条记录插入的方式，毫无疑问，这可能要执行很久。</p>
-<p>如果是采用同步的方式的话，页面就会需要等好长一段时间才能有响应。就算采用异步的方式，先给前端一个响应，后台异步执行插入操作，用户也会需要等好长一段时间才能看到刚才 excel 导入的数据。</p>
-<a id="more"></a>
-
-<p>这时候批量插入的方式就显得很有必要了。这里我们采用 JdbcTemplate 来实现批量插入。</p>
-<p>这里再次以活动统计表 activity_stats 来举例，比如需求就是要导入一份活动统计的 excel 数据,这里为了简单起见，就通过 for 循环来模拟构造一份 excel 数据。</p>
-<p>这里我两种方式都实现了，一种是通过 for 循环一个一个保存的，另一种则是批量插入。先声明我测试使用的 mysql 驱动版本是:</p>
-<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>mysql<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>mysql-connector-java<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">version</span>&gt;</span>8.0.19<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<p>spring jdbc 依赖版本是:</p>
-<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-jdbc<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.2.6.RELEASE<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
-<p>首先我们看 for 循环的方式，代码很简单，我就直接贴出来了:</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">insertStats</span><span class="params">(List&lt;ActivityStat&gt; activityStatList)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(CollectionUtils.isEmpty(activityStatList))&#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        String sql = <span class="string">&quot;insert into activity_stats(activity_id, times_viewed, works_count, user_count) values(?, ?, ?, ?)&quot;</span>;</span><br><span class="line">        <span class="keyword">long</span> start = System.currentTimeMillis();</span><br><span class="line">        activityStatList.forEach(item -&gt; &#123;</span><br><span class="line">            <span class="keyword">this</span>.jdbcTemplate.update(sql, preparedStatement -&gt; &#123;</span><br><span class="line">                preparedStatement.setLong(<span class="number">1</span>, item.getActivityId());</span><br><span class="line">                preparedStatement.setLong(<span class="number">2</span>, item.getTimesViewed());</span><br><span class="line">                preparedStatement.setLong(<span class="number">3</span>, item.getWorksCount());</span><br><span class="line">                preparedStatement.setLong(<span class="number">4</span>, item.getUserCount());</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;);</span><br><span class="line">        log.info(<span class="string">&quot;insert state cost &#123;&#125; s&quot;</span>, (System.currentTimeMillis() - start) / <span class="number">1000</span>);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-<p>下面则是批量的方式:</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">batchInsertStats</span><span class="params">(List&lt;ActivityStat&gt; activityStatList)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(CollectionUtils.isEmpty(activityStatList))&#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        String sql = <span class="string">&quot;insert into activity_stats(activity_id, times_viewed, works_count, user_count) values(?, ?, ?, ?)&quot;</span>;</span><br><span class="line">        <span class="keyword">long</span> start = System.currentTimeMillis();</span><br><span class="line">        <span class="keyword">this</span>.jdbcTemplate.batchUpdate(sql, <span class="keyword">new</span> BatchPreparedStatementSetter() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setValues</span><span class="params">(PreparedStatement preparedStatement, <span class="keyword">int</span> i)</span> <span class="keyword">throws</span> SQLException </span>&#123;</span><br><span class="line">                ActivityStat data = activityStatList.get(i);</span><br><span class="line">                preparedStatement.setLong(<span class="number">1</span>, data.getActivityId());</span><br><span class="line">                preparedStatement.setLong(<span class="number">2</span>, data.getTimesViewed());</span><br><span class="line">                preparedStatement.setLong(<span class="number">3</span>, data.getWorksCount());</span><br><span class="line">                preparedStatement.setLong(<span class="number">4</span>, data.getUserCount());</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getBatchSize</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                <span class="keyword">return</span> activityStatList.size();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">        log.info(<span class="string">&quot;batch insert state cost &#123;&#125; s&quot;</span>, (System.currentTimeMillis() - start) / <span class="number">1000</span>);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
-<p>代码实现写好了，接下来我们来测试下看看效果</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testInsertStats</span><span class="params">()</span></span>&#123;</span><br><span class="line">        List&lt;ActivityStat&gt; activityStatList = mockStatsData();</span><br><span class="line">        <span class="keyword">this</span>.activityStatService.insertStats(activityStatList);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testBatchInsertStats</span><span class="params">()</span></span>&#123;</span><br><span class="line">        List&lt;ActivityStat&gt; activityStatList = mockStatsData();</span><br><span class="line">        <span class="keyword">this</span>.activityStatService.batchInsertStats(activityStatList);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-
-<p>其中 mockStatsData() 方法是一个 for 循环构建了 10000 个 ActivityStat，返回 activityStatList:</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> List&lt;ActivityStat&gt; <span class="title">mockStatsData</span><span class="params">()</span></span>&#123;</span><br><span class="line">        List&lt;ActivityStat&gt; activityStatList = <span class="keyword">new</span> ArrayList&lt;&gt;(<span class="number">10000</span>);</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000</span>; i++)&#123;</span><br><span class="line">            ActivityStat activityStat = <span class="keyword">new</span> ActivityStat();</span><br><span class="line">            activityStat.setActivityId((<span class="keyword">long</span>)i)</span><br><span class="line">                    .setTimesViewed((<span class="keyword">long</span>)(i + <span class="number">100</span>))</span><br><span class="line">                    .setWorksCount((<span class="keyword">long</span>) i + <span class="number">50</span>)</span><br><span class="line">                    .setUserCount((<span class="keyword">long</span>) i + <span class="number">10</span>);</span><br><span class="line">            activityStatList.add(activityStat);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> activityStatList;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-<p>运行测试的结果是下面这样的:<br><img src="http://images.rookiezhou.top/inser_stats_result.png" alt="insert stats result"></p>
-<p><img src="http://images.rookiezhou.top/batch_insert_stats_result.png" alt="batch insert stats result"></p>
-<p>往数据库中插入 10000 条记录，采用 for 循环的方式和采用批量的方式插入竟然时间量级是一样的，是不是有点懵，说实话刚开始我也有点懵，就觉得不应该啊，如果这样的话那还要 batchUpdate 方法有什么意义呢。</p>
-<p>懵归懵，但还是要找出其中的原因来，正常来说肯定不会是这种结果，应该是哪个环节没弄好，从我们写的代码来看应该是没有问题的，那就通过 debug 的方式看看 batchUpdate 方法里面到底是怎么执行的。这里建议如果要 debug 的源码是稍微比较复杂的，建议不要直接看 class 文件，calss 文件毕竟是编译之后的，代码看起来不是那么的直观，可以在打开 class 文件之后点击右上角提示的下载源码按钮。<br><img src="http://images.rookiezhou.top/download_source.png" alt="download_source"></p>
-<p>通过 debug 的方式我在 ClientPreparedStatement 类中找到下面这样一段代码:<br><img src="http://images.rookiezhou.top/batch_insert_condition.png" alt="batch insert condition"></p>
-<p>这里有个判断 !this.batchHasPlainStatements &amp;&amp; this.rewriteBatchedStatements.getValue()<br>只有这两个条件同时都满足的情况下才会执行下面的 executeBatchedInserts 或 executePreparedBatchAsMultiStatement 方法，这两个都是批量的方法，第一个是针对 Insert 语句的，下面那个是 Update 和 Delete 语句的批量方法。</p>
-<p>当上面这两个条件只要有一个不满足，就会执行最下面的 executeBatchSerially 方法，而在这个方法的内部可以看到有一个 for 循环，然后在 for 循环里面一个一个执行 SQL。<br><img src="http://images.rookiezhou.top/batch_insert_for_loop.png" alt="batch insert for loop"></p>
-<p>看到这里再仔细看上面两个条件，对于    !this.batchHasPlainStatements 是类的一个属性，默认值是 false:</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Does the batch (if any) contain &quot;plain&quot; statements added by</span></span><br><span class="line"><span class="comment">     * Statement.addBatch(String)?</span></span><br><span class="line"><span class="comment">     * </span></span><br><span class="line"><span class="comment">     * If so, we can&#x27;t re-write it to use multi-value or multi-queries.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">boolean</span> batchHasPlainStatements = <span class="keyword">false</span>;</span><br></pre></td></tr></table></figure>
-<p>只有在 addBatch 方法中才会置为 true，所以第一个条件满足的。再看第二个条件 thi.rewriteBatchedStatements,是父类的一个属性:</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">protected</span> RuntimeProperty&lt;Boolean&gt; rewriteBatchedStatements;</span><br></pre></td></tr></table></figure>
-<p><img src="http://images.rookiezhou.top/jdbc_url_property.png" alt="jdbc_url_property"><br>再看这个属性的初始化值的地方应该能猜到是这个是数据库地址 url 后面接的配置信息。</p>
-<p>到这里我们应该知道为什么批量执行的方式和 for 循环一个一个插入时间量级是一样的了，是由于我们的少了rewriteBatchedStatements=true 的配置，导致 batchUpdate 代码内部其实还是通过 for 循环的方式来执行的，所以量级才会是一样的，接下来我们加上这项配置再执行就可以看到速度明显上来了，下面是加上改配置执行之后的结果:</p>
-<p><img src="http://images.rookiezhou.top/real_batch_insert_stats_result.png" alt="real batch update result"></p>
-<p>插入 10000 条记录用时才 2s，而加上配置之前是 30s。其实 rewriteBatchedStatements=true 配置对于批量的 insert 语句来说，是实现了下面的效果:</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> activity_stats(activity_id, times_viewed, works_count, user_count) <span class="keyword">values</span>(?, ?, ?, ?);</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> activity_stats(activity_id, times_viewed, works_count, user_count) <span class="keyword">values</span>(?, ?, ?, ?);</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> activity_stats(activity_id, times_viewed, works_count, user_count) <span class="keyword">values</span>(?, ?, ?, ?)</span><br><span class="line"><span class="comment"># 重写之后</span></span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> activity_stats(activity_id, times_viewed, works_count, user_count) <span class="keyword">values</span>(?, ?, ?, ?),(?, ?, ?, ?),(?, ?, ?, ?);</span><br></pre></td></tr></table></figure>
-<p>也就是是否将多条重写成一条，然后在发给 MySQL 执行，这样不用一条一条发过去执行，大大提高了执行效率。</p>
-<p>好了，上面整体就是 JdbcTemplate 批量插入的实现，记得千万不要忘了加上 rewriteBatchedStatements=true 的配置，不然可能你写完了以为已经实现了批量插入，但结果根本没有达到批量执行的效果。</p>
-]]></content>
-      <categories>
-        <category>JdbcTemplate</category>
-      </categories>
-  </entry>
-  <entry>
     <title>Java 面试系列——基础篇(二)</title>
     <url>/Java-%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97%E2%80%94%E2%80%94%E5%9F%BA%E7%A1%80%E7%AF%87-%E4%BA%8C/</url>
     <content><![CDATA[<h2 id="Java-中-equals-与-的区别"><a href="#Java-中-equals-与-的区别" class="headerlink" title="Java 中 equals 与 == 的区别"></a>Java 中 equals 与 == 的区别</h2><p>通俗的来说，“==” 比较的是地址，equals 比较的是内容。也就是说前者比较的是对象(堆)在(栈)内存中存放的内存地址，用来判断两个对象的地址是否相同，即是否是指向同一个对象。后者用来比较的是两个对象的内容是否相等，由于所有的类都是继承自java.lang.Object 类的，所以适用于所有对象，注意如果没有对该方法进行重写的话，调用的仍然是 Object 类中的方法，而 Object 中的 equals 方法返回的却是内存地址比较的结果，方法内容如下 ：</p>
@@ -285,6 +239,52 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 ]]></content>
       <categories>
         <category>面试系列</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>JdbcTemplate 实现批量插入</title>
+    <url>/JdbcTemplate-%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5/</url>
+    <content><![CDATA[<p>项目中有时候我们会遇到 excel 导入的需求, excle 文件的每一行记录对应的可能都是数据库中的一条记录，一个 excel 中可能有很多行，所以导入一个 excel 就意味着 excel 里面有多少行，我们就要插入多少条记录。如果我们采用一条一条记录插入的方式，毫无疑问，这可能要执行很久。</p>
+<p>如果是采用同步的方式的话，页面就会需要等好长一段时间才能有响应。就算采用异步的方式，先给前端一个响应，后台异步执行插入操作，用户也会需要等好长一段时间才能看到刚才 excel 导入的数据。</p>
+<a id="more"></a>
+
+<p>这时候批量插入的方式就显得很有必要了。这里我们采用 JdbcTemplate 来实现批量插入。</p>
+<p>这里再次以活动统计表 activity_stats 来举例，比如需求就是要导入一份活动统计的 excel 数据,这里为了简单起见，就通过 for 循环来模拟构造一份 excel 数据。</p>
+<p>这里我两种方式都实现了，一种是通过 for 循环一个一个保存的，另一种则是批量插入。先声明我测试使用的 mysql 驱动版本是:</p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>mysql<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>mysql-connector-java<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">version</span>&gt;</span>8.0.19<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>spring jdbc 依赖版本是:</p>
+<figure class="highlight xml"><table><tr><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>org.springframework.boot<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>spring-boot-starter-jdbc<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">            <span class="tag">&lt;<span class="name">version</span>&gt;</span>2.2.6.RELEASE<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>首先我们看 for 循环的方式，代码很简单，我就直接贴出来了:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">insertStats</span><span class="params">(List&lt;ActivityStat&gt; activityStatList)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(CollectionUtils.isEmpty(activityStatList))&#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        String sql = <span class="string">&quot;insert into activity_stats(activity_id, times_viewed, works_count, user_count) values(?, ?, ?, ?)&quot;</span>;</span><br><span class="line">        <span class="keyword">long</span> start = System.currentTimeMillis();</span><br><span class="line">        activityStatList.forEach(item -&gt; &#123;</span><br><span class="line">            <span class="keyword">this</span>.jdbcTemplate.update(sql, preparedStatement -&gt; &#123;</span><br><span class="line">                preparedStatement.setLong(<span class="number">1</span>, item.getActivityId());</span><br><span class="line">                preparedStatement.setLong(<span class="number">2</span>, item.getTimesViewed());</span><br><span class="line">                preparedStatement.setLong(<span class="number">3</span>, item.getWorksCount());</span><br><span class="line">                preparedStatement.setLong(<span class="number">4</span>, item.getUserCount());</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;);</span><br><span class="line">        log.info(<span class="string">&quot;insert state cost &#123;&#125; s&quot;</span>, (System.currentTimeMillis() - start) / <span class="number">1000</span>);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>下面则是批量的方式:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">batchInsertStats</span><span class="params">(List&lt;ActivityStat&gt; activityStatList)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span>(CollectionUtils.isEmpty(activityStatList))&#123;</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        String sql = <span class="string">&quot;insert into activity_stats(activity_id, times_viewed, works_count, user_count) values(?, ?, ?, ?)&quot;</span>;</span><br><span class="line">        <span class="keyword">long</span> start = System.currentTimeMillis();</span><br><span class="line">        <span class="keyword">this</span>.jdbcTemplate.batchUpdate(sql, <span class="keyword">new</span> BatchPreparedStatementSetter() &#123;</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">setValues</span><span class="params">(PreparedStatement preparedStatement, <span class="keyword">int</span> i)</span> <span class="keyword">throws</span> SQLException </span>&#123;</span><br><span class="line">                ActivityStat data = activityStatList.get(i);</span><br><span class="line">                preparedStatement.setLong(<span class="number">1</span>, data.getActivityId());</span><br><span class="line">                preparedStatement.setLong(<span class="number">2</span>, data.getTimesViewed());</span><br><span class="line">                preparedStatement.setLong(<span class="number">3</span>, data.getWorksCount());</span><br><span class="line">                preparedStatement.setLong(<span class="number">4</span>, data.getUserCount());</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getBatchSize</span><span class="params">()</span> </span>&#123;</span><br><span class="line">                <span class="keyword">return</span> activityStatList.size();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">        log.info(<span class="string">&quot;batch insert state cost &#123;&#125; s&quot;</span>, (System.currentTimeMillis() - start) / <span class="number">1000</span>);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>代码实现写好了，接下来我们来测试下看看效果</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testInsertStats</span><span class="params">()</span></span>&#123;</span><br><span class="line">        List&lt;ActivityStat&gt; activityStatList = mockStatsData();</span><br><span class="line">        <span class="keyword">this</span>.activityStatService.insertStats(activityStatList);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">testBatchInsertStats</span><span class="params">()</span></span>&#123;</span><br><span class="line">        List&lt;ActivityStat&gt; activityStatList = mockStatsData();</span><br><span class="line">        <span class="keyword">this</span>.activityStatService.batchInsertStats(activityStatList);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<p>其中 mockStatsData() 方法是一个 for 循环构建了 10000 个 ActivityStat，返回 activityStatList:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> List&lt;ActivityStat&gt; <span class="title">mockStatsData</span><span class="params">()</span></span>&#123;</span><br><span class="line">        List&lt;ActivityStat&gt; activityStatList = <span class="keyword">new</span> ArrayList&lt;&gt;(<span class="number">10000</span>);</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000</span>; i++)&#123;</span><br><span class="line">            ActivityStat activityStat = <span class="keyword">new</span> ActivityStat();</span><br><span class="line">            activityStat.setActivityId((<span class="keyword">long</span>)i)</span><br><span class="line">                    .setTimesViewed((<span class="keyword">long</span>)(i + <span class="number">100</span>))</span><br><span class="line">                    .setWorksCount((<span class="keyword">long</span>) i + <span class="number">50</span>)</span><br><span class="line">                    .setUserCount((<span class="keyword">long</span>) i + <span class="number">10</span>);</span><br><span class="line">            activityStatList.add(activityStat);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> activityStatList;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>运行测试的结果是下面这样的:<br><img src="http://images.rookiezhou.top/inser_stats_result.png" alt="insert stats result"></p>
+<p><img src="http://images.rookiezhou.top/batch_insert_stats_result.png" alt="batch insert stats result"></p>
+<p>往数据库中插入 10000 条记录，采用 for 循环的方式和采用批量的方式插入竟然时间量级是一样的，是不是有点懵，说实话刚开始我也有点懵，就觉得不应该啊，如果这样的话那还要 batchUpdate 方法有什么意义呢。</p>
+<p>懵归懵，但还是要找出其中的原因来，正常来说肯定不会是这种结果，应该是哪个环节没弄好，从我们写的代码来看应该是没有问题的，那就通过 debug 的方式看看 batchUpdate 方法里面到底是怎么执行的。这里建议如果要 debug 的源码是稍微比较复杂的，建议不要直接看 class 文件，calss 文件毕竟是编译之后的，代码看起来不是那么的直观，可以在打开 class 文件之后点击右上角提示的下载源码按钮。<br><img src="http://images.rookiezhou.top/download_source.png" alt="download_source"></p>
+<p>通过 debug 的方式我在 ClientPreparedStatement 类中找到下面这样一段代码:<br><img src="http://images.rookiezhou.top/batch_insert_condition.png" alt="batch insert condition"></p>
+<p>这里有个判断 !this.batchHasPlainStatements &amp;&amp; this.rewriteBatchedStatements.getValue()<br>只有这两个条件同时都满足的情况下才会执行下面的 executeBatchedInserts 或 executePreparedBatchAsMultiStatement 方法，这两个都是批量的方法，第一个是针对 Insert 语句的，下面那个是 Update 和 Delete 语句的批量方法。</p>
+<p>当上面这两个条件只要有一个不满足，就会执行最下面的 executeBatchSerially 方法，而在这个方法的内部可以看到有一个 for 循环，然后在 for 循环里面一个一个执行 SQL。<br><img src="http://images.rookiezhou.top/batch_insert_for_loop.png" alt="batch insert for loop"></p>
+<p>看到这里再仔细看上面两个条件，对于    !this.batchHasPlainStatements 是类的一个属性，默认值是 false:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Does the batch (if any) contain &quot;plain&quot; statements added by</span></span><br><span class="line"><span class="comment">     * Statement.addBatch(String)?</span></span><br><span class="line"><span class="comment">     * </span></span><br><span class="line"><span class="comment">     * If so, we can&#x27;t re-write it to use multi-value or multi-queries.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">boolean</span> batchHasPlainStatements = <span class="keyword">false</span>;</span><br></pre></td></tr></table></figure>
+<p>只有在 addBatch 方法中才会置为 true，所以第一个条件满足的。再看第二个条件 thi.rewriteBatchedStatements,是父类的一个属性:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">protected</span> RuntimeProperty&lt;Boolean&gt; rewriteBatchedStatements;</span><br></pre></td></tr></table></figure>
+<p><img src="http://images.rookiezhou.top/jdbc_url_property.png" alt="jdbc_url_property"><br>再看这个属性的初始化值的地方应该能猜到是这个是数据库地址 url 后面接的配置信息。</p>
+<p>到这里我们应该知道为什么批量执行的方式和 for 循环一个一个插入时间量级是一样的了，是由于我们的少了rewriteBatchedStatements=true 的配置，导致 batchUpdate 代码内部其实还是通过 for 循环的方式来执行的，所以量级才会是一样的，接下来我们加上这项配置再执行就可以看到速度明显上来了，下面是加上改配置执行之后的结果:</p>
+<p><img src="http://images.rookiezhou.top/real_batch_insert_stats_result.png" alt="real batch update result"></p>
+<p>插入 10000 条记录用时才 2s，而加上配置之前是 30s。其实 rewriteBatchedStatements=true 配置对于批量的 insert 语句来说，是实现了下面的效果:</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> activity_stats(activity_id, times_viewed, works_count, user_count) <span class="keyword">values</span>(?, ?, ?, ?);</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> activity_stats(activity_id, times_viewed, works_count, user_count) <span class="keyword">values</span>(?, ?, ?, ?);</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> activity_stats(activity_id, times_viewed, works_count, user_count) <span class="keyword">values</span>(?, ?, ?, ?)</span><br><span class="line"><span class="comment"># 重写之后</span></span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> activity_stats(activity_id, times_viewed, works_count, user_count) <span class="keyword">values</span>(?, ?, ?, ?),(?, ?, ?, ?),(?, ?, ?, ?);</span><br></pre></td></tr></table></figure>
+<p>也就是是否将多条重写成一条，然后在发给 MySQL 执行，这样不用一条一条发过去执行，大大提高了执行效率。</p>
+<p>好了，上面整体就是 JdbcTemplate 批量插入的实现，记得千万不要忘了加上 rewriteBatchedStatements=true 的配置，不然可能你写完了以为已经实现了批量插入，但结果根本没有达到批量执行的效果。</p>
+]]></content>
+      <categories>
+        <category>JdbcTemplate</category>
       </categories>
   </entry>
   <entry>
@@ -350,29 +350,6 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <h3 id="文件类型"><a href="#文件类型" class="headerlink" title="文件类型"></a>文件类型</h3><p>最后说一下文件的类型主要有以下几种：</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">d ：目录   </span><br><span class="line">- ：文件   </span><br><span class="line">l ：链接   </span><br><span class="line">s ：socket   </span><br><span class="line">p ：named pipe   </span><br><span class="line">b ：block device   </span><br><span class="line">c  ：character device  </span><br></pre></td></tr></table></figure>
 
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>Ubuntu 执行命令时报错 unable to resolve host</title>
-    <url>/Ubuntu-%E6%89%A7%E8%A1%8C%E5%91%BD%E4%BB%A4%E6%97%B6%E6%8A%A5%E9%94%99-unable-to-resolve-host/</url>
-    <content><![CDATA[<h2 id="记录一下今天遇到的一个问题"><a href="#记录一下今天遇到的一个问题" class="headerlink" title="记录一下今天遇到的一个问题"></a>记录一下今天遇到的一个问题</h2><p>今天在阿里云服务器上部署应用时遇到一个小问题，每次执行完 sudo 命令都会出现一行错误信息，刚开始还以为执行命令出错了，但仔细一看不像是执行命令的报错信息，而且还发现命令其实已经执行成功了。</p>
-<a id="more"></a>
-
-<p>执行命令之后的报错信息如下：</p>
-<p><img src="http://images.rookiezhou.top/resolve-host3.png" alt="hosts 文件"></p>
-<p>于是去百度了一波，发现原来是**<em>因为 /etc/ 路径下 hosts 文件中的主机名和 hostname 文件中的主机名不一致**</em>所导致的错误。</p>
-<p>经查看 hostname 文件中的主机名如下：</p>
-<p><img src="http://images.rookiezhou.top/resolve-host5.png" alt="hosts 文件"></p>
-<p>知道原因了之后就知道如何解决了，方式如下:</p>
-<p>在 /etc/ 路径下 hosts 文件中添加一行，将 /etc/ 路径下 hostname 文件中的主机名称拷贝过来即可，hosts 文件修改之后如下：</p>
-<p><img src="http://images.rookiezhou.top/resolve-host4.png" alt="hosts 文件"></p>
-<p>以下则分别是我电脑上 /etc 路径下 hosts 文件和 hostname 文件中的内容</p>
-<p><img src="http://images.rookiezhou.top/resolve-host.png" alt="hosts 文件"></p>
-<p><img src="http://images.rookiezhou.top/resolve-host2.png" alt="hostname 文件"></p>
-<p>比如上面我电脑上 hostname 文件中内容是 zhouoxh-X550VC ，只要在 hosts 文件中添加一行 127.0.1.1       zhouxh-X550VC，如果不加这一行执行 sudo 命令就会报错。</p>
 ]]></content>
       <categories>
         <category>Linux</category>
@@ -453,6 +430,29 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 ]]></content>
       <categories>
         <category>MySQL</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>Ubuntu 执行命令时报错 unable to resolve host</title>
+    <url>/Ubuntu-%E6%89%A7%E8%A1%8C%E5%91%BD%E4%BB%A4%E6%97%B6%E6%8A%A5%E9%94%99-unable-to-resolve-host/</url>
+    <content><![CDATA[<h2 id="记录一下今天遇到的一个问题"><a href="#记录一下今天遇到的一个问题" class="headerlink" title="记录一下今天遇到的一个问题"></a>记录一下今天遇到的一个问题</h2><p>今天在阿里云服务器上部署应用时遇到一个小问题，每次执行完 sudo 命令都会出现一行错误信息，刚开始还以为执行命令出错了，但仔细一看不像是执行命令的报错信息，而且还发现命令其实已经执行成功了。</p>
+<a id="more"></a>
+
+<p>执行命令之后的报错信息如下：</p>
+<p><img src="http://images.rookiezhou.top/resolve-host3.png" alt="hosts 文件"></p>
+<p>于是去百度了一波，发现原来是**<em>因为 /etc/ 路径下 hosts 文件中的主机名和 hostname 文件中的主机名不一致**</em>所导致的错误。</p>
+<p>经查看 hostname 文件中的主机名如下：</p>
+<p><img src="http://images.rookiezhou.top/resolve-host5.png" alt="hosts 文件"></p>
+<p>知道原因了之后就知道如何解决了，方式如下:</p>
+<p>在 /etc/ 路径下 hosts 文件中添加一行，将 /etc/ 路径下 hostname 文件中的主机名称拷贝过来即可，hosts 文件修改之后如下：</p>
+<p><img src="http://images.rookiezhou.top/resolve-host4.png" alt="hosts 文件"></p>
+<p>以下则分别是我电脑上 /etc 路径下 hosts 文件和 hostname 文件中的内容</p>
+<p><img src="http://images.rookiezhou.top/resolve-host.png" alt="hosts 文件"></p>
+<p><img src="http://images.rookiezhou.top/resolve-host2.png" alt="hostname 文件"></p>
+<p>比如上面我电脑上 hostname 文件中内容是 zhouoxh-X550VC ，只要在 hosts 文件中添加一行 127.0.1.1       zhouxh-X550VC，如果不加这一行执行 sudo 命令就会报错。</p>
+]]></content>
+      <categories>
+        <category>Linux</category>
       </categories>
   </entry>
   <entry>
@@ -611,55 +611,6 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
       </categories>
   </entry>
   <entry>
-    <title>nginx 负载均衡策略之内置策略</title>
-    <url>/nginx-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5%E4%B9%8B%E5%86%85%E7%BD%AE%E7%AD%96%E7%95%A5/</url>
-    <content><![CDATA[<p>nginx 服务器在开发中我们用的比较多的有 nginx 的负载均衡，nginx 负载均衡主要是利用反向代理来实现，也就是表面上我们访问的是这个服务，其实访问的是该服务背后支撑的众多服务器中的其中一台。比如说全世界同一时间有这么多人同时在访问百度这个网站，它是怎么能够承受的住这么大的访问量呢，这时我们就应该知道其实百度这个网站的背后有很多的服务器在支撑着众多的用户的访问。</p>
-<a id="more"></a>
-
-<p>但是这里就引出一个问题，用户访问的这个服务是如何分发给它背后的众多的服务器呢，于是就出现了满足各种需求的负载均衡策略，其中有 nginx 自己内置的负载均衡策略，也有第三方提供的一些负载均衡策略。今天主要谈一下 nginx 内置的负载均衡策略，主要有四种：轮询（默认）、加权轮询、最少连接 least_conn、IP 哈希 ip_hash，下面将一一进行介绍。</p>
-<p>首先我们先安装好 nginx 服务器，下面是在 Ubuntu 16.04 系统测试的，采用的 nginx 版本是 nginx/1.12.0。</p>
-<h2 id="安装-nginx"><a href="#安装-nginx" class="headerlink" title="安装 nginx"></a>安装 nginx</h2><p>下载基于 Linux 系统的 nginx/1.12.0 版的 nginx 服务器进行解压编译安装，下面是安装命令。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo wget http:&#x2F;&#x2F;nginx.org&#x2F;download&#x2F;nginx-1.12.0.tar.gz</span><br><span class="line">sudo tar xzf nginx-1.12.0.tar.gz</span><br><span class="line">cd nginx-1.12.0</span><br><span class="line">sudo .&#x2F;configure</span><br><span class="line">sudo make</span><br><span class="line">sudo make install</span><br></pre></td></tr></table></figure>
-
-<p>上面安装成功后，nginx 默认安装在目录 /usr/local/nginx/ 下面，当然你也可以自定义安装目录，不过一般不建议这么做，以防以后都不知道到哪里去找配置文件，默认就好，安装成功后可以在 /usr/sbin/ 目录下创建一个软链接指向 /usr/local/nginx/sbin/nginx 文件，命令如下：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ln -s &#x2F;usr&#x2F;sbin&#x2F;nginx &#x2F;usr&#x2F;local&#x2F;nginx&#x2F;sbin&#x2F;nginx</span><br></pre></td></tr></table></figure>
-
-<p>这样我们就不用每次启动 nginx 服务都切换到 /usr/local/nginx/sbin/ 目录下去执行 nginx 的启动命令，配置好了这些后就可以启动 nginx 服务器进行测试了。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo nginx -c &#x2F;usr&#x2F;local&#x2F;nginx&#x2F;conf&#x2F;nginx.conf </span><br></pre></td></tr></table></figure>
-
-<p>执行上面的启动命令后在浏览器中输入 localhost 后回车出现对应的 nginx 服务器的欢迎页面就表示 nginx 服务器安装成功了，这里我们为了更好的测试首先将 nginx.conf 配置文件中 http 的默认端口 80 改成 10080，改了之后重新启动 nginx 服务器后接着在浏览器中输入 localhost:10080 后回车应该又会出现刚才的欢迎页面了。接下来就开始我们的 nginx 的负载均衡策略之旅吧。</p>
-<h2 id="轮询（默认）"><a href="#轮询（默认）" class="headerlink" title="轮询（默认）"></a>轮询（默认）</h2><p>轮询这个策略是 nginx 进行负载均衡时默认采用的策略，也就是最基本的负载均衡配置，打开 /usr/local/nginx/conf/ 目录下的 nginx.conf 配置文件，我们配置一个最简单的负载均衡方式，在配置文件中 http 模块里面也就是和 http 模块里面的 server 模块同级加上以下内容：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">upstream loadserver &#123;</span><br><span class="line">    server 192.168.1.110:10080;</span><br><span class="line">    server 192.168.1.111:10080;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>然后在 http 模块里面的 server 模块下面的 location 模块加上一行配置，如下：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">location &#x2F; &#123;</span><br><span class="line">    root   html;</span><br><span class="line">    index  index.html index.htm;</span><br><span class="line">    proxy_pass http:&#x2F;&#x2F;loadserver;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-<p>部分配置文件截图如下：</p>
-<p><img src="http://images.rookiezhou.top/polling.png" alt="轮询策略配置"></p>
-<p>这样也就配置好了最基本的负载均衡，默认采用轮询的策略将请求分发给后台服务器，当我们访问 localhost:10080 这个地址时页面轮流的展示 192.168.1.110 和 192.168.1.111 这两台主机的 nginx 服务器的欢迎页面，这里为了区分这两个欢迎页面需要修改一下这两台主机的 nginx 服务器的欢迎页面信息，欢迎页面默认存放在 /usr/local/nginx/html/ 目录下的 index.html 页面。我们只要稍微修改一下这两台主机的 nginx 欢迎页面使得每次访问的页面都是不同的，便于我们区分访问的是哪台主机的 nginx 服务器。</p>
-<h2 id="加权轮询"><a href="#加权轮询" class="headerlink" title="加权轮询"></a>加权轮询</h2><p>加权轮询则是在第一种轮询的基础上对后台的每台服务赋予权重，服务器的权重比例越大，被分发到的概率也就越大，配置如下：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">upstream loadserver &#123;</span><br><span class="line">    server 192.168.1.110:10080 weight&#x3D;3;</span><br><span class="line">    server 192.168.1.111:10080 weight&#x3D;1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>上面只是给每个后台服务加上了一个权重比例，拿上面的配置举例：用户将会每访问三次 192.168.1.110 这个服务访问一次 192.168.1.111 这个服务。这种适合后台的各个服务的性能不一样，这时我们就可以将性能好的服务器权重设置大一些，减轻一些性能不怎么样的服务器的压力。</p>
-<h2 id="最少连接-least-conn"><a href="#最少连接-least-conn" class="headerlink" title="最少连接 least_conn"></a>最少连接 least_conn</h2><p>最少连接是每次请求都将请求分发给后台服务连接数最少的那台服务上，当然如果每台服务还配置了权重，那么这时会取连接数和权重比值最小的那台服务，如果连接数和权重的比值都相同的话就会采取轮询的方式进行分发，配置如下：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">upstream loadserver &#123;</span><br><span class="line">    least_conn;</span><br><span class="line">    server 192.168.1.110:10080;</span><br><span class="line">    server 192.168.1.111:10080;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>上面的配置只是加了一个调度策略 least_conn，其他和轮询的方式一样，当然你也可以给每台服务加上权重比例，分发时就会选择 conn / weight 值最小的那台服务，这种方式适合请求处理时间长短不一造成服务器过载的情况。</p>
-<h2 id="IP-哈希-ip-hash"><a href="#IP-哈希-ip-hash" class="headerlink" title="IP 哈希 ip_hash"></a>IP 哈希 ip_hash</h2><p>ip_hash 这种负载策略是根据客户端的 IP 地址的 hash 结果来进行分发，这样的话能够确保每个访客访问后端固定的一台服务器，这种情况对于需要保存用户的 session 信息的应用就很方便了，它避免了同一个用户访问到不同的服务器上产生 session 共享的问题。配置如下：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">upstream loadserver &#123;</span><br><span class="line">    ip_hash;</span><br><span class="line">    server 192.168.1.110:10080;</span><br><span class="line">    server 192.168.1.111:10080;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>上面的配置只是加了一个调度策略 ip_hash，其他也和轮询的方式一样，这里你也可以给每台服务加上权重比例，分发时在该客户端 IP 第一次访问时就会优先选择 weight 值最大的那台服务。</p>
-<h2 id="其他配置说明"><a href="#其他配置说明" class="headerlink" title="其他配置说明"></a>其他配置说明</h2><p>其实每个后台服务器的配置除了权重 weight 还有一些配置，比如说下面的配置：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">upstream loadserver &#123;</span><br><span class="line">    least_conn;</span><br><span class="line">    server 192.168.1.110:10080 weight&#x3D;5 ;</span><br><span class="line">    server 192.168.1.111:10080 weight&#x3D;1;</span><br><span class="line">    server 192.168.1.112:10080 weight&#x3D;1 max_fails&#x3D;3 fail_timeout&#x3D;30s;</span><br><span class="line">    server 192.168.1.113:10080 down;</span><br><span class="line">    server 192.168.1.114:10080 backup;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>配置说明：<br>1.weight 的值默认为1，weight 越大，服务器负载的权重就越大，访问的概率越高。<br>2.down 表示当前服务器暂时不参与负载。<br>3.backup 表示其它所有的非 backup 服务器 down 或者忙的时候才会请求 backup 服务器，所以这台服务器压力最轻，一般这台服务器当做是备用服务器。<br>3.max_fails 表示允许请求失败的次数，默认为 1，当超过最大次数时，返回proxy_next_upstream 模块定义错误。<br>4.fail_timeout 表示每次失败后暂停的时间。</p>
-<p>到这里就全部介绍完了 nginx 负载均衡内置的一些策略，还有第三方扩展的一些策略，未完待续………</p>
-]]></content>
-      <categories>
-        <category>Nginx</category>
-      </categories>
-  </entry>
-  <entry>
     <title>nginx 实现 TCP 代理及其负载均衡之 stream 模块</title>
     <url>/nginx-%E5%AE%9E%E7%8E%B0-TCP-%E4%BB%A3%E7%90%86%E5%8F%8A%E5%85%B6%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E4%B9%8B-stream-%E6%A8%A1%E5%9D%97/</url>
     <content><![CDATA[<p>前面所说的 nginx 负载均衡都是基于 HTTP 七层代理，有时候我们可能需要基于 TCP 四层代理以及负载均衡，在之前我们可能需要编译安装第三方的一个模块 nginx_tcp_proxy_module，并且需要打上一个补丁，具体安装方式可以去参考项目中的描述。</p>
@@ -716,6 +667,55 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <h2 id="nginx-反向代理"><a href="#nginx-反向代理" class="headerlink" title="nginx 反向代理"></a>nginx 反向代理</h2><p>还是刚开始上面说的这些：用户 C，服务器 S1，S2 和 S3，以及服务器 S2 和 S3 上的数据资源 D。这时用户 C 并不知道数据资源 D 在服务器 S2 和 S3 上面，他只知道访问服务器 S1 可以得到自己想要的内容，于是他每次都是直接访问服务器 S1，只不过提供给用户 C 数据资源的都是服务器 S2 或者 S3。那么反向代理就是对于用户 C 来说他是不知道数据资源 D 具体在哪里，是由谁提供的；对于服务器 S1 来说每次都接收用户的请求，然后再把请求交给真正能提供资源的服务器 S2 或 S3；对于服务器 S2 和 S3 来说同样也都不知道访问这份资源的真实用户是谁，只是和服务器 S1 进行交互。</p>
 <p>反向代理的整个流程就是用户 C 访问服务器 S1 获取数据资源 D，服务器 S1 将请求转交给服务器 S2 或 S3，然后得到相应的资源后再返回给用户 C。</p>
 <p>总之，正向代理就是客户端知道服务器端，带过代理连接服务器端。反向代理就是客户端不知道服务器端，通过代理连接服务器端，具体是由哪个服务器端提供服务取决于代理的调度方式，即 nginx 中的负载均衡策略。</p>
+]]></content>
+      <categories>
+        <category>Nginx</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>nginx 负载均衡策略之内置策略</title>
+    <url>/nginx-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5%E4%B9%8B%E5%86%85%E7%BD%AE%E7%AD%96%E7%95%A5/</url>
+    <content><![CDATA[<p>nginx 服务器在开发中我们用的比较多的有 nginx 的负载均衡，nginx 负载均衡主要是利用反向代理来实现，也就是表面上我们访问的是这个服务，其实访问的是该服务背后支撑的众多服务器中的其中一台。比如说全世界同一时间有这么多人同时在访问百度这个网站，它是怎么能够承受的住这么大的访问量呢，这时我们就应该知道其实百度这个网站的背后有很多的服务器在支撑着众多的用户的访问。</p>
+<a id="more"></a>
+
+<p>但是这里就引出一个问题，用户访问的这个服务是如何分发给它背后的众多的服务器呢，于是就出现了满足各种需求的负载均衡策略，其中有 nginx 自己内置的负载均衡策略，也有第三方提供的一些负载均衡策略。今天主要谈一下 nginx 内置的负载均衡策略，主要有四种：轮询（默认）、加权轮询、最少连接 least_conn、IP 哈希 ip_hash，下面将一一进行介绍。</p>
+<p>首先我们先安装好 nginx 服务器，下面是在 Ubuntu 16.04 系统测试的，采用的 nginx 版本是 nginx/1.12.0。</p>
+<h2 id="安装-nginx"><a href="#安装-nginx" class="headerlink" title="安装 nginx"></a>安装 nginx</h2><p>下载基于 Linux 系统的 nginx/1.12.0 版的 nginx 服务器进行解压编译安装，下面是安装命令。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo wget http:&#x2F;&#x2F;nginx.org&#x2F;download&#x2F;nginx-1.12.0.tar.gz</span><br><span class="line">sudo tar xzf nginx-1.12.0.tar.gz</span><br><span class="line">cd nginx-1.12.0</span><br><span class="line">sudo .&#x2F;configure</span><br><span class="line">sudo make</span><br><span class="line">sudo make install</span><br></pre></td></tr></table></figure>
+
+<p>上面安装成功后，nginx 默认安装在目录 /usr/local/nginx/ 下面，当然你也可以自定义安装目录，不过一般不建议这么做，以防以后都不知道到哪里去找配置文件，默认就好，安装成功后可以在 /usr/sbin/ 目录下创建一个软链接指向 /usr/local/nginx/sbin/nginx 文件，命令如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ln -s &#x2F;usr&#x2F;sbin&#x2F;nginx &#x2F;usr&#x2F;local&#x2F;nginx&#x2F;sbin&#x2F;nginx</span><br></pre></td></tr></table></figure>
+
+<p>这样我们就不用每次启动 nginx 服务都切换到 /usr/local/nginx/sbin/ 目录下去执行 nginx 的启动命令，配置好了这些后就可以启动 nginx 服务器进行测试了。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo nginx -c &#x2F;usr&#x2F;local&#x2F;nginx&#x2F;conf&#x2F;nginx.conf </span><br></pre></td></tr></table></figure>
+
+<p>执行上面的启动命令后在浏览器中输入 localhost 后回车出现对应的 nginx 服务器的欢迎页面就表示 nginx 服务器安装成功了，这里我们为了更好的测试首先将 nginx.conf 配置文件中 http 的默认端口 80 改成 10080，改了之后重新启动 nginx 服务器后接着在浏览器中输入 localhost:10080 后回车应该又会出现刚才的欢迎页面了。接下来就开始我们的 nginx 的负载均衡策略之旅吧。</p>
+<h2 id="轮询（默认）"><a href="#轮询（默认）" class="headerlink" title="轮询（默认）"></a>轮询（默认）</h2><p>轮询这个策略是 nginx 进行负载均衡时默认采用的策略，也就是最基本的负载均衡配置，打开 /usr/local/nginx/conf/ 目录下的 nginx.conf 配置文件，我们配置一个最简单的负载均衡方式，在配置文件中 http 模块里面也就是和 http 模块里面的 server 模块同级加上以下内容：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">upstream loadserver &#123;</span><br><span class="line">    server 192.168.1.110:10080;</span><br><span class="line">    server 192.168.1.111:10080;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>然后在 http 模块里面的 server 模块下面的 location 模块加上一行配置，如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">location &#x2F; &#123;</span><br><span class="line">    root   html;</span><br><span class="line">    index  index.html index.htm;</span><br><span class="line">    proxy_pass http:&#x2F;&#x2F;loadserver;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<p>部分配置文件截图如下：</p>
+<p><img src="http://images.rookiezhou.top/polling.png" alt="轮询策略配置"></p>
+<p>这样也就配置好了最基本的负载均衡，默认采用轮询的策略将请求分发给后台服务器，当我们访问 localhost:10080 这个地址时页面轮流的展示 192.168.1.110 和 192.168.1.111 这两台主机的 nginx 服务器的欢迎页面，这里为了区分这两个欢迎页面需要修改一下这两台主机的 nginx 服务器的欢迎页面信息，欢迎页面默认存放在 /usr/local/nginx/html/ 目录下的 index.html 页面。我们只要稍微修改一下这两台主机的 nginx 欢迎页面使得每次访问的页面都是不同的，便于我们区分访问的是哪台主机的 nginx 服务器。</p>
+<h2 id="加权轮询"><a href="#加权轮询" class="headerlink" title="加权轮询"></a>加权轮询</h2><p>加权轮询则是在第一种轮询的基础上对后台的每台服务赋予权重，服务器的权重比例越大，被分发到的概率也就越大，配置如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">upstream loadserver &#123;</span><br><span class="line">    server 192.168.1.110:10080 weight&#x3D;3;</span><br><span class="line">    server 192.168.1.111:10080 weight&#x3D;1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面只是给每个后台服务加上了一个权重比例，拿上面的配置举例：用户将会每访问三次 192.168.1.110 这个服务访问一次 192.168.1.111 这个服务。这种适合后台的各个服务的性能不一样，这时我们就可以将性能好的服务器权重设置大一些，减轻一些性能不怎么样的服务器的压力。</p>
+<h2 id="最少连接-least-conn"><a href="#最少连接-least-conn" class="headerlink" title="最少连接 least_conn"></a>最少连接 least_conn</h2><p>最少连接是每次请求都将请求分发给后台服务连接数最少的那台服务上，当然如果每台服务还配置了权重，那么这时会取连接数和权重比值最小的那台服务，如果连接数和权重的比值都相同的话就会采取轮询的方式进行分发，配置如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">upstream loadserver &#123;</span><br><span class="line">    least_conn;</span><br><span class="line">    server 192.168.1.110:10080;</span><br><span class="line">    server 192.168.1.111:10080;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面的配置只是加了一个调度策略 least_conn，其他和轮询的方式一样，当然你也可以给每台服务加上权重比例，分发时就会选择 conn / weight 值最小的那台服务，这种方式适合请求处理时间长短不一造成服务器过载的情况。</p>
+<h2 id="IP-哈希-ip-hash"><a href="#IP-哈希-ip-hash" class="headerlink" title="IP 哈希 ip_hash"></a>IP 哈希 ip_hash</h2><p>ip_hash 这种负载策略是根据客户端的 IP 地址的 hash 结果来进行分发，这样的话能够确保每个访客访问后端固定的一台服务器，这种情况对于需要保存用户的 session 信息的应用就很方便了，它避免了同一个用户访问到不同的服务器上产生 session 共享的问题。配置如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">upstream loadserver &#123;</span><br><span class="line">    ip_hash;</span><br><span class="line">    server 192.168.1.110:10080;</span><br><span class="line">    server 192.168.1.111:10080;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面的配置只是加了一个调度策略 ip_hash，其他也和轮询的方式一样，这里你也可以给每台服务加上权重比例，分发时在该客户端 IP 第一次访问时就会优先选择 weight 值最大的那台服务。</p>
+<h2 id="其他配置说明"><a href="#其他配置说明" class="headerlink" title="其他配置说明"></a>其他配置说明</h2><p>其实每个后台服务器的配置除了权重 weight 还有一些配置，比如说下面的配置：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">upstream loadserver &#123;</span><br><span class="line">    least_conn;</span><br><span class="line">    server 192.168.1.110:10080 weight&#x3D;5 ;</span><br><span class="line">    server 192.168.1.111:10080 weight&#x3D;1;</span><br><span class="line">    server 192.168.1.112:10080 weight&#x3D;1 max_fails&#x3D;3 fail_timeout&#x3D;30s;</span><br><span class="line">    server 192.168.1.113:10080 down;</span><br><span class="line">    server 192.168.1.114:10080 backup;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>配置说明：<br>1.weight 的值默认为1，weight 越大，服务器负载的权重就越大，访问的概率越高。<br>2.down 表示当前服务器暂时不参与负载。<br>3.backup 表示其它所有的非 backup 服务器 down 或者忙的时候才会请求 backup 服务器，所以这台服务器压力最轻，一般这台服务器当做是备用服务器。<br>3.max_fails 表示允许请求失败的次数，默认为 1，当超过最大次数时，返回proxy_next_upstream 模块定义错误。<br>4.fail_timeout 表示每次失败后暂停的时间。</p>
+<p>到这里就全部介绍完了 nginx 负载均衡内置的一些策略，还有第三方扩展的一些策略，未完待续………</p>
 ]]></content>
       <categories>
         <category>Nginx</category>
@@ -820,6 +820,63 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
       </categories>
   </entry>
   <entry>
+    <title>你还在习惯的使用 keys * 查看 redis 中的所有数据吗</title>
+    <url>/%E4%BD%A0%E8%BF%98%E5%9C%A8%E4%B9%A0%E6%83%AF%E7%9A%84%E4%BD%BF%E7%94%A8-keys-%E6%9F%A5%E7%9C%8B-redis-%E4%B8%AD%E7%9A%84%E6%89%80%E6%9C%89%E6%95%B0%E6%8D%AE%E5%90%97/</url>
+    <content><![CDATA[<p>redis 在我们的日常开发中其实还是用的比较多的，常用来做缓存或者存放一些热点数据，主要为了提高系统的响应速度。在我们平常使用中，我们可能都习惯的使用 keys * 命令来查询数据库中的数据存储情况。</p>
+<p>这时也许我们都是在开发环境执行，开发环境 redis 中的数据量不是很多，redis 也很快的能给我们响应。但是如果你要查询的 redis 中存储了非常大的数据量，这时候你还能愉快的使用这个命令吗？</p>
+<p>首先，我们来大概了解下 keys 命令是用来干嘛的，它是用来查找所有符合给定模式 pattern 的 key ，上面的 * 表示匹配所有数据，同时还有下面几种用法:</p>
+<a id="more"></a>
+<ul>
+<li>keys re?is 匹配 redis，recis</li>
+<li>keys re*is 匹配 redis, reddddis</li>
+<li>keys re[cd]is 匹配 redis，recis，不匹配 reais，reddis</li>
+</ul>
+<p>keys 命令的时间复杂度是 O(N)，N 是 redis 库中的数据量，也就是说这个命令的执行时间是随着库中的数据量增多呈正比的，数据量越大，执行时间越长。所以尽管这个命令的速度很快，但如果是一个数据量很大的库，还是会造成性能问题的。</p>
+<p>我之前就在一次项目上线演练时，当时在一个 redis 库中初始化一批数据，当时我为了验证数据库中是否已经初始化过了这些数据，我顺手就敲了一个 keys abc*，其中 abc 是我要初始化的这批数据的 key 前缀(当然不是真的就是 abc，这里是随便起的一个)。</p>
+<p>然后并没有像往常开发中一样很快给我响应，我立马就意识到不对了，这个 redis 库数据量很大，不能使用 keys 命令去查询，我随即立马按下 command + c 尝试终止，但其实已经没什么用了，因为 redis 已经在执行我刚才发送的命令，终端已经没响应，我记得我我当时还索性把终端都给关了，这纯属病急乱投医了。</p>
+<p>随后呢我另起一个终端，尝试连接 redis，看看刚才的命令是否执行完了，但不幸的是我连都连不上，连接命令敲完没反应，当时这会心里真的慌了。</p>
+<p>不过幸运的是这只是一次新系统正式上线前的演练，而且并没有用户在使用。至于为什么没有用户在用怎么有这么多数据在里面，那是因为在我初始化我这批数据之前，我同事已经将老系统中的数据迁移过来了。</p>
+<p>但我还是很慌的原因是我具体不知道老系统迁移过来有多少数据，只知道数据量很大，不知道要执行多久。然后虽然说那只是新系统正式上线前一次演练而已，但是我们这次上线是有很多流程，所以才有了这次演练。</p>
+<p>对于流程中的每个环节都要记录操作时间，下次正式上线时需要按之前演练上线的流程来执行，正式上线时如果某一环节出问题了，就要采取回滚流程进行回滚，下次上线要是因为我这个数据初始化环节出问题了，那这锅岂不背定了。</p>
+<p>所以说当时真的是慌的一匹，但最后还是过了两三分钟之后我重新连上了，此时应该是将我刚才的命令执行完了，随后我也不管里面是不是已经初始化了，直接初始化数据，大不了覆盖好了，反正 key 是相同的，因为这部分数据只有我的程序要用到，所以没什么问题。后面正式上线时有了演练的教训，也就没有出啥问题，也没有再作死去敲 keys 命令了。</p>
+<p>如果我们真的要在大数据量的 redis 库中查询匹配的数据怎么办呢？其实 redis 是有相应的替代命令的，就是 scan 命令，以及对应的数据类型的 sscan，hscan 和 zscan，他们都用于增量地迭代库中的元素。</p>
+<ul>
+<li>scan 命令用于迭代当前库中的所有 key</li>
+<li>sscan 命令用于迭代集合键中的元素</li>
+<li>hscan 命令用于哈希键中的键值对</li>
+<li>zscan 命令用于迭代有序集合中的元素(包括元素成员和元素分值)</li>
+</ul>
+<p>上面的命令都是支持增量式迭代，每次执行都只会返回少量元素，这些命令每次执行的时间复杂度是 O(1)，完整的一次迭代过程才是 O(N)，因此它是可以在生产环境中执行的，而不会像 keys 命令一样，如果正在处理的是一个大数据量的库，会阻塞 redis 服务很久。</p>
+<p>scan 命令它是一个基于游标的迭代器(cursor based iterator)，scan 命令每次被调用之后， 都会向用户返回一个新的游标， 用户在下次迭代时需要使用这个新游标作为 scan 命令的游标参数， 以此来延续之前的迭代过程。当 scan 命令的游标参数被设置为 0 时， 服务器将开始一次新的迭代， 而当服务器向用户返回值为 0 的游标时， 表示一次完整的迭代过程结束。</p>
+<p>scan 命令是迭代库中所有的 key，基本使用方式是: </p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">SCAN cursor [MATCH pattern] [COUNT count] </span><br></pre></td></tr></table></figure>
+
+<p>而 sscan 命令、 hscan 命令和 zscan 命令的第一个参数是一个数据库键:</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">SSCAN/HSCAN/ZSCAN key cursor [MATCH pattern] [COUNT count] </span><br></pre></td></tr></table></figure>
+
+<p>cursor 就是游标参数，初始我们可以设置 0，开始一次迭代过程，一次迭代后的返回值作为下次迭代的游标值，当我们看到 redis 的返回值是 0 时，意味着完整的迭代过程结束。</p>
+<p>看到这里你应该能发现，如果在迭代的中间过程中，redis 的数据发生了变化，那么我们得到的数据可能是不正确的，这是无法得到保证的。</p>
+<p>而 scan 命令只会给我们保证在整个遍历过程中，一直存在于数据集中的元素都会被遍历返回，也就是说，如果一个元素如果在遍历开始到结束都存在于要遍历的数据集中，那么这个元素肯定会在某一次迭代过程中得到返回。</p>
+<p>后面两个中括号中的参数是可选的，可通过 match 来指定只返回匹配对应模式的元素，而 count 可以指定每次迭代返回的元素最大数量，默认值是 10。</p>
+<p>但要注意虽然指定了返回的元素最大数量，这个 count 参数只是用户给 scan 迭代命令的一种提示，尽管这种提示在很多情况下是有效的，但也要注意不一定每次都是返回指定的数量，有可能会比指定的要多一些。</p>
+<p>对于 scan 以及其相关的 sscan，hscan，zscan 命令都会返回两个元素，第一个元素是下次迭代的初始游标，第二个元素是本次迭代返回的结果。</p>
+<ul>
+<li>scan 得到的结果是库中键元素 key</li>
+<li>sscan 得到的结果是集合中的成员</li>
+<li>hscan 得到的结果是键值对</li>
+<li>zscan 得到的结果是有序元素集合，集合中元素由一个成员和一个分值组成。</li>
+</ul>
+<p>上面就是 scan 命令的大体介绍，我是觉得这个命令其实很适合清理 redis 中无效数据，通过 scan 命令扫一遍 redis 库，很容易就做到数据清理的工作。</p>
+<p>后来想想那次小事故其实就是因为自己平时用 keys 命令用习惯了，也没多想不假思索随手就敲下去了。所以说我们在日常 redis 的使用中，不能只是简单的就想也不想的就直接 keys 命令敲下去，长期以往会出事故的，我还好不是在线上使用的系统中执行的这个命令，不然后果真的很严重。</p>
+<p>试想如果是在线上，在 redis 阻塞的那段时间，系统的访问请求继续打到 redis 服务器上，导致 redis 服务器 CPU 直接飙涨，很有可能服务器就直接宕机了，再进一步的话，程序无法从 redis 中获取数据，所有的请求都直接一下全到数据库去了，也有可能造成数据库直接挂了。</p>
+<p>所以说我们应该养成这样的习惯，在需要用 keys 查询 redis 中的数据时，脑海里先确认下当时的环境以及库中的数据量大小。</p>
+<p>当然 redis 不仅仅是只有 keys 这一个比较危险的命令，还有 hgetall，lrange，smembers，zrange 等命令，这些命令的时间复杂度都是 O(N)，使用这些命令都需要注意 N 的大小。当然其实线上对于 keys，flushdb，flushall 这几个命令最好是通过配置文件 redis.conf 来直接禁用它，以防万一。</p>
+]]></content>
+      <categories>
+        <category>redis</category>
+      </categories>
+  </entry>
+  <entry>
     <title>使用 Docker 运行 MySQL 服务</title>
     <url>/%E4%BD%BF%E7%94%A8-Docker-%E8%BF%90%E8%A1%8C-MySQL-%E6%9C%8D%E5%8A%A1/</url>
     <content><![CDATA[<p>对于 MySQL 数据库，我们基本上都用得到，在工作上有些情况下不太想连云上的库，比如说网络比较慢，或者我们只是刚开始开发，还没来得及在云上建立数据库，这时候在本地跑一下 MySQL 服务也许比较方便，但是呢 MySQL 安装下来占的内存还是比较大的，像我们不是经常连本地的库开发的在本地电脑安装一个 MySQL 确实有点浪费空间了，再加上可能本来笔记本电脑内存就不是非常富余的情况下再去安装，实在是有些肉疼。</p>
@@ -900,6 +957,97 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> ActivityStat <span class="title">findById</span><span class="params">(Long id)</span> </span>&#123;</span><br><span class="line">        String sql = <span class="string">&quot;select * from activity_stats where activity_id = ?&quot;</span>;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.jdbcTemplate.queryForObject(sql, <span class="keyword">new</span> Object[]&#123;id&#125;, (rs, i) -&gt; &#123;</span><br><span class="line">            ActivityStat activityStat = <span class="keyword">new</span> ActivityStat();</span><br><span class="line">            activityStat.setActivityId(rs.getLong(<span class="string">&quot;activity_id&quot;</span>));</span><br><span class="line">            activityStat.setTimesViewed(rs.getLong(<span class="string">&quot;times_viewed&quot;</span>));</span><br><span class="line">            activityStat.setWorksCount(rs.getLong(<span class="string">&quot;works_count&quot;</span>));</span><br><span class="line">            activityStat.setUserCount(rs.getLong(<span class="string">&quot;user_count&quot;</span>));</span><br><span class="line">            <span class="keyword">return</span> activityStat;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
 
 <p>这里其实就是一个坑，稍不注意就会觉得代码好像也没啥问题，怎么会报错呢，同样的对于 queryForList 方法也会有这个问题，如果我们使用指定返回类型的话也是只能查询单列结果，需要返回多列时也需要我们自定义 RowMapper，感兴趣的可以自己去试试看。</p>
+]]></content>
+      <categories>
+        <category>JdbcTemplate</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>关于批量插入的数据重复问题</title>
+    <url>/%E5%85%B3%E4%BA%8E%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5%E7%9A%84%E6%95%B0%E6%8D%AE%E9%87%8D%E5%A4%8D%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<p>在上一篇文章中我们谈到了数据库批量插入，如果你已经亲自实践过了的话你会发现有个问题，就是我们在第一次执行完测试之后，再次执行的话会报错，除非你删掉数据库中的数据再执行。</p>
+<p>那是因为 activity_stats 表中 activity_id 是表的主键，第二次执行的话就会因为主键重复而报错了，当然你也可以选择去掉这个主键的限制来进行测试。</p>
+<p>但真正在项目中可就不能这么做了，项目中我们可能就是想要 activity_id 字段作为主键，不允许插入重复数据。</p>
+<a id="more"></a>
+
+<p>虽然说一般情况下不会有重复的，但毕竟是一般情况下，对于特殊情况我们也是需要考虑的。比如说 excel 中就是因为运营人员粗心弄了多条相同的数据，或者再次将同样的 excel 文件拿来上传，这时候就会有问题了。</p>
+<p>所以对于这种情况我们需要做到兼容，尽量给用户好的体验，不然说因为几条重复的数据就让用户去修改再次上传。对于这种普通的数据，可能就需要系统自动去重了，当然如果是涉及到金钱方面的数据那还是需要人工再次确认过的。</p>
+<p>下面我们就讨论下 key 重复的几种不同处理方式:<br>1.忽略重复 key 的数据，由于主键或者唯一键重复的记录，数据库自动忽略，在 insert 后面加上 ignore 关键字。</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">ignore</span> <span class="keyword">into</span> activity_stats (activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>);</span><br></pre></td></tr></table></figure>
+<p>上面的 SQL 执行时，如果主键重复或者唯一键重复，会忽略掉新插入的数据，受影响行数为0，表数据不变，这是比较简单暴力的方式，但对于大部分情况下都是适用的，具体看业务情况而定。</p>
+<p>2.使用最新数据，<br>对于 key 重复的数据，我们希望插入最新的数据到数据库中。要做到这个有两种方式: 一种是对重复数据进行更新，另一种是先删掉旧数据，然后再插入新数据。</p>
+<p>先看第一种: ON DUPLICATE KEY UPDATE</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> activity_stats (activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>)</span><br><span class="line"><span class="keyword">ON</span> <span class="keyword">DUPLICATE</span> <span class="keyword">KEY</span> </span><br><span class="line"><span class="keyword">UPDATE</span> times_viewed = <span class="keyword">values</span>(times_viewed), works_count = <span class="keyword">values</span>(works_count), user_count = <span class="keyword">values</span>(user_count);</span><br></pre></td></tr></table></figure>
+<p>这种方式就是对于有重复的数据采取更新操作，要更新的字段跟在 UPDATE 关键字后面。</p>
+<p>这里要注意一个受影响的行数的问题:</p>
+<ul>
+<li>没有重复 key 数据，直接插入新数据，受影响的行数为 1。</li>
+<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据不一样，受影响的行数为 2(???)，这里可能有点不好理解为什么是 2，这里我们先暂时记下是 2，待会我会详细说明。</li>
+<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据一致，受影响的行数为 1(???)，这个可能也不是很好理解，同样暂时先记下，马上为你娓娓道来。</li>
+</ul>
+<p>好了，现在看上面有两个地方打上了问号，这两个地方都是和我们正常所想的有点不一样。先看第一个打了问号的地方，也就是上面的第二点，按我们所想，key 重复，然后进行数据更新，这里只是进行了更新操作，受影响的行数应该是 1 才对，刚开始我对这个也是不太理解，后来通过查资料发现在 MySQL 的文档中关于 ON DUPLICATE KEY UPDATE 的使用中有下面这样一句话:<br>文档链接:<br><a href="https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html">https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html</a></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">With ON DUPLICATE KEY UPDATE, the affected-rows value per row is 1 if the row is inserted as a new row, 2 if an existing row is updated, and 0 if an existing row is set to its current values.If you specify the CLIENT_FOUND_ROWS flag to the mysql_real_connect() C API function when connecting to mysqld, the affected-rows value is 1 (not 0) if an existing row is set to its current values.</span><br></pre></td></tr></table></figure>
+
+<p>上面这句话前半句就能为我解答为什么我们在第二点中提到的疑惑，前半句的大概意思就是:<br>对于 ON DUPLICATE KEY UPDATE 的使用，如果没有 key 重复的新数据插入，每行受影响的行数是 1，如果有 key 重复的新数据更新，返回受影响的行数是 2，如果有 key 重复的数据并且存在的旧数据和要更新的数据一致，受影响的行数是 0。</p>
+<p>看到这里我们应该就能明白为什么受影响的行数是 2 了，我们可以理解为是 MySQL 为了在 ON DUPLICATE KEY UPDATE 的使用中区分插入和更新，所以对于插入返回 1，更新返回 2。</p>
+<p>但是不是说 “如果是有 key 重复的数据并且存在的旧数据和要更新的数据一致，受影响的行数是 0” 吗？可是我们在上面第三点中 MySQL 返回的受影响的行数是 1，而这也正是我们第三点所疑惑的地方，我们再去看上面那句话的后半句，大概意思是:<br>在连接 mysqld 的时候如果你为 mysql_real_connect() API 函数指定了 CLIENT_FOUND_ROWS 标志，那么对于已经存在的旧数据和要更新的数据一致时，受影响的数值为 1 而不是 0。</p>
+<p>对于第二个疑问，我们也大概明白为什么受影响的行数是 1 了，是因为我们使用的 MySQL 指定了 CLIENT_FOUND_ROWS 标志，而 mysql_real_connect 函数指定 CLIENT_FOUND_ROWS 标志的意思就是:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">CLIENT_FOUND_ROWS: Return the number of found (matched) rows, not the number of changed rows.</span><br></pre></td></tr></table></figure>
+<p>这段文字在上面文档链接中可以点击 mysql_real_connect 跳转到对 mysql_real_connect 函数的描述页面，里面有 CLIENT_FOUND_ROWS 相应介绍。感兴趣的可以去研究研究。</p>
+<hr>
+<p>再回到使用最新数据方式上，上面已经描述了对 key 重复的数据进行更新的方式，接下来我们看第二种:<br>对于 key 重复，先删掉旧数据，然后再插入新数据:  REPLACE INTO </p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">REPLACE</span> <span class="keyword">INTO</span> activity_stats (activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>);</span><br></pre></td></tr></table></figure>
+
+<p>这种方式就是如果没有重复 key，直接插入，效果和 insert into 一样，但如果有重复 key，它会先删除旧数据，再插入新数据。同样这种方式受影响的行数也有以下几种情况:</p>
+<ul>
+<li>没有重复 key 数据，直接插入新数据，受影响的行数为 1。</li>
+<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据不一样，受影响的行数为 2。这个很好理解，先删除旧数据，然后再插入新数据，所以受影响的行数为 2。</li>
+<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据一致，受影响的行数为 1。这里应该是数据没有发生变化，至于返回 1，我的理解是和上面一样的，返回匹配到的行数，并不是发生改变的行数(暂时没找到有关文档描述)。</li>
+</ul>
+<p>关于重复 key 数据的处理方式主要有上面提到的三种，忽略重复数据的 INSERT IGNORE，使用更新的方式插入最新数据的 ON DUPLICATE KEY UPDATE，还有先删除再插入最新数据的 REPLACE INTO。</p>
+<p>在我们使用这三种方式来避免插入重复数据的过程中，我们还需要注意下面几个问题:<br>首先，使用这三种方式的前提都是表中需要存在主键冲突或唯一键冲突，不然这三种都跟直接 INSERT INTO 没什么区别。</p>
+<p>第二，要注意存在多个键冲突(插入的数据既可能存在主键冲突，也可能存在其他唯一键冲突或者存在多个唯一键冲突)的情况，在这种情况下使用可能会出现其他结果(可以自己测试看看)，所以这种情况下不太建议使用。</p>
+<p>第三，这点比较重要，上面我的 activity_stats 表是有一个 activity_id 字段作为主键，这是存在主键冲突的情况。但如果我把 activity_id 字段改成唯一键并且新增一个字段 id 作为主键自增长，插入语句不变，这里因为 id 是自增长的，不存在冲突，所以这里是满足单一键冲突的情况，但是这里有个坑要注意，这种情况下使用上面三种方式都会产生主键 id 自增长不连续的问题。</p>
+<p>目前的 SQL 语句是这样的: </p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">ignore</span> <span class="keyword">into</span> activity_stat (<span class="keyword">id</span>, activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="literal">null</span>, <span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>);</span><br><span class="line">或者</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>对于 INSERT IGNORE 和 ON DUPLICATE KEY UPDATE，在存在 unique key 重复时，前者虽然重复的记录被忽略了没有执行插入操作，但是 id 还是会 +1。而后者是在 key 重复时执行更新操作，但 id 同样也会 +1，也就是说在存在 unique key 重复的情况下这两种方式不管有没有插入数据，自增长 id 都会增加。</p>
+<p>这样的话在主从库的场景下就会出现主从的 auto_increment 不一致，因为 slave 并不会同步 master 的 auto_increment，一旦当前 master 挂了，任意一个 slave 被选举为 master，再次执行 insert 语句就可能导致主键冲突。</p>
+<p>至于这里为什么会出现没有插入记录 auto_increment 却依然 +1 的情况，和 innodb_autoinc_lock_mode 的值有关。可以通过下面的 SQL 语句查看:</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> @@innodb_autoinc_lock_mode;</span><br></pre></td></tr></table></figure>
+
+<p>它的值可能是 0，1，2 其中一种，默认是 1，具体各个值的特征可以参看官方文档中的描述，下面是文档地址:<br><a href="https://dev.mysql.com/doc/refman/5.7/en/innodb-auto-increment-handling.html#innodb-auto-increment-lock-modes">https://dev.mysql.com/doc/refman/5.7/en/innodb-auto-increment-handling.html#innodb-auto-increment-lock-modes</a></p>
+<p>而对于 REPLACE INTO，那是因为在存在 unique key 重复时，会先删除再插入，执行了插入操作，id 肯定会增加。问题就在于重新插入了一条数据 id 发生了变化。如果别的表关联了这个表的主键 id 的话就会出现数据查找不到的情况。</p>
+<p>总之就是对于这三种避免插入重复数据的方式，如果是由于主键冲突的情况，基本上没什么问题，但如果是唯一键冲突的情况，都会导致 master 和 slave 的 auto_increment 不一致的问题，一旦主从的 auto_increment 不一致(这里是 master 的 auto_increment 要大于 slave)，只要 master 出现问题，任意一个 slave 升级成 master，由于当前新的 master 的 auto_increment 是小于数据中的 id 的值，所以再进行插入时就可能发生主键冲突。</p>
+]]></content>
+      <categories>
+        <category>JdbcTemplate</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>使用 JdbcTemplate 的 queryForObject 方法时需注意的地方(一)</title>
+    <url>/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9/</url>
+    <content><![CDATA[<p>我们应该都使用过 JdbcTemplate 来查询数据库，一般用在配置了多数据源的情况下，在一个服务里面需要简单查询多个数据库的数据，这时通过 JdbcTemplate 来构建 SQL 查询数据库往往比较方便快捷些，不需要用封装的 repository 那一套东西。</p>
+<p>举一个简单的例子，比如查询一个活动的浏览量。</p>
+<a id="more"></a>
+
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Long <span class="title">findByActivityId</span><span class="params">(String activityId)</span> </span>&#123;</span><br><span class="line">   String selectSql = <span class="string">&quot;select times_viewed from activity_stats where activity_id = ?&quot;</span>;</span><br><span class="line">   Long timesViewed = <span class="keyword">this</span>.jdbcTemplate.queryForObject(selectSql, Long.class,</span><br><span class="line">            activityId);</span><br><span class="line">   <span class="keyword">return</span> timesViewed;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>其实我们咋一看上面这段代码，好像也没多大问题，只是一个普通的查询而已。在有数据的情况下，经过测试，程序也运行正常。但是如果你把你要查询的那个活动 id 的那条数据删除，这时再去测试会发现程序抛异常了，抛的异常类是 EmptyResultDataAccessException，从类的名字我们就可以看出，查询结果为空异常。</p>
+<p>这里为什么会产生这种情况呢，我们深入查看下源码就知道了。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> &lt;T&gt; <span class="function">T <span class="title">queryForObject</span><span class="params">(String sql, SqlParameterSource paramSource, RowMapper&lt;T&gt; rowMapper)</span></span></span><br><span class="line"><span class="function">            <span class="keyword">throws</span> DataAccessException </span>&#123;</span><br><span class="line"></span><br><span class="line">        List&lt;T&gt; results = getJdbcOperations().query(getPreparedStatementCreator(sql, paramSource), rowMapper);</span><br><span class="line">        <span class="keyword">return</span> DataAccessUtils.nullableSingleResult(results);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们点进去查看 queryForObject 的方法体可以看到，在返回查询结果前调用了 DataAccessUtils 类的 nullableSingleResult 方法，那么再继续点进去查看 nullableSingleResult 的方法体:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; <span class="function">T <span class="title">nullableSingleResult</span><span class="params">(<span class="meta">@Nullable</span> Collection&lt;T&gt; results)</span> <span class="keyword">throws</span> IncorrectResultSizeDataAccessException </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (CollectionUtils.isEmpty(results)) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> EmptyResultDataAccessException(<span class="number">1</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (results.size() &gt; <span class="number">1</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IncorrectResultSizeDataAccessException(<span class="number">1</span>, results.size());</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> results.iterator().next();</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从 nullableSingleResult 的方法体中可以看到，当查询的结果为空的时候，手动抛了一个 EmptyResultDataAccessException 异常，同时我们还可以看到当查询结果记录数大于 1 时，手动抛了一个 IncorrectResultSizeDataAccessException 异常，这时候我们就要注意了，如果当前我们要执行的 SQL 的查询结果可能为空，或者结果集可能大于 1 时就需要根据我们的业务需求来进行手动处理这两个异常，不然程序会由于异常无法进行下去。</p>
+<p>在这里个人觉得结果大于 1 的情况抛出异常还能理解，但是结果为空，其实在很多情况下我们都是希望代码正常运行下去，而不是直接抛出异常，有可能我们还有别的业务需要执行。所以不太清楚这里为什么需要做这个处理。</p>
+<p>对于结果为空时抛出异常的情况，处理方式也很简单，在调用 queryForObject 方法的地方用 try catch 包起来，对 EmptyResultDataAccessException 异常进行捕获，同时忽略异常信息就好。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Long <span class="title">queryByActivityId</span><span class="params">(String activityId)</span> </span>&#123;</span><br><span class="line">    String selectSql = <span class="string">&quot;select times_viewed from activity_stats where activity_id = ?&quot;</span>;</span><br><span class="line">    Long timesViewed = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        timesViewed = <span class="keyword">this</span>.jdbcTemplate.queryForObject(selectSql, Long.class,</span><br><span class="line">                activityId);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (EmptyResultDataAccessException ignored) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> timesViewed;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>同理，如果对结果集可能大于 1 的情况也要特殊处理的话，我们就直接捕获 IncorrectResultSizeDataAccessException 异常就好，因为你可以看到 EmptyResultDataAccessException 是继承 IncorrectResultSizeDataAccessException 的。所以就直接捕获 IncorrectResultSizeDataAccessException 就好。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Long <span class="title">queryByActivityId</span><span class="params">(String activityId)</span> </span>&#123;</span><br><span class="line">    String selectSql = <span class="string">&quot;select times_viewed from activity_stats where activity_id = ?&quot;</span>;</span><br><span class="line">    Long timesViewed = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        timesViewed = <span class="keyword">this</span>.jdbcTemplate.queryForObject(selectSql, Long.class,</span><br><span class="line">                activityId);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (IncorrectResultSizeDataAccessException ignored) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> timesViewed;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里再提下 JdbcTemplate 和 NamedParmeterJdbcTemplate 的主要区别:<br>对于 JdbcTemplate，sql 的查询条件参数是使用占位符 ? 表示，受到了顺序的限制，如果是需要多个参数，在传入数组参数的时候，必须按照占位符的顺序传入参数，一旦传入的顺序错误就可能会造成非预期的结果。</p>
+<p>而 NamedParmeterJdbcTemplate，在 sprintJdbc 框架中，通过这个 NameParameterJdbcTemplate 使用具名参数的方式来绑定 Sql 参数。具名参数的格式为 “ :parameterName”，多个具名参数通过 Map key value 的方式传入，key 和 parameterName 保持一致，这种情况下就和参数的顺序没有关系了，主要是通过 Map 的 key 来取值。</p>
 ]]></content>
       <categories>
         <category>JdbcTemplate</category>
@@ -1035,135 +1183,6 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 ]]></content>
       <categories>
         <category>Markdown</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>使用 JdbcTemplate 的 queryForObject 方法时需注意的地方(一)</title>
-    <url>/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9/</url>
-    <content><![CDATA[<p>我们应该都使用过 JdbcTemplate 来查询数据库，一般用在配置了多数据源的情况下，在一个服务里面需要简单查询多个数据库的数据，这时通过 JdbcTemplate 来构建 SQL 查询数据库往往比较方便快捷些，不需要用封装的 repository 那一套东西。</p>
-<p>举一个简单的例子，比如查询一个活动的浏览量。</p>
-<a id="more"></a>
-
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Long <span class="title">findByActivityId</span><span class="params">(String activityId)</span> </span>&#123;</span><br><span class="line">   String selectSql = <span class="string">&quot;select times_viewed from activity_stats where activity_id = ?&quot;</span>;</span><br><span class="line">   Long timesViewed = <span class="keyword">this</span>.jdbcTemplate.queryForObject(selectSql, Long.class,</span><br><span class="line">            activityId);</span><br><span class="line">   <span class="keyword">return</span> timesViewed;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>其实我们咋一看上面这段代码，好像也没多大问题，只是一个普通的查询而已。在有数据的情况下，经过测试，程序也运行正常。但是如果你把你要查询的那个活动 id 的那条数据删除，这时再去测试会发现程序抛异常了，抛的异常类是 EmptyResultDataAccessException，从类的名字我们就可以看出，查询结果为空异常。</p>
-<p>这里为什么会产生这种情况呢，我们深入查看下源码就知道了。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> &lt;T&gt; <span class="function">T <span class="title">queryForObject</span><span class="params">(String sql, SqlParameterSource paramSource, RowMapper&lt;T&gt; rowMapper)</span></span></span><br><span class="line"><span class="function">            <span class="keyword">throws</span> DataAccessException </span>&#123;</span><br><span class="line"></span><br><span class="line">        List&lt;T&gt; results = getJdbcOperations().query(getPreparedStatementCreator(sql, paramSource), rowMapper);</span><br><span class="line">        <span class="keyword">return</span> DataAccessUtils.nullableSingleResult(results);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>我们点进去查看 queryForObject 的方法体可以看到，在返回查询结果前调用了 DataAccessUtils 类的 nullableSingleResult 方法，那么再继续点进去查看 nullableSingleResult 的方法体:</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> &lt;T&gt; <span class="function">T <span class="title">nullableSingleResult</span><span class="params">(<span class="meta">@Nullable</span> Collection&lt;T&gt; results)</span> <span class="keyword">throws</span> IncorrectResultSizeDataAccessException </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (CollectionUtils.isEmpty(results)) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> EmptyResultDataAccessException(<span class="number">1</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (results.size() &gt; <span class="number">1</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IncorrectResultSizeDataAccessException(<span class="number">1</span>, results.size());</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> results.iterator().next();</span><br><span class="line">        &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>从 nullableSingleResult 的方法体中可以看到，当查询的结果为空的时候，手动抛了一个 EmptyResultDataAccessException 异常，同时我们还可以看到当查询结果记录数大于 1 时，手动抛了一个 IncorrectResultSizeDataAccessException 异常，这时候我们就要注意了，如果当前我们要执行的 SQL 的查询结果可能为空，或者结果集可能大于 1 时就需要根据我们的业务需求来进行手动处理这两个异常，不然程序会由于异常无法进行下去。</p>
-<p>在这里个人觉得结果大于 1 的情况抛出异常还能理解，但是结果为空，其实在很多情况下我们都是希望代码正常运行下去，而不是直接抛出异常，有可能我们还有别的业务需要执行。所以不太清楚这里为什么需要做这个处理。</p>
-<p>对于结果为空时抛出异常的情况，处理方式也很简单，在调用 queryForObject 方法的地方用 try catch 包起来，对 EmptyResultDataAccessException 异常进行捕获，同时忽略异常信息就好。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Long <span class="title">queryByActivityId</span><span class="params">(String activityId)</span> </span>&#123;</span><br><span class="line">    String selectSql = <span class="string">&quot;select times_viewed from activity_stats where activity_id = ?&quot;</span>;</span><br><span class="line">    Long timesViewed = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        timesViewed = <span class="keyword">this</span>.jdbcTemplate.queryForObject(selectSql, Long.class,</span><br><span class="line">                activityId);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (EmptyResultDataAccessException ignored) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> timesViewed;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>同理，如果对结果集可能大于 1 的情况也要特殊处理的话，我们就直接捕获 IncorrectResultSizeDataAccessException 异常就好，因为你可以看到 EmptyResultDataAccessException 是继承 IncorrectResultSizeDataAccessException 的。所以就直接捕获 IncorrectResultSizeDataAccessException 就好。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Long <span class="title">queryByActivityId</span><span class="params">(String activityId)</span> </span>&#123;</span><br><span class="line">    String selectSql = <span class="string">&quot;select times_viewed from activity_stats where activity_id = ?&quot;</span>;</span><br><span class="line">    Long timesViewed = <span class="keyword">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        timesViewed = <span class="keyword">this</span>.jdbcTemplate.queryForObject(selectSql, Long.class,</span><br><span class="line">                activityId);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">catch</span> (IncorrectResultSizeDataAccessException ignored) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> timesViewed;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>这里再提下 JdbcTemplate 和 NamedParmeterJdbcTemplate 的主要区别:<br>对于 JdbcTemplate，sql 的查询条件参数是使用占位符 ? 表示，受到了顺序的限制，如果是需要多个参数，在传入数组参数的时候，必须按照占位符的顺序传入参数，一旦传入的顺序错误就可能会造成非预期的结果。</p>
-<p>而 NamedParmeterJdbcTemplate，在 sprintJdbc 框架中，通过这个 NameParameterJdbcTemplate 使用具名参数的方式来绑定 Sql 参数。具名参数的格式为 “ :parameterName”，多个具名参数通过 Map key value 的方式传入，key 和 parameterName 保持一致，这种情况下就和参数的顺序没有关系了，主要是通过 Map 的 key 来取值。</p>
-]]></content>
-      <categories>
-        <category>JdbcTemplate</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>关于批量插入的数据重复问题</title>
-    <url>/%E5%85%B3%E4%BA%8E%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5%E7%9A%84%E6%95%B0%E6%8D%AE%E9%87%8D%E5%A4%8D%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<p>在上一篇文章中我们谈到了数据库批量插入，如果你已经亲自实践过了的话你会发现有个问题，就是我们在第一次执行完测试之后，再次执行的话会报错，除非你删掉数据库中的数据再执行。</p>
-<p>那是因为 activity_stats 表中 activity_id 是表的主键，第二次执行的话就会因为主键重复而报错了，当然你也可以选择去掉这个主键的限制来进行测试。</p>
-<p>但真正在项目中可就不能这么做了，项目中我们可能就是想要 activity_id 字段作为主键，不允许插入重复数据。</p>
-<a id="more"></a>
-
-<p>虽然说一般情况下不会有重复的，但毕竟是一般情况下，对于特殊情况我们也是需要考虑的。比如说 excel 中就是因为运营人员粗心弄了多条相同的数据，或者再次将同样的 excel 文件拿来上传，这时候就会有问题了。</p>
-<p>所以对于这种情况我们需要做到兼容，尽量给用户好的体验，不然说因为几条重复的数据就让用户去修改再次上传。对于这种普通的数据，可能就需要系统自动去重了，当然如果是涉及到金钱方面的数据那还是需要人工再次确认过的。</p>
-<p>下面我们就讨论下 key 重复的几种不同处理方式:<br>1.忽略重复 key 的数据，由于主键或者唯一键重复的记录，数据库自动忽略，在 insert 后面加上 ignore 关键字。</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">ignore</span> <span class="keyword">into</span> activity_stats (activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>);</span><br></pre></td></tr></table></figure>
-<p>上面的 SQL 执行时，如果主键重复或者唯一键重复，会忽略掉新插入的数据，受影响行数为0，表数据不变，这是比较简单暴力的方式，但对于大部分情况下都是适用的，具体看业务情况而定。</p>
-<p>2.使用最新数据，<br>对于 key 重复的数据，我们希望插入最新的数据到数据库中。要做到这个有两种方式: 一种是对重复数据进行更新，另一种是先删掉旧数据，然后再插入新数据。</p>
-<p>先看第一种: ON DUPLICATE KEY UPDATE</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> activity_stats (activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>)</span><br><span class="line"><span class="keyword">ON</span> <span class="keyword">DUPLICATE</span> <span class="keyword">KEY</span> </span><br><span class="line"><span class="keyword">UPDATE</span> times_viewed = <span class="keyword">values</span>(times_viewed), works_count = <span class="keyword">values</span>(works_count), user_count = <span class="keyword">values</span>(user_count);</span><br></pre></td></tr></table></figure>
-<p>这种方式就是对于有重复的数据采取更新操作，要更新的字段跟在 UPDATE 关键字后面。</p>
-<p>这里要注意一个受影响的行数的问题:</p>
-<ul>
-<li>没有重复 key 数据，直接插入新数据，受影响的行数为 1。</li>
-<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据不一样，受影响的行数为 2(???)，这里可能有点不好理解为什么是 2，这里我们先暂时记下是 2，待会我会详细说明。</li>
-<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据一致，受影响的行数为 1(???)，这个可能也不是很好理解，同样暂时先记下，马上为你娓娓道来。</li>
-</ul>
-<p>好了，现在看上面有两个地方打上了问号，这两个地方都是和我们正常所想的有点不一样。先看第一个打了问号的地方，也就是上面的第二点，按我们所想，key 重复，然后进行数据更新，这里只是进行了更新操作，受影响的行数应该是 1 才对，刚开始我对这个也是不太理解，后来通过查资料发现在 MySQL 的文档中关于 ON DUPLICATE KEY UPDATE 的使用中有下面这样一句话:<br>文档链接:<br><a href="https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html">https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html</a></p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">With ON DUPLICATE KEY UPDATE, the affected-rows value per row is 1 if the row is inserted as a new row, 2 if an existing row is updated, and 0 if an existing row is set to its current values.If you specify the CLIENT_FOUND_ROWS flag to the mysql_real_connect() C API function when connecting to mysqld, the affected-rows value is 1 (not 0) if an existing row is set to its current values.</span><br></pre></td></tr></table></figure>
-
-<p>上面这句话前半句就能为我解答为什么我们在第二点中提到的疑惑，前半句的大概意思就是:<br>对于 ON DUPLICATE KEY UPDATE 的使用，如果没有 key 重复的新数据插入，每行受影响的行数是 1，如果有 key 重复的新数据更新，返回受影响的行数是 2，如果有 key 重复的数据并且存在的旧数据和要更新的数据一致，受影响的行数是 0。</p>
-<p>看到这里我们应该就能明白为什么受影响的行数是 2 了，我们可以理解为是 MySQL 为了在 ON DUPLICATE KEY UPDATE 的使用中区分插入和更新，所以对于插入返回 1，更新返回 2。</p>
-<p>但是不是说 “如果是有 key 重复的数据并且存在的旧数据和要更新的数据一致，受影响的行数是 0” 吗？可是我们在上面第三点中 MySQL 返回的受影响的行数是 1，而这也正是我们第三点所疑惑的地方，我们再去看上面那句话的后半句，大概意思是:<br>在连接 mysqld 的时候如果你为 mysql_real_connect() API 函数指定了 CLIENT_FOUND_ROWS 标志，那么对于已经存在的旧数据和要更新的数据一致时，受影响的数值为 1 而不是 0。</p>
-<p>对于第二个疑问，我们也大概明白为什么受影响的行数是 1 了，是因为我们使用的 MySQL 指定了 CLIENT_FOUND_ROWS 标志，而 mysql_real_connect 函数指定 CLIENT_FOUND_ROWS 标志的意思就是:</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">CLIENT_FOUND_ROWS: Return the number of found (matched) rows, not the number of changed rows.</span><br></pre></td></tr></table></figure>
-<p>这段文字在上面文档链接中可以点击 mysql_real_connect 跳转到对 mysql_real_connect 函数的描述页面，里面有 CLIENT_FOUND_ROWS 相应介绍。感兴趣的可以去研究研究。</p>
-<hr>
-<p>再回到使用最新数据方式上，上面已经描述了对 key 重复的数据进行更新的方式，接下来我们看第二种:<br>对于 key 重复，先删掉旧数据，然后再插入新数据:  REPLACE INTO </p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">REPLACE</span> <span class="keyword">INTO</span> activity_stats (activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>);</span><br></pre></td></tr></table></figure>
-
-<p>这种方式就是如果没有重复 key，直接插入，效果和 insert into 一样，但如果有重复 key，它会先删除旧数据，再插入新数据。同样这种方式受影响的行数也有以下几种情况:</p>
-<ul>
-<li>没有重复 key 数据，直接插入新数据，受影响的行数为 1。</li>
-<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据不一样，受影响的行数为 2。这个很好理解，先删除旧数据，然后再插入新数据，所以受影响的行数为 2。</li>
-<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据一致，受影响的行数为 1。这里应该是数据没有发生变化，至于返回 1，我的理解是和上面一样的，返回匹配到的行数，并不是发生改变的行数(暂时没找到有关文档描述)。</li>
-</ul>
-<p>关于重复 key 数据的处理方式主要有上面提到的三种，忽略重复数据的 INSERT IGNORE，使用更新的方式插入最新数据的 ON DUPLICATE KEY UPDATE，还有先删除再插入最新数据的 REPLACE INTO。</p>
-<p>在我们使用这三种方式来避免插入重复数据的过程中，我们还需要注意下面几个问题:<br>首先，使用这三种方式的前提都是表中需要存在主键冲突或唯一键冲突，不然这三种都跟直接 INSERT INTO 没什么区别。</p>
-<p>第二，要注意存在多个键冲突(插入的数据既可能存在主键冲突，也可能存在其他唯一键冲突或者存在多个唯一键冲突)的情况，在这种情况下使用可能会出现其他结果(可以自己测试看看)，所以这种情况下不太建议使用。</p>
-<p>第三，这点比较重要，上面我的 activity_stats 表是有一个 activity_id 字段作为主键，这是存在主键冲突的情况。但如果我把 activity_id 字段改成唯一键并且新增一个字段 id 作为主键自增长，插入语句不变，这里因为 id 是自增长的，不存在冲突，所以这里是满足单一键冲突的情况，但是这里有个坑要注意，这种情况下使用上面三种方式都会产生主键 id 自增长不连续的问题。</p>
-<p>目前的 SQL 语句是这样的: </p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">ignore</span> <span class="keyword">into</span> activity_stat (<span class="keyword">id</span>, activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="literal">null</span>, <span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>);</span><br><span class="line">或者</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>对于 INSERT IGNORE 和 ON DUPLICATE KEY UPDATE，在存在 unique key 重复时，前者虽然重复的记录被忽略了没有执行插入操作，但是 id 还是会 +1。而后者是在 key 重复时执行更新操作，但 id 同样也会 +1，也就是说在存在 unique key 重复的情况下这两种方式不管有没有插入数据，自增长 id 都会增加。</p>
-<p>这样的话在主从库的场景下就会出现主从的 auto_increment 不一致，因为 slave 并不会同步 master 的 auto_increment，一旦当前 master 挂了，任意一个 slave 被选举为 master，再次执行 insert 语句就可能导致主键冲突。</p>
-<p>至于这里为什么会出现没有插入记录 auto_increment 却依然 +1 的情况，和 innodb_autoinc_lock_mode 的值有关。可以通过下面的 SQL 语句查看:</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> @@innodb_autoinc_lock_mode;</span><br></pre></td></tr></table></figure>
-
-<p>它的值可能是 0，1，2 其中一种，默认是 1，具体各个值的特征可以参看官方文档中的描述，下面是文档地址:<br><a href="https://dev.mysql.com/doc/refman/5.7/en/innodb-auto-increment-handling.html#innodb-auto-increment-lock-modes">https://dev.mysql.com/doc/refman/5.7/en/innodb-auto-increment-handling.html#innodb-auto-increment-lock-modes</a></p>
-<p>而对于 REPLACE INTO，那是因为在存在 unique key 重复时，会先删除再插入，执行了插入操作，id 肯定会增加。问题就在于重新插入了一条数据 id 发生了变化。如果别的表关联了这个表的主键 id 的话就会出现数据查找不到的情况。</p>
-<p>总之就是对于这三种避免插入重复数据的方式，如果是由于主键冲突的情况，基本上没什么问题，但如果是唯一键冲突的情况，都会导致 master 和 slave 的 auto_increment 不一致的问题，一旦主从的 auto_increment 不一致(这里是 master 的 auto_increment 要大于 slave)，只要 master 出现问题，任意一个 slave 升级成 master，由于当前新的 master 的 auto_increment 是小于数据中的 id 的值，所以再进行插入时就可能发生主键冲突。</p>
-]]></content>
-      <categories>
-        <category>JdbcTemplate</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>极力推荐的博文排版指南</title>
-    <url>/%E6%9E%81%E5%8A%9B%E6%8E%A8%E8%8D%90%E7%9A%84%E5%8D%9A%E6%96%87%E6%8E%92%E7%89%88%E6%8C%87%E5%8D%97/</url>
-    <content><![CDATA[<p>作为程序员来说，养成写博客的习惯真的是一件值得去做的事，尽管刚开始可能没有那么高质量的知识输出，但是不是有这样一句话吗？「知识的输入应转化为输出」，也就是说你应该把你所学到的都转化为输出，只有这样你才能更好的掌握你所学的知识，并且在这个过程中你也会对你所学的知识点进行很好的补充。既然要写博文，是不是刚开始就随便写写呢？当然不是，一篇排版好内容不是很好的博文相比于内容好排版很乱的博文能够让人更乐于看下去，尤其是那些对代码有洁癖的程序员我相信你更看不下去，那么以下便是我极力推荐的博客排版指南：</p>
-<a id="more"></a>
-
-<h3 id="空格的使用"><a href="#空格的使用" class="headerlink" title="空格的使用"></a>空格的使用</h3><p>「有研究显示，打字的时候不喜欢在中文和英文之间加空格的人，感情路都走得很辛苦，有七成的比例会在 34 岁的时候跟自己不爱的人结婚，而其余三成的人最后只能把遗产留给自己的猫。毕竟爱情跟书写都需要适时地留白。」</p>
-<ol>
-<li><p>中英文之间加空格<br>eg. 相信每个程序员都会去全球最大的同性交友网站 GitHub 上逛逛。</p>
-</li>
-<li><p>中文和数字之间加空格<br>eg. 那些排版很乱的博文估计你连 1 分钟都看不下去。</p>
-</li>
-<li><p>数字和单位之间不加空格<br>eg. 现在的安卓手机运行内存没有 6G 都装不了几个应用了。<br>eg. 今天的气温又超过了 40°。<br>eg. 之前买的基金昨天一天跌了 5%。</p>
-</li>
-<li><p>推荐在链接前后加一个空格<br>eg.  我的公众号和博客名称都是 rookiezhou，搜索 rookiezhou 关注我，点击这里 <a href="http://www.rookiezhou.top/">rookiezhou</a> 访问个人博客。</p>
-</li>
-</ol>
-<h3 id="标点符号的细节"><a href="#标点符号的细节" class="headerlink" title="标点符号的细节"></a>标点符号的细节</h3><ol>
-<li><p>不用为了夸张重复使用标点符号<br>eg. 今年法国夺冠了，华帝刚开始打的一手好牌到最后却变成了一副烂牌，你敢信吗？</p>
-</li>
-<li><p>中文段落中尽量使用中文标点符号<br>eg. 一篇好的博文绝对离不开好的排版，所以这篇博文应该算是好文了吧。</p>
-</li>
-<li><p>推荐将引号换成直角引号<br>eg. 你竟然没看过「Java 编程思想」这本书。</p>
-</li>
-<li><p>推荐引号中还有引号替换成直角双引号<br>eg. 经常有人带着疑惑的目光对我说「你竟然没看过『Java 编程思想』这本书？」</p>
-</li>
-<li><p>完整的英文整句使用英文标点符号<br>eg. 引用乔布斯说的那句话：「Stay hungry, stay foolish.」</p>
-</li>
-</ol>
-<h3 id="专有名词大小写尽量规范"><a href="#专有名词大小写尽量规范" class="headerlink" title="专有名词大小写尽量规范"></a>专有名词大小写尽量规范</h3><p>eg. Java、MySQL 都是后端开发人员必须要会的，当然也要会一些前端的技术，比如说：HTML5、CSS、JavaScript、jQuery。</p>
-<p>还有就是对于一些博文可能存在一篇博文下来就只有一段，看起来很紧凑，如果说在每写完一个知识点隔开一行看起来是不是会更好看些呢，这样一来对于我们从小养成的每一段首行空两格的习惯是不是也可以改了呢，其实你去注意一下那些排版比较好的博文，应该大部分都是这么做的，当然这取决于个人，不喜勿喷。</p>
-<p>参考：</p>
-<p><a href="https://www.jianshu.com/p/538faa30b17d">https://www.jianshu.com/p/538faa30b17d</a><br><a href="https://github.com/mzlogin/chinese-copywriting-guidelines">https://github.com/mzlogin/chinese-copywriting-guidelines</a></p>
-]]></content>
-      <categories>
-        <category>写作</category>
       </categories>
   </entry>
   <entry>
@@ -1366,6 +1385,44 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <h2 id="常用正则表达式"><a href="#常用正则表达式" class="headerlink" title="常用正则表达式"></a>常用正则表达式</h2><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">整数: ^-?\d+$</span><br><span class="line">正整数: ^\d+$</span><br><span class="line">负整数: ^-\d+$&#96;</span><br><span class="line">纯小写字母: ^([a-z])*$</span><br><span class="line">纯大写字母: ^([A-Z])*$</span><br><span class="line">用户名: ^[\w\d_.]&#123;4,16&#125;$</span><br><span class="line">数字和英文字母: ^[a-zA-Z0-9]*$</span><br><span class="line">数字和英文字母和空格: ^[a-zA-Z0-9 ]*$</span><br><span class="line">密码: ^(?&#x3D;^.&#123;6,&#125;$)((?&#x3D;.*[A-Za-z0-9])(?&#x3D;.*[A-Z])(?&#x3D;.*[a-z]))^.*$</span><br><span class="line">邮箱: ^([a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]&#123;2,4&#125;)*$</span><br><span class="line">IP4 地址: ^((?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.)&#123;3&#125;(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))*$</span><br><span class="line">URL: ^(((http|https|ftp):\&#x2F;\&#x2F;)?([[a-zA-Z0-9]\-\.])+(\.)([[a-zA-Z0-9]])&#123;2,4&#125;([[a-zA-Z0-9]\&#x2F;+&#x3D;%&amp;_\.~?\-]*))*$</span><br></pre></td></tr></table></figure>]]></content>
       <categories>
         <category>正则表达式</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>极力推荐的博文排版指南</title>
+    <url>/%E6%9E%81%E5%8A%9B%E6%8E%A8%E8%8D%90%E7%9A%84%E5%8D%9A%E6%96%87%E6%8E%92%E7%89%88%E6%8C%87%E5%8D%97/</url>
+    <content><![CDATA[<p>作为程序员来说，养成写博客的习惯真的是一件值得去做的事，尽管刚开始可能没有那么高质量的知识输出，但是不是有这样一句话吗？「知识的输入应转化为输出」，也就是说你应该把你所学到的都转化为输出，只有这样你才能更好的掌握你所学的知识，并且在这个过程中你也会对你所学的知识点进行很好的补充。既然要写博文，是不是刚开始就随便写写呢？当然不是，一篇排版好内容不是很好的博文相比于内容好排版很乱的博文能够让人更乐于看下去，尤其是那些对代码有洁癖的程序员我相信你更看不下去，那么以下便是我极力推荐的博客排版指南：</p>
+<a id="more"></a>
+
+<h3 id="空格的使用"><a href="#空格的使用" class="headerlink" title="空格的使用"></a>空格的使用</h3><p>「有研究显示，打字的时候不喜欢在中文和英文之间加空格的人，感情路都走得很辛苦，有七成的比例会在 34 岁的时候跟自己不爱的人结婚，而其余三成的人最后只能把遗产留给自己的猫。毕竟爱情跟书写都需要适时地留白。」</p>
+<ol>
+<li><p>中英文之间加空格<br>eg. 相信每个程序员都会去全球最大的同性交友网站 GitHub 上逛逛。</p>
+</li>
+<li><p>中文和数字之间加空格<br>eg. 那些排版很乱的博文估计你连 1 分钟都看不下去。</p>
+</li>
+<li><p>数字和单位之间不加空格<br>eg. 现在的安卓手机运行内存没有 6G 都装不了几个应用了。<br>eg. 今天的气温又超过了 40°。<br>eg. 之前买的基金昨天一天跌了 5%。</p>
+</li>
+<li><p>推荐在链接前后加一个空格<br>eg.  我的公众号和博客名称都是 rookiezhou，搜索 rookiezhou 关注我，点击这里 <a href="http://www.rookiezhou.top/">rookiezhou</a> 访问个人博客。</p>
+</li>
+</ol>
+<h3 id="标点符号的细节"><a href="#标点符号的细节" class="headerlink" title="标点符号的细节"></a>标点符号的细节</h3><ol>
+<li><p>不用为了夸张重复使用标点符号<br>eg. 今年法国夺冠了，华帝刚开始打的一手好牌到最后却变成了一副烂牌，你敢信吗？</p>
+</li>
+<li><p>中文段落中尽量使用中文标点符号<br>eg. 一篇好的博文绝对离不开好的排版，所以这篇博文应该算是好文了吧。</p>
+</li>
+<li><p>推荐将引号换成直角引号<br>eg. 你竟然没看过「Java 编程思想」这本书。</p>
+</li>
+<li><p>推荐引号中还有引号替换成直角双引号<br>eg. 经常有人带着疑惑的目光对我说「你竟然没看过『Java 编程思想』这本书？」</p>
+</li>
+<li><p>完整的英文整句使用英文标点符号<br>eg. 引用乔布斯说的那句话：「Stay hungry, stay foolish.」</p>
+</li>
+</ol>
+<h3 id="专有名词大小写尽量规范"><a href="#专有名词大小写尽量规范" class="headerlink" title="专有名词大小写尽量规范"></a>专有名词大小写尽量规范</h3><p>eg. Java、MySQL 都是后端开发人员必须要会的，当然也要会一些前端的技术，比如说：HTML5、CSS、JavaScript、jQuery。</p>
+<p>还有就是对于一些博文可能存在一篇博文下来就只有一段，看起来很紧凑，如果说在每写完一个知识点隔开一行看起来是不是会更好看些呢，这样一来对于我们从小养成的每一段首行空两格的习惯是不是也可以改了呢，其实你去注意一下那些排版比较好的博文，应该大部分都是这么做的，当然这取决于个人，不喜勿喷。</p>
+<p>参考：</p>
+<p><a href="https://www.jianshu.com/p/538faa30b17d">https://www.jianshu.com/p/538faa30b17d</a><br><a href="https://github.com/mzlogin/chinese-copywriting-guidelines">https://github.com/mzlogin/chinese-copywriting-guidelines</a></p>
+]]></content>
+      <categories>
+        <category>写作</category>
       </categories>
   </entry>
 </search>
