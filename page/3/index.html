@@ -194,7 +194,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5%E5%92%8C%E8%BF%9C%E7%A8%8B%E6%8B%B7%E8%B4%9D%E5%91%BD%E4%BB%A4/">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/JdbcTemplate-%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -208,7 +208,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5%E5%92%8C%E8%BF%9C%E7%A8%8B%E6%8B%B7%E8%B4%9D%E5%91%BD%E4%BB%A4/" class="post-title-link" itemprop="url">Linux 系统下远程连接和远程拷贝命令</a>
+            <a href="/JdbcTemplate-%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5/" class="post-title-link" itemprop="url">JdbcTemplate 实现批量插入</a>
         </h2>
 
         <div class="post-meta">
@@ -217,23 +217,17 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
+              
 
-              <time title="Created: 2018-05-10 00:45:15" itemprop="dateCreated datePublished" datetime="2018-05-10T00:45:15+08:00">2018-05-10</time>
+              <time title="Created: 2020-08-11 16:34:33 / Modified: 16:39:21" itemprop="dateCreated datePublished" datetime="2020-08-11T16:34:33+08:00">2020-08-11</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-02 20:48:16" itemprop="dateModified" datetime="2020-08-02T20:48:16+08:00">2020-08-02</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+                  <a href="/categories/JdbcTemplate/" itemprop="url" rel="index"><span itemprop="name">JdbcTemplate</span></a>
                 </span>
             </span>
 
@@ -248,10 +242,11 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>在平常开发部署中，我们可能经常需要远程连接到服务器上执行一些操作，有时还需要拷贝相应的文件过去，这里记录下平常自己用的比较多的远程连接命令以及远程拷贝文件的命令。</p>
+          <p>项目中有时候我们会遇到 excel 导入的需求, excle 文件的每一行记录对应的可能都是数据库中的一条记录，一个 excel 中可能有很多行，所以导入一个 excel 就意味着 excel 里面有多少行，我们就要插入多少条记录。如果我们采用一条一条记录插入的方式，毫无疑问，这可能要执行很久。</p>
+<p>如果是采用同步的方式的话，页面就会需要等好长一段时间才能有响应。就算采用异步的方式，先给前端一个响应，后台异步执行插入操作，用户也会需要等好长一段时间才能看到刚才 excel 导入的数据。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5%E5%92%8C%E8%BF%9C%E7%A8%8B%E6%8B%B7%E8%B4%9D%E5%91%BD%E4%BB%A4/#more" rel="contents">
+              <a class="btn" href="/JdbcTemplate-%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -275,7 +270,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/Ubuntu-%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E4%B8%80%E4%BA%9B%E5%BC%80%E5%8F%91%E4%B8%AD%E5%BF%85%E8%A6%81%E7%9A%84%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9-%E4%BA%8C/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -289,7 +284,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/Ubuntu-%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E4%B8%80%E4%BA%9B%E5%BC%80%E5%8F%91%E4%B8%AD%E5%BF%85%E8%A6%81%E7%9A%84%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/" class="post-title-link" itemprop="url">Ubuntu 系统安装以及一些开发中必要的安装配置</a>
+            <a href="/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9-%E4%BA%8C/" class="post-title-link" itemprop="url">使用 JdbcTemplate 的 queryForObject 方法时需注意的地方(二)</a>
         </h2>
 
         <div class="post-meta">
@@ -298,23 +293,17 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
+              
 
-              <time title="Created: 2018-05-07 23:46:03" itemprop="dateCreated datePublished" datetime="2018-05-07T23:46:03+08:00">2018-05-07</time>
+              <time title="Created: 2020-08-11 16:26:56 / Modified: 16:33:41" itemprop="dateCreated datePublished" datetime="2020-08-11T16:26:56+08:00">2020-08-11</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-08 13:25:09" itemprop="dateModified" datetime="2020-08-08T13:25:09+08:00">2020-08-08</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+                  <a href="/categories/JdbcTemplate/" itemprop="url" rel="index"><span itemprop="name">JdbcTemplate</span></a>
                 </span>
             </span>
 
@@ -329,10 +318,11 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>对于开发人员来说，个人强烈推荐使用 Linux 系统进行开发，至于为什么，这里贴出自己刚开始尝试使用 Linux 系统时看的一个博主写的文章，可以说就是因为看了这位博主的文章才立即决定装上 Linux 系统，开始了我的 Linux 系统之旅，从此停不下来了。下面就是这位博主写的文章地址，里面详细阐述了为什么要使用 Linux 系统。</p>
+          <p>上一篇文章中提到了 JdbcTemplate 的 queryForObject 方法在使用时需要注意的地方，其实这里还有一个地方也是我们在使用时容易忽略的，为了避免踩坑，这里我也一并提出来。</p>
+<p>同样的，继续用活动的状态表来举例，在上次的例子中我们是通过活动 id 查询活动的浏览量这一列数据，但是如果我们想要一并查出活动的浏览量，作品数和用户数。先让我们同样使用 queryForObject 方法，然后把 SQL 改成查询所有列的数据,返回类型改成实体类。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/Ubuntu-%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E4%B8%80%E4%BA%9B%E5%BC%80%E5%8F%91%E4%B8%AD%E5%BF%85%E8%A6%81%E7%9A%84%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/#more" rel="contents">
+              <a class="btn" href="/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9-%E4%BA%8C/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -356,7 +346,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B%E7%9A%84%E8%BD%AF%E9%93%BE%E6%8E%A5%E5%92%8C%E7%A1%AC%E9%93%BE%E6%8E%A5/">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -370,7 +360,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B%E7%9A%84%E8%BD%AF%E9%93%BE%E6%8E%A5%E5%92%8C%E7%A1%AC%E9%93%BE%E6%8E%A5/" class="post-title-link" itemprop="url">Linux 系统下的软链接和硬链接</a>
+            <a href="/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9/" class="post-title-link" itemprop="url">使用 JdbcTemplate 的 queryForObject 方法时需注意的地方(一)</a>
         </h2>
 
         <div class="post-meta">
@@ -380,14 +370,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2018-04-25 23:41:50" itemprop="dateCreated datePublished" datetime="2018-04-25T23:41:50+08:00">2018-04-25</time>
+              <time title="Created: 2020-08-10 22:38:56" itemprop="dateCreated datePublished" datetime="2020-08-10T22:38:56+08:00">2020-08-10</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-02 20:47:57" itemprop="dateModified" datetime="2020-08-02T20:47:57+08:00">2020-08-02</time>
+                <time title="Modified: 2020-08-11 16:24:20" itemprop="dateModified" datetime="2020-08-11T16:24:20+08:00">2020-08-11</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -395,7 +385,7 @@
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+                  <a href="/categories/JdbcTemplate/" itemprop="url" rel="index"><span itemprop="name">JdbcTemplate</span></a>
                 </span>
             </span>
 
@@ -410,11 +400,11 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>之前一直不是很明白 Linux 系统下的软链接 (soft link) 和硬链接 (hard link) 的区别和用法，今天刚好又用到了，特意花了点时间去了解了一下，暂且在这里记录一下吧。</p>
-<p>在介绍硬链接和软链接之前先介绍一下 Linux 系统下面的文件结构，文件在 Linux 下可以分为两个部分：元数据和用户数据。元数据中主要包含文件的一些附加属性，比如：文件大小，创建时间，所有者信息以及 文件的 inode 索引号，inode 索引号是文件索引节点号，也是文件的唯一标识，我们平常看到的文件名并非是用来区分文件而是一个别名便于我们识别和记忆；用户数据则是文件的数据块内容，也就是该文件保存的真正内容。</p>
+          <p>我们应该都使用过 JdbcTemplate 来查询数据库，一般用在配置了多数据源的情况下，在一个服务里面需要简单查询多个数据库的数据，这时通过 JdbcTemplate 来构建 SQL 查询数据库往往比较方便快捷些，不需要用封装的 repository 那一套东西。</p>
+<p>举一个简单的例子，比如查询一个活动的浏览量。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B%E7%9A%84%E8%BD%AF%E9%93%BE%E6%8E%A5%E5%92%8C%E7%A1%AC%E9%93%BE%E6%8E%A5/#more" rel="contents">
+              <a class="btn" href="/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -438,7 +428,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/Ubuntu-%E4%B8%8B-MySQL-%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E9%85%8D%E7%BD%AE%E5%8F%AF%E8%BF%9C%E7%A8%8B%E8%AE%BF%E9%97%AE/">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E4%BD%BF%E7%94%A8-Docker-%E8%BF%90%E8%A1%8C-MySQL-%E6%9C%8D%E5%8A%A1/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -452,7 +442,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/Ubuntu-%E4%B8%8B-MySQL-%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E9%85%8D%E7%BD%AE%E5%8F%AF%E8%BF%9C%E7%A8%8B%E8%AE%BF%E9%97%AE/" class="post-title-link" itemprop="url">Ubuntu 下 MySQL 安装以及配置远程可访问</a>
+            <a href="/%E4%BD%BF%E7%94%A8-Docker-%E8%BF%90%E8%A1%8C-MySQL-%E6%9C%8D%E5%8A%A1/" class="post-title-link" itemprop="url">使用 Docker 运行 MySQL 服务</a>
         </h2>
 
         <div class="post-meta">
@@ -461,23 +451,17 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
+              
 
-              <time title="Created: 2018-04-23 22:15:09" itemprop="dateCreated datePublished" datetime="2018-04-23T22:15:09+08:00">2018-04-23</time>
+              <time title="Created: 2020-08-10 22:32:38 / Modified: 22:37:39" itemprop="dateCreated datePublished" datetime="2020-08-10T22:32:38+08:00">2020-08-10</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-08 13:21:21" itemprop="dateModified" datetime="2020-08-08T13:21:21+08:00">2020-08-08</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+                  <a href="/categories/Docker/" itemprop="url" rel="index"><span itemprop="name">Docker</span></a>
                 </span>
             </span>
 
@@ -492,11 +476,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h3 id="Ubuntu-安装-MySQL"><a href="#Ubuntu-安装-MySQL" class="headerlink" title="Ubuntu 安装 MySQL###"></a>Ubuntu 安装 MySQL###</h3><p>最好先执行一次更新操作：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get update</span><br></pre></td></tr></table></figure>
+          <p>对于 MySQL 数据库，我们基本上都用得到，在工作上有些情况下不太想连云上的库，比如说网络比较慢，或者我们只是刚开始开发，还没来得及在云上建立数据库，这时候在本地跑一下 MySQL 服务也许比较方便，但是呢 MySQL 安装下来占的内存还是比较大的，像我们不是经常连本地的库开发的在本地电脑安装一个 MySQL 确实有点浪费空间了，再加上可能本来笔记本电脑内存就不是非常富余的情况下再去安装，实在是有些肉疼。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/Ubuntu-%E4%B8%8B-MySQL-%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E9%85%8D%E7%BD%AE%E5%8F%AF%E8%BF%9C%E7%A8%8B%E8%AE%BF%E9%97%AE/#more" rel="contents">
+              <a class="btn" href="/%E4%BD%BF%E7%94%A8-Docker-%E8%BF%90%E8%A1%8C-MySQL-%E6%9C%8D%E5%8A%A1/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -520,7 +503,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/Ubuntu-%E6%89%A7%E8%A1%8C%E5%91%BD%E4%BB%A4%E6%97%B6%E6%8A%A5%E9%94%99-unable-to-resolve-host/">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E6%9E%81%E5%8A%9B%E6%8E%A8%E8%8D%90%E7%9A%84%E5%8D%9A%E6%96%87%E6%8E%92%E7%89%88%E6%8C%87%E5%8D%97/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -534,7 +517,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/Ubuntu-%E6%89%A7%E8%A1%8C%E5%91%BD%E4%BB%A4%E6%97%B6%E6%8A%A5%E9%94%99-unable-to-resolve-host/" class="post-title-link" itemprop="url">Ubuntu 执行命令时报错 unable to resolve host</a>
+            <a href="/%E6%9E%81%E5%8A%9B%E6%8E%A8%E8%8D%90%E7%9A%84%E5%8D%9A%E6%96%87%E6%8E%92%E7%89%88%E6%8C%87%E5%8D%97/" class="post-title-link" itemprop="url">极力推荐的博文排版指南</a>
         </h2>
 
         <div class="post-meta">
@@ -544,14 +527,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2018-04-08 22:26:03" itemprop="dateCreated datePublished" datetime="2018-04-08T22:26:03+08:00">2018-04-08</time>
+              <time title="Created: 2018-07-23 23:32:52" itemprop="dateCreated datePublished" datetime="2018-07-23T23:32:52+08:00">2018-07-23</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-08 13:38:52" itemprop="dateModified" datetime="2020-08-08T13:38:52+08:00">2020-08-08</time>
+                <time title="Modified: 2020-08-02 19:17:14" itemprop="dateModified" datetime="2020-08-02T19:17:14+08:00">2020-08-02</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -559,7 +542,7 @@
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+                  <a href="/categories/%E5%86%99%E4%BD%9C/" itemprop="url" rel="index"><span itemprop="name">写作</span></a>
                 </span>
             </span>
 
@@ -574,10 +557,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="记录一下今天遇到的一个问题"><a href="#记录一下今天遇到的一个问题" class="headerlink" title="记录一下今天遇到的一个问题"></a>记录一下今天遇到的一个问题</h2><p>今天在阿里云服务器上部署应用时遇到一个小问题，每次执行完 sudo 命令都会出现一行错误信息，刚开始还以为执行命令出错了，但仔细一看不像是执行命令的报错信息，而且还发现命令其实已经执行成功了。</p>
+          <p>作为程序员来说，养成写博客的习惯真的是一件值得去做的事，尽管刚开始可能没有那么高质量的知识输出，但是不是有这样一句话吗？「知识的输入应转化为输出」，也就是说你应该把你所学到的都转化为输出，只有这样你才能更好的掌握你所学的知识，并且在这个过程中你也会对你所学的知识点进行很好的补充。既然要写博文，是不是刚开始就随便写写呢？当然不是，一篇排版好内容不是很好的博文相比于内容好排版很乱的博文能够让人更乐于看下去，尤其是那些对代码有洁癖的程序员我相信你更看不下去，那么以下便是我极力推荐的博客排版指南：</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/Ubuntu-%E6%89%A7%E8%A1%8C%E5%91%BD%E4%BB%A4%E6%97%B6%E6%8A%A5%E9%94%99-unable-to-resolve-host/#more" rel="contents">
+              <a class="btn" href="/%E6%9E%81%E5%8A%9B%E6%8E%A8%E8%8D%90%E7%9A%84%E5%8D%9A%E6%96%87%E6%8E%92%E7%89%88%E6%8C%87%E5%8D%97/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -601,7 +584,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/Java-%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97%E2%80%94%E2%80%94%E5%9F%BA%E7%A1%80%E7%AF%87-%E4%BA%8C/">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F%E7%9A%84%E5%9F%BA%E6%9C%AC%E8%BF%90%E7%94%A8/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -615,7 +598,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/Java-%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97%E2%80%94%E2%80%94%E5%9F%BA%E7%A1%80%E7%AF%87-%E4%BA%8C/" class="post-title-link" itemprop="url">Java 面试系列——基础篇(二)</a>
+            <a href="/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F%E7%9A%84%E5%9F%BA%E6%9C%AC%E8%BF%90%E7%94%A8/" class="post-title-link" itemprop="url">正则表达式的基本运用</a>
         </h2>
 
         <div class="post-meta">
@@ -625,14 +608,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2018-04-01 18:56:13" itemprop="dateCreated datePublished" datetime="2018-04-01T18:56:13+08:00">2018-04-01</time>
+              <time title="Created: 2018-07-19 01:20:57" itemprop="dateCreated datePublished" datetime="2018-07-19T01:20:57+08:00">2018-07-19</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-02 20:46:57" itemprop="dateModified" datetime="2020-08-02T20:46:57+08:00">2020-08-02</time>
+                <time title="Modified: 2020-08-02 20:44:52" itemprop="dateModified" datetime="2020-08-02T20:44:52+08:00">2020-08-02</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -640,7 +623,7 @@
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97/" itemprop="url" rel="index"><span itemprop="name">面试系列</span></a>
+                  <a href="/categories/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/" itemprop="url" rel="index"><span itemprop="name">正则表达式</span></a>
                 </span>
             </span>
 
@@ -655,10 +638,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="Java-中-equals-与-的区别"><a href="#Java-中-equals-与-的区别" class="headerlink" title="Java 中 equals 与 == 的区别"></a>Java 中 equals 与 == 的区别</h2><p>通俗的来说，“==” 比较的是地址，equals 比较的是内容。也就是说前者比较的是对象(堆)在(栈)内存中存放的内存地址，用来判断两个对象的地址是否相同，即是否是指向同一个对象。后者用来比较的是两个对象的内容是否相等，由于所有的类都是继承自java.lang.Object 类的，所以适用于所有对象，注意如果没有对该方法进行重写的话，调用的仍然是 Object 类中的方法，而 Object 中的 equals 方法返回的却是内存地址比较的结果，方法内容如下 ：</p>
+          <p>正则表达式，听起来就很高大上，用起来其实挺复杂的，毕竟人家也算是一门语言，但我们在日常开发中如果会一点正则，你会发现有意想不到的效果，对我们开发的效率还是有一定的提高的。刚开始我一直想学习一下一些简单的正则，但每次看完一些资料当时好像明白怎么回事了，但过一段时间没用又忘了，其实说到底就是自己就根本没掌握好，加上又没去实践，当时理解了，长时间不用自然就忘了。所以说学到的知识需要用起来，这样才能加深理解，也不容易忘记。下面主要说一下正则表达式的简单运用，更加高深的正则可能需要花好些时间去系统的学习一番。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/Java-%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97%E2%80%94%E2%80%94%E5%9F%BA%E7%A1%80%E7%AF%87-%E4%BA%8C/#more" rel="contents">
+              <a class="btn" href="/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F%E7%9A%84%E5%9F%BA%E6%9C%AC%E8%BF%90%E7%94%A8/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -682,7 +665,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/Java-%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97%E2%80%94%E2%80%94%E5%9F%BA%E7%A1%80%E7%AF%87-%E4%B8%80/">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/zookeeper-%E5%8D%95%E6%9C%BA%E6%A8%A1%E5%BC%8F%E4%BB%A5%E5%8F%8A%E4%BC%AA%E9%9B%86%E7%BE%A4%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -696,7 +679,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/Java-%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97%E2%80%94%E2%80%94%E5%9F%BA%E7%A1%80%E7%AF%87-%E4%B8%80/" class="post-title-link" itemprop="url">Java 面试系列——基础篇(一)</a>
+            <a href="/zookeeper-%E5%8D%95%E6%9C%BA%E6%A8%A1%E5%BC%8F%E4%BB%A5%E5%8F%8A%E4%BC%AA%E9%9B%86%E7%BE%A4%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/" class="post-title-link" itemprop="url">zookeeper 单机模式以及伪集群模式搭建</a>
         </h2>
 
         <div class="post-meta">
@@ -706,14 +689,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2018-03-29 23:18:01" itemprop="dateCreated datePublished" datetime="2018-03-29T23:18:01+08:00">2018-03-29</time>
+              <time title="Created: 2018-07-16 22:32:57" itemprop="dateCreated datePublished" datetime="2018-07-16T22:32:57+08:00">2018-07-16</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-02 20:47:19" itemprop="dateModified" datetime="2020-08-02T20:47:19+08:00">2020-08-02</time>
+                <time title="Modified: 2020-08-10 22:43:45" itemprop="dateModified" datetime="2020-08-10T22:43:45+08:00">2020-08-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -721,7 +704,7 @@
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97/" itemprop="url" rel="index"><span itemprop="name">面试系列</span></a>
+                  <a href="/categories/Zookeeper/" itemprop="url" rel="index"><span itemprop="name">Zookeeper</span></a>
                 </span>
             </span>
 
@@ -736,10 +719,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="面向对象的特征：封装、继承、多态、抽象"><a href="#面向对象的特征：封装、继承、多态、抽象" class="headerlink" title="面向对象的特征：封装、继承、多态、抽象"></a>面向对象的特征：封装、继承、多态、抽象</h2><p>封装给对象提供了隐藏内部特性和行为的能力，对象提供一些能被其他对象访问的方法来改变它内部的数据。在 Java 当中，有 4 种访问权限，对应有三个修饰符 : public、private 、protected，每一种修饰符给其他的位于同一个包或者不同包下面对象赋予了不同的访问权限。下面列出了使用封装的一些好处:</p>
+          <p>首先说一下我对 <code>zookeeper</code> 的学习，在刚开始听的时候觉得很高大上，但又觉得很陌生，也不知道是干嘛的，然后就网上查各种资料开始慢慢对 <code>zookeeper</code> 好像有点感觉了，又好像还是似懂非懂的样子，然后还看到网上都在告诉我们 <code>zookeeper</code> 的安装以及 <code>zookeeper</code> 集群的搭建，又尝试着去搭建了一遍。到最后还是有点晕乎乎的样子，总觉得好像不是很理解，包括网上说的 <code>zookeeper</code> 一些使用场景。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/Java-%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97%E2%80%94%E2%80%94%E5%9F%BA%E7%A1%80%E7%AF%87-%E4%B8%80/#more" rel="contents">
+              <a class="btn" href="/zookeeper-%E5%8D%95%E6%9C%BA%E6%A8%A1%E5%BC%8F%E4%BB%A5%E5%8F%8A%E4%BC%AA%E9%9B%86%E7%BE%A4%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -763,7 +746,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/nginx-location-%E8%B7%AF%E5%BE%84%E5%9F%BA%E6%9C%AC%E5%8C%B9%E9%85%8D%E8%A7%84%E5%88%99/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -777,7 +760,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/" class="post-title-link" itemprop="url">我的第一篇博客</a>
+            <a href="/nginx-location-%E8%B7%AF%E5%BE%84%E5%9F%BA%E6%9C%AC%E5%8C%B9%E9%85%8D%E8%A7%84%E5%88%99/" class="post-title-link" itemprop="url">nginx location 路径匹配规则</a>
         </h2>
 
         <div class="post-meta">
@@ -787,14 +770,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2018-03-27 19:05:55" itemprop="dateCreated datePublished" datetime="2018-03-27T19:05:55+08:00">2018-03-27</time>
+              <time title="Created: 2018-07-10 23:10:20" itemprop="dateCreated datePublished" datetime="2018-07-10T23:10:20+08:00">2018-07-10</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-02 20:44:27" itemprop="dateModified" datetime="2020-08-02T20:44:27+08:00">2020-08-02</time>
+                <time title="Modified: 2020-08-10 22:41:07" itemprop="dateModified" datetime="2020-08-10T22:41:07+08:00">2020-08-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -802,7 +785,7 @@
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Markdown/" itemprop="url" rel="index"><span itemprop="name">Markdown</span></a>
+                  <a href="/categories/Nginx/" itemprop="url" rel="index"><span itemprop="name">Nginx</span></a>
                 </span>
             </span>
 
@@ -817,10 +800,172 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="好的开始是成功的一半"><a href="#好的开始是成功的一半" class="headerlink" title="好的开始是成功的一半"></a><center>好的开始是成功的一半</center></h2><h1 id="欢迎使用Markdown编辑器写博客"><a href="#欢迎使用Markdown编辑器写博客" class="headerlink" title="欢迎使用Markdown编辑器写博客"></a>欢迎使用Markdown编辑器写博客</h1><p>本Markdown编辑器使用<a target="_blank" rel="noopener" href="https://github.com/benweet/stackedit">StackEdit</a>修改而来，用它写博客，将会带来全新的体验哦：</p>
+          <p>之前每次配置 nginx 中的 location 这个路径时都会很头疼，基本上每次都是靠碰运气，一个个去试，直到访问路径通了为止，这样一来到最后还是不知道怎么配置成功的，下次再配置时又需要一个个去试，既浪费时间又很没有效率，所以这次特意花了点时间去学习了一番，特此记录一下，也记录一下自己在测试的过程中踩过的一些坑。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/#more" rel="contents">
+              <a class="btn" href="/nginx-location-%E8%B7%AF%E5%BE%84%E5%9F%BA%E6%9C%AC%E5%8C%B9%E9%85%8D%E8%A7%84%E5%88%99/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/nginx-%E5%AE%9E%E7%8E%B0-TCP-%E4%BB%A3%E7%90%86%E5%8F%8A%E5%85%B6%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E4%B9%8B-stream-%E6%A8%A1%E5%9D%97/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/nginx-%E5%AE%9E%E7%8E%B0-TCP-%E4%BB%A3%E7%90%86%E5%8F%8A%E5%85%B6%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E4%B9%8B-stream-%E6%A8%A1%E5%9D%97/" class="post-title-link" itemprop="url">nginx 实现 TCP 代理及其负载均衡之 stream 模块</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-07-04 23:10:05" itemprop="dateCreated datePublished" datetime="2018-07-04T23:10:05+08:00">2018-07-04</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-08-10 22:41:29" itemprop="dateModified" datetime="2020-08-10T22:41:29+08:00">2020-08-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Nginx/" itemprop="url" rel="index"><span itemprop="name">Nginx</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>前面所说的 nginx 负载均衡都是基于 HTTP 七层代理，有时候我们可能需要基于 TCP 四层代理以及负载均衡，在之前我们可能需要编译安装第三方的一个模块 nginx_tcp_proxy_module，并且需要打上一个补丁，具体安装方式可以去参考项目中的描述。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/nginx-%E5%AE%9E%E7%8E%B0-TCP-%E4%BB%A3%E7%90%86%E5%8F%8A%E5%85%B6%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E4%B9%8B-stream-%E6%A8%A1%E5%9D%97/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/nginx-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5%E4%B9%8B%E7%AC%AC%E4%B8%89%E6%96%B9%E6%89%A9%E5%B1%95%E7%AD%96%E7%95%A5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/nginx-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5%E4%B9%8B%E7%AC%AC%E4%B8%89%E6%96%B9%E6%89%A9%E5%B1%95%E7%AD%96%E7%95%A5/" class="post-title-link" itemprop="url">nginx 负载均衡策略之第三方扩展策略</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-07-03 22:51:01" itemprop="dateCreated datePublished" datetime="2018-07-03T22:51:01+08:00">2018-07-03</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-08-10 22:41:51" itemprop="dateModified" datetime="2020-08-10T22:41:51+08:00">2020-08-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Nginx/" itemprop="url" rel="index"><span itemprop="name">Nginx</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>之前已经将 nginx 负载均衡中的内置策略介绍完了，下面我们来看一下第三方的扩展策略，所谓的内置策略其实就是 nginx 安装后就已经自带了，对于第三方的一些策略则是需要我们在安装时要额外添加第三方的模块才能实现。下面就一一进行介绍：</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/nginx-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5%E4%B9%8B%E7%AC%AC%E4%B8%89%E6%96%B9%E6%89%A9%E5%B1%95%E7%AD%96%E7%95%A5/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -843,7 +988,7 @@
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/2/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span>
+    <a class="extend prev" rel="prev" href="/page/2/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/">4</a><a class="page-number" href="/page/5/">5</a><a class="extend next" rel="next" href="/page/4/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
   </nav>
 
 
@@ -909,14 +1054,14 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">28</span>
+          <span class="site-state-item-count">45</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">15</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
   </nav>
@@ -948,7 +1093,7 @@
 <div class="copyright">
   
   &copy; 2018 – 
-  <span itemprop="copyrightYear">2020</span>
+  <span itemprop="copyrightYear">2021</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

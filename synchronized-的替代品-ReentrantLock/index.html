@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="v本来这篇文章打算写下细粒度锁的几种通用实现的，但在实践的过程中，我觉得有必要先介绍一下 ReentrantLock 这个类，可能大部分人都没有使用过，其实我也是一样，在接触到这个类之前都是只用过 synchronized 关键字，直到接触到了 ReentrantLock 这个类才知道还有这个东西，哎，还是对并发编程不是非常熟悉，对 JUC 并发包还需要进一步的去学习，下面我们就一起来看下 Ree">
+<meta property="og:type" content="article">
+<meta property="og:title" content="synchronized 的替代品 ReentrantLock">
+<meta property="og:url" content="http://gittab.net/synchronized-%E7%9A%84%E6%9B%BF%E4%BB%A3%E5%93%81-ReentrantLock/index.html">
+<meta property="og:site_name" content="rookiedev">
+<meta property="og:description" content="v本来这篇文章打算写下细粒度锁的几种通用实现的，但在实践的过程中，我觉得有必要先介绍一下 ReentrantLock 这个类，可能大部分人都没有使用过，其实我也是一样，在接触到这个类之前都是只用过 synchronized 关键字，直到接触到了 ReentrantLock 这个类才知道还有这个东西，哎，还是对并发编程不是非常熟悉，对 JUC 并发包还需要进一步的去学习，下面我们就一起来看下 Ree">
+<meta property="og:locale">
+<meta property="article:published_time" content="2021-02-23T15:47:56.000Z">
+<meta property="article:modified_time" content="2021-02-23T15:48:51.677Z">
+<meta property="article:author" content="rookiedev">
+<meta property="article:tag" content="Java MySQL Life">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://gittab.net/synchronized-%E7%9A%84%E6%9B%BF%E4%BB%A3%E5%93%81-ReentrantLock/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'default'
+  };
+</script>
+
+  <title>synchronized 的替代品 ReentrantLock | rookiedev</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <a target="_blank" rel="noopener" href="https://github.com/rookiedev-z"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">rookiedev</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">just do it</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/synchronized-%E7%9A%84%E6%9B%BF%E4%BB%A3%E5%93%81-ReentrantLock/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          synchronized 的替代品 ReentrantLock
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-02-23 23:47:56 / Modified: 23:48:51" itemprop="dateCreated datePublished" datetime="2021-02-23T23:47:56+08:00">2021-02-23</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>v本来这篇文章打算写下细粒度锁的几种通用实现的，但在实践的过程中，我觉得有必要先介绍一下 ReentrantLock 这个类，可能大部分人都没有使用过，其实我也是一样，在接触到这个类之前都是只用过 synchronized 关键字，直到接触到了 ReentrantLock 这个类才知道还有这个东西，哎，还是对并发编程不是非常熟悉，对 JUC 并发包还需要进一步的去学习，下面我们就一起来看下 ReentrantLock 这个类是怎样的。</p>
+<a id="more"></a>
+
+<p>在 Java 中当我们需要对某个方法或代码块进行加锁时，往往我们第一时间想到的是 synchronized 关键字，通过 synchronized 来保证多线程环境下的线程安全。比如说下面两段代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">syncMethod</span><span class="params">()</span></span>&#123;</span><br><span class="line">  System.out.println(<span class="string">&quot;execute sync method&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">syncMethod</span><span class="params">()</span></span>&#123;</span><br><span class="line">  System.out.println(<span class="string">&quot;enter sync method&quot;</span>);</span><br><span class="line">  <span class="keyword">synchronized</span> (<span class="keyword">this</span>)&#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;execute sync method&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面两段代码很简单，一个是在 syncMethod 方法上加上 synchronized 关键字，另一个是在方法内部对部分代码块进行加锁，或许我们都知道这样都能保证 syncMethod 方法或 syncMethod 方法内部分代码块是线程安全的，那么有没有另外一种方式来实现这一效果呢？</p>
+<p>答案是有的，也就是我们上面提到的 ReentrantLock 类了，他可以说是 synchronized 的替代品，一般翻译成再入锁，和 synchronized 关键字一样都是可重入的，也就是说当一个线程尝试获取它已经获取成功的锁时，这时锁直接获取成功。那我们先看如何使用 ReentrantLock 类实现上面的效果吧。</p>
+<p>其实第一种也可以认为是使用 synchronized 关键字将整个 syncMethod 方法的代码包裹起来，就像下面这样：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">syncMethod</span><span class="params">()</span></span>&#123;</span><br><span class="line">  <span class="keyword">synchronized</span> (<span class="keyword">this</span>)&#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;execute sync method&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用 ReentrantLock 类实现加锁方式如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">ReentrantLock lock = <span class="keyword">new</span> ReentrantLock();</span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">syncMethod</span><span class="params">()</span></span>&#123;</span><br><span class="line">  lock.lock();</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;execute sync method&quot;</span>);</span><br><span class="line">  &#125;<span class="keyword">finally</span> &#123;</span><br><span class="line">    lock.unlock();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>可以看到使用 ReentrantLock 来加锁的话其实就跟使用普通对象一样，调用 lock 方法加锁，unlock 方法解锁，只不过千万需要注意的是在我们调用 lock 方法进行加锁之后一定要保证有解锁的操作。一般我们是通过 try-finally 的方式来确保 unlock 方法被调用，而且 unlock 方法的调用需要放在 finally 代码块的第一行。还有就是 lock 方法的调用最好不要放到 try 代码块中，不然万一 lock 方法加锁失败，最终 finally 代码块中的解锁方法被调用会抛出异常，因为是在锁根本没有加成功的情况下去解锁。</p>
+<p>如果说仅仅是作为 synchronized 关键字的替代品那就太弱了，ReentrantLock 还能够实现一些 synchronized 无法做到的场景，比如说带超时的加锁操作。有时候由于业务需要，在尝试进入加锁的代码块时，如果 3s 之内没有获取到锁的话直接返回，提示用户重新操作，这可以有效减小高并发给系统带来的压力。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">syncMethod</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  <span class="keyword">if</span>(lock.tryLock(<span class="number">3</span>, TimeUnit.SECONDS))&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">      System.out.println(<span class="string">&quot;execute sync method&quot;</span>);</span><br><span class="line">      TimeUnit.SECONDS.sleep(<span class="number">5</span>);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e)&#123;</span><br><span class="line">      e.printStackTrace();</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">      lock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;execute other logic&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面的代码中通过调用 ReentrantLock 类的 tryLock 带超时时间参数的方法，在 3s 内加锁失败的话执行其他逻辑。</p>
+<p>对于 ReentrantLock 类，它还提供保证获取锁公平性，判断是否有其他线程也在排队等待获取锁等一些特性。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 创建公平性锁</span></span><br><span class="line">ReentrantLock lock = <span class="keyword">new</span> ReentrantLock(<span class="keyword">true</span>);</span><br><span class="line"><span class="comment">// 队列中是否有线程在等待获取锁</span></span><br><span class="line">lock.hasQueuedThreads();</span><br><span class="line"><span class="comment">// 锁是否已经被线程持有</span></span><br><span class="line">lock.isLocked();</span><br><span class="line"><span class="comment">// 是否是当前线程持有该锁</span></span><br><span class="line">lock.isHeldByCurrentThread();</span><br></pre></td></tr></table></figure>
+
+<p>上面锁在创建的时候设置 boolean 参数指定是否需要提供公平性，一般是不太建议引入公平性锁，因为只要引入公平性锁必然就要有额外的开销来保证线程获取锁的公平性，所以说除非业务实在是需要一般不引入。</p>
+<p>接下来我们再看一下和 ReentrantLock 类有关的一个比较实用的功能，配合 Condition 条件变量非常优雅的实现线程间的通信操作，就有点类似于 Object 类中的 wait，notify/notifyAll 方法，都是实现线程间的通信，而这里是采用 await，signal/signalAll 组合，我们可以看下面一段很简单的代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> List&lt;String&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line"><span class="keyword">private</span> ReentrantLock reentrantLock = <span class="keyword">new</span> ReentrantLock();</span><br><span class="line"><span class="keyword">private</span> Condition notEmpty = reentrantLock.newCondition();</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">produce</span><span class="params">(String str)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">  reentrantLock.lock();</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    list.add(str);</span><br><span class="line">    System.out.println(<span class="string">&quot;send a signal to add elements to the list&quot;</span>);</span><br><span class="line">    notEmpty.signal();</span><br><span class="line">    TimeUnit.SECONDS.sleep(<span class="number">5</span>);</span><br><span class="line">  &#125;<span class="keyword">finally</span> &#123;</span><br><span class="line">    reentrantLock.unlock();</span><br><span class="line">    System.out.println(<span class="string">&quot;producer unlock&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">consume</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">  reentrantLock.lock();</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    <span class="keyword">if</span>(list.size() == <span class="number">0</span>)&#123;</span><br><span class="line">      System.out.println(<span class="string">&quot;waiting for elements to add the list&quot;</span>);</span><br><span class="line">      notEmpty.await();</span><br><span class="line">      System.out.println(<span class="string">&quot;received a signal to add elements to the list&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    list.remove(list.size() - <span class="number">1</span>);</span><br><span class="line">    System.out.println(<span class="string">&quot;consume list element&quot;</span>);</span><br><span class="line">    TimeUnit.SECONDS.sleep(<span class="number">1</span>);</span><br><span class="line">  &#125;<span class="keyword">finally</span> &#123;</span><br><span class="line">    reentrantLock.unlock();</span><br><span class="line">    System.out.println(<span class="string">&quot;consumer unlock&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面代码我们拿一个 list 来简单模仿队列的生产和消费操作，同时通过 ReentrantLock 创建一个 notEmpty 的 condition 来实现当 list 集合大小为 0 时，消费端则需要等待生产端生产元素，一旦生产端有元素进入，立马通过 notEmpty 的 condition 来通知消费端消费，消费端在收到生产端的信号之后则可以继续消费。</p>
+<p>测试代码如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">Thread consumer = <span class="keyword">new</span> Thread(() -&gt; &#123;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    test.consume();</span><br><span class="line">  &#125;<span class="keyword">catch</span> (Exception e)&#123;</span><br><span class="line">    e.printStackTrace();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line">Thread producer = <span class="keyword">new</span> Thread(() -&gt; &#123;</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    test.produce(<span class="string">&quot;string&quot;</span>);</span><br><span class="line">  &#125;<span class="keyword">catch</span> (Exception e)&#123;</span><br><span class="line">    e.printStackTrace();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line">consumer.start();</span><br><span class="line">TimeUnit.SECONDS.sleep(<span class="number">1</span>);</span><br><span class="line">producer.start();</span><br></pre></td></tr></table></figure>
+
+<p>测试代码中先启动消费线程，消费线程启动之后，等待元素进入集合，接着启动生产线程，生产元素进入集合，紧接着发送有元素加入的信号通知消费线程开始消费。测试结果如下：</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">waiting for elements to add the list</span><br><span class="line">send a signal to add elements to the list</span><br><span class="line">producer unlock</span><br><span class="line">received a signal to add elements to the list</span><br><span class="line">consume list element</span><br><span class="line">consumer unlock</span><br></pre></td></tr></table></figure>
+
+<p>当然上面例子中的代码可能不是很严瑾，但我觉得足以说明 ReentrantLock 配合 Condition 一起使用可以实现的功能了，如果你想看下标准的实现方式，可以去看下标准类库中的 ArrayBlockingQueue，它里面的入队和出队操作就是利用了上面例子所表达的这一功能。</p>
+<p>上面描述了 ReentrantLock 类的整体使用，基本上能够做到 synchronized 关键字所能做到功能，那么它们两者的性能如何呢？其实在 Java 6 之前的版本，synchronized 关键字的性能表现不是很理想，直到在 Java 6 中进行了很大的改进，加入了偏斜锁，轻量级锁，重量级锁实现，这才让 synchronized 关键字的性能得到很大的改善，在这之后，如果是并发冲突很高的情况下，ReentrantLock 的性能表现会更好点，相反，synchronized 关键字的表现会更好些。</p>
+
+    </div>
+
+    
+    
+    
+        
+  <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
+    <div>扫描上面图中二维码关注微信公众号</div>
+  </div>
+<!-- 
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg">
+            <span class="icon">
+              <i class="wechat"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </a>
+        </div>
+    </div>
+  </div>
+-->
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/synchronized-%E5%8A%A0%E9%94%81%E5%AE%9E%E7%8E%B0%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/" rel="prev" title="synchronized 加锁实现线程安全">
+      <i class="fa fa-chevron-left"></i> synchronized 加锁实现线程安全
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/Java-%E4%B8%AD%E5%B8%B8%E8%A7%81%E7%9A%84%E7%BB%86%E7%B2%92%E5%BA%A6%E9%94%81%E5%AE%9E%E7%8E%B0/" rel="next" title="Java 中常见的细粒度锁实现">
+      Java 中常见的细粒度锁实现 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">rookiedev</p>
+  <div class="site-description" itemprop="description">daily development technology summary</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">45</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rookiedev-z" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rookiedev-z" rel="noopener" target="_blank"><i class="github fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rookiedev</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

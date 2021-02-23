@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="上篇文章大致说了下 ReentrantLock 类的使用，对 ReentrantLock 类有了初步的认识之后让我们一起来看下基于 ReentrantLock 的几种细粒度锁实现。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java 中常见的细粒度锁实现">
+<meta property="og:url" content="http://gittab.net/Java-%E4%B8%AD%E5%B8%B8%E8%A7%81%E7%9A%84%E7%BB%86%E7%B2%92%E5%BA%A6%E9%94%81%E5%AE%9E%E7%8E%B0/index.html">
+<meta property="og:site_name" content="rookiedev">
+<meta property="og:description" content="上篇文章大致说了下 ReentrantLock 类的使用，对 ReentrantLock 类有了初步的认识之后让我们一起来看下基于 ReentrantLock 的几种细粒度锁实现。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2021-02-23T15:49:41.000Z">
+<meta property="article:modified_time" content="2021-02-23T15:56:44.393Z">
+<meta property="article:author" content="rookiedev">
+<meta property="article:tag" content="Java MySQL Life">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://gittab.net/Java-%E4%B8%AD%E5%B8%B8%E8%A7%81%E7%9A%84%E7%BB%86%E7%B2%92%E5%BA%A6%E9%94%81%E5%AE%9E%E7%8E%B0/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'default'
+  };
+</script>
+
+  <title>Java 中常见的细粒度锁实现 | rookiedev</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <a target="_blank" rel="noopener" href="https://github.com/rookiedev-z"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">rookiedev</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">just do it</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/Java-%E4%B8%AD%E5%B8%B8%E8%A7%81%E7%9A%84%E7%BB%86%E7%B2%92%E5%BA%A6%E9%94%81%E5%AE%9E%E7%8E%B0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Java 中常见的细粒度锁实现
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-02-23 23:49:41 / Modified: 23:56:44" itemprop="dateCreated datePublished" datetime="2021-02-23T23:49:41+08:00">2021-02-23</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>上篇文章大致说了下 ReentrantLock 类的使用，对 ReentrantLock 类有了初步的认识之后让我们一起来看下基于 ReentrantLock 的几种细粒度锁实现。</p>
+<a id="more"></a>
+
+<p>这里我们还是接着用之前 <a target="_blank" rel="noopener" href="https://mp.weixin.qq.com/s/LhDnmnE5fy2tcgB5a0xI4g">synchronized 关键字加锁实现线程安全</a> 文章中举的账户扣款的例子好了，不过这里为了更贴近系统的功能实现，我们换一下思路，功能实现不变，只是把钱转换成我们系统中的使用的礼券好了，用户每次在系统中购买某项功能需要支付一定的礼券。那既然要实现细粒度锁，那就意味着不同用户账户扣除礼券的操作互不影响，只需要保证相同账户下的礼券扣除操作是线程安全的即可，而且仅仅是扣除礼券的那一小部分的代码块，对于账户的校验我们可以接受并发执行。</p>
+<p>–分段锁</p>
+<p>我们先来想象这样一个场景好了，可能我们的系统只有那么一小部分的忠实用户，他们更愿意在我们的系统中通过礼券购买，从而使用一些特殊的功能，更多的用户只是在使用我们系统的基本功能。接下来我们需要考虑这样两种情况：</p>
+<ul>
+<li>同一用户在同一时间通过礼券购买系统的付费功能，也就是在扣款时需要保证线程安全的情况</li>
+<li>不同用户在同一时间通过礼券购买系统的付费功能，这是系统的付费用户并发量，这个和我们需要创建的细粒度锁的数量有关。</li>
+</ul>
+<p>基于上面我们描述的场景可以看出，对于第一种情况只要有礼券消费就可能存在，虽然不常出现但肯定存在，那么我们就需要通过细粒度锁来控制礼券的扣除操作。而第二种情况也是存在的，但是由于付费用户的基数不是很大，所以这种情况也可以说很少了，这也就意味着在同一时间我们实际要创建的锁的数量并不是很多。这里稍微解释一下，因为在礼券消费的时候我们肯定是要创建锁来保证线程安全，而且锁是和用户绑定的，同一时间对于同一用户只会创建一把锁，而同一时间如果很多用户都在消费礼券，那这一刻就是有多少用户就需要创建多少把锁了。</p>
+<p>好了，通过上面的分析我们来看下分段锁是如何实现细粒度锁的。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">SegmentLock</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 默认预先创建的锁数量.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">int</span> DEFAULT_LOCK_COUNT = <span class="number">20</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ConcurrentHashMap&lt;Integer, ReentrantLock&gt; lockMap = <span class="keyword">new</span> ConcurrentHashMap&lt;&gt;();</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">SegmentLock</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        init(<span class="keyword">null</span>, <span class="keyword">false</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">SegmentLock</span><span class="params">(Integer count, <span class="keyword">boolean</span> isFair)</span> </span>&#123;</span><br><span class="line">        init(count, isFair);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">init</span><span class="params">(Integer count, <span class="keyword">boolean</span> isFair)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (count != <span class="keyword">null</span> &amp;&amp; count != <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="keyword">this</span>.DEFAULT_LOCK_COUNT = count;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// 预先初始化指定数量的锁</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="keyword">this</span>.DEFAULT_LOCK_COUNT; i++) &#123;</span><br><span class="line">            <span class="keyword">this</span>.lockMap.put(i, <span class="keyword">new</span> ReentrantLock(isFair));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> ReentrantLock <span class="title">get</span><span class="params">(T key)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">this</span>.lockMap.get((key.hashCode() &gt;&gt;&gt; <span class="number">1</span>) % DEFAULT_LOCK_COUNT);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">lock</span><span class="params">(T key)</span> </span>&#123;</span><br><span class="line">        ReentrantLock lock = <span class="keyword">this</span>.get(key);</span><br><span class="line">        lock.lock();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">unlock</span><span class="params">(T key)</span> </span>&#123;</span><br><span class="line">        ReentrantLock lock = <span class="keyword">this</span>.get(key);</span><br><span class="line">        lock.unlock();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>由于上一篇文章中我们对 ReentrantLock 已经有了了解了，上面的代码看起来就很简单，SegmentLock 类构造方法中调用 init 方法预先初始化指定数量的锁，然后就是提供了锁的获取以及加锁和解锁的方法。这里需要注意的一个地方就是我们获取锁的方式是：使用 key 的 hashCode 值向右无符号位移一位得到的值再对锁的数量取余，然后再用这个值作为索引去 Map 中获取锁。至于这里为什么要无符号位移呢，那是因为 hashCode 值有可能是得到一个负数，取余之后还是一个负数，用一个负数索引去 Map 中取值得到就是 null，会导致后面在使用时产生 NPE。接下来一起来看看如何使用:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> SegmentLock&lt;String&gt; segmentLock = <span class="keyword">new</span> SegmentLock&lt;&gt;();</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">consume</span><span class="params">(String userId, <span class="keyword">int</span> amount)</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">  System.out.println(<span class="string">&quot;verify that the account is normal...&quot;</span>);</span><br><span class="line">  TimeUnit.MILLISECONDS.sleep(<span class="number">500</span>);</span><br><span class="line">  ReentrantLock lock = segmentLock.get(userId);</span><br><span class="line">  lock.lock();</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;enter the deduction code block&quot;</span>);</span><br><span class="line">    Integer userAccountBalance = accountMap.get(userId);</span><br><span class="line">    <span class="keyword">if</span> (userAccountBalance &gt;= amount) &#123;</span><br><span class="line">      <span class="comment">// deduction</span></span><br><span class="line">      TimeUnit.MILLISECONDS.sleep(<span class="number">2000</span>);</span><br><span class="line">      userAccountBalance -= amount;</span><br><span class="line">      accountMap.put(userId, userAccountBalance);</span><br><span class="line">      System.out.println(Thread.currentThread().getName() + <span class="string">&quot; deduction success&quot;</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      TimeUnit.MILLISECONDS.sleep(<span class="number">1000</span>);</span><br><span class="line">      System.out.println(Thread.currentThread().getName() + <span class="string">&quot; deduction failed, insufficient account balance.&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    lock.unlock();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从使用代码中可以看出，基本上和 ReentrantLock 的使用一样，只是由于我们预先创建好了一定数量的锁，直接根据用户 id 取锁，然后再进行加锁解锁的操作，这可以减少锁创建的性能开销，这对于并发付费的用户量不大的情况下性能会有很好的提升，这也是为什么采用分段锁的原因。</p>
+<p>这里有个问题就是如果刚好两个用户 id 的 hash 值一样或者说 hash 值取余的结果一样，那么这两个用户获取的就是同一把锁，那在同时进行礼券消费时，一个用户先获取了锁并执行了加锁操作，另一个用户也获取了这把锁，在执行加锁的时候就需要等了，因为上一个用户已经用这把锁进行加锁操作了，等到上一个用户执行成功锁释放了之后就能进行加锁了。</p>
+<p>但你想想，本身付费用户基数就不大，这种情况出现的概率其实很小了，所以在这里其实问题不大，只是提醒一下可能会有这种情况的出现，那么就需要注意加锁的代码块如果本来执行时间就很长的情况，这里可能会让其中一个用户等待的时间加倍，当然一般也不建议锁住一个资源很长时间，也就是要加锁的代码块执行时间很长。</p>
+<p>优点：对于付费用户基数不大时，由于预创建了一部分锁，所以在付费加锁时性能表现很好。</p>
+<p>缺点：可能会出现不同用户获取到相同锁的情况，导致用户需要等待上一用户释放锁后才能加锁往下执行。</p>
+<p>–哈希锁</p>
+<p>对于分段锁，其实我们是设定了一个并发付费用户量不是很大的场景，那如果说我们的系统随着慢慢的运营迭代已经俘获了更多的忠实用户，越来越多的用户认可我们的系统，这时候可能并发付费用户量已经上来了，而且有少部分用户已经开始抱怨我们的系统在付费的时候有卡顿，需要等一段时间。</p>
+<p>这很可能就是我们所实现的分段锁数量已经不够了，很多用户 id 的 hash 值经过取余之后结果是一样的，那么获取的锁也是一样的，这时就需要等了，严重的时候可能多个用户同一时间获取的都是同一把锁，这时等待的时间就更长了。</p>
+<p> 对此我们就需要进行优化改进了，既然是锁不够那就需要创建更多的锁，那是不是可以直接预创建更多数量的锁呢，但这时付费用户基数已经上来了，我们可能需要为每一个用户分配一把锁，这种方式恐怕不行，一是我们不知道哪些用户需要用，还有就是一上来就创建这么多的锁也不现实啊。</p>
+<p>那么我们可以为每一个来付费的用户创建一把锁，付费结束之后再移除，注意不是预创建，而是付费时再创建，创建好之后同时会把锁放到 Map 中，以防同一个用户并发付费，这时就可以直接 Map 中获取同时加锁的次数加一，等到锁释放的时候再看下加锁的次数，如果等于一则从 Map 中移除，否则暂先不移除，只是释放锁就好了。来看看代码实现:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">HashLock</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">boolean</span> fair = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> SegmentLock&lt;T&gt; segmentLock = <span class="keyword">new</span> SegmentLock&lt;&gt;();</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> ConcurrentHashMap&lt;T, ReentrantLockCount&gt; lockMap = <span class="keyword">new</span> ConcurrentHashMap&lt;&gt;();</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">HashLock</span><span class="params">()</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="title">HashLock</span><span class="params">(<span class="keyword">boolean</span> fair)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">this</span>.fair = fair;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">lock</span><span class="params">(T key)</span> </span>&#123;</span><br><span class="line">        ReentrantLockCount lock;</span><br><span class="line">        <span class="comment">// 通过分段锁来保证获取锁时的线程安全</span></span><br><span class="line">        <span class="keyword">this</span>.segmentLock.lock(key);</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            lock = <span class="keyword">this</span>.lockMap.get(key);</span><br><span class="line">            <span class="keyword">if</span> (lock == <span class="keyword">null</span>) &#123;</span><br><span class="line">                lock = <span class="keyword">new</span> ReentrantLockCount(<span class="keyword">this</span>.fair);</span><br><span class="line">                <span class="keyword">this</span>.lockMap.put(key, lock);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// map 中已经存在说明锁已经创建，直接数量加一</span></span><br><span class="line">                lock.incrementAndGet();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            <span class="keyword">this</span>.segmentLock.unlock(key);</span><br><span class="line">        &#125;</span><br><span class="line">        lock.lock();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">unlock</span><span class="params">(T key)</span> </span>&#123;</span><br><span class="line">        ReentrantLockCount reentrantLockCount = <span class="keyword">this</span>.lockMap.get(key);</span><br><span class="line">        <span class="comment">// 判断加锁的次数等于一的话可以将 map 中的锁移除</span></span><br><span class="line">        <span class="keyword">if</span> (reentrantLockCount.getCount() == <span class="number">1</span>) &#123;</span><br><span class="line">            <span class="keyword">this</span>.segmentLock.lock(key);</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (reentrantLockCount.getCount() == <span class="number">1</span>) &#123;</span><br><span class="line">                    <span class="keyword">this</span>.lockMap.remove(key);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                <span class="keyword">this</span>.segmentLock.unlock(key);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        reentrantLockCount.unlock();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">ReentrantLockCount</span> </span>&#123;</span><br><span class="line">        <span class="keyword">private</span> ReentrantLock reentrantLock;</span><br><span class="line">        <span class="comment">// 记录加锁的次数</span></span><br><span class="line">        <span class="keyword">private</span> AtomicInteger count = <span class="keyword">new</span> AtomicInteger(<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">ReentrantLockCount</span><span class="params">(<span class="keyword">boolean</span> fair)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">this</span>.reentrantLock = <span class="keyword">new</span> ReentrantLock(fair);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">lock</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">this</span>.reentrantLock.lock();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">unlock</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">this</span>.count.decrementAndGet();</span><br><span class="line">            <span class="keyword">this</span>.reentrantLock.unlock();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">incrementAndGet</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">this</span>.count.incrementAndGet();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">int</span> <span class="title">getCount</span><span class="params">()</span> </span>&#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">this</span>.count.get();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面代码实现主要看 lock 和 unlock 方法就好了，当然还有一个包装了 ReentrantLock 的内部类 ReentrantLockCount，其中有一个字段来统计加锁的次数，这是为了避免同一个用户进行并发付费的时候重复创建锁，直接 Map 中获取，释放的时候如果加锁次数只有一次就可以直接移除。上面的 lock 方法和 unlock 方法采用了分段锁来保证锁的获取过程和移除过程是线程安全，不然可能导致锁的重复创建和重复移除问题。至于使用其实和分段锁差不多的：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> HashLock&lt;String&gt; hashLock = <span class="keyword">new</span> HashLock&lt;&gt;();</span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">consume1</span><span class="params">(String userId, <span class="keyword">int</span> amount)</span> </span>&#123;</span><br><span class="line">  System.out.println(<span class="string">&quot;verify that the account is normal...&quot;</span>);</span><br><span class="line">  TimeUnit.MILLISECONDS.sleep(<span class="number">500</span>);</span><br><span class="line">  hashLock.lock(userId);</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;enter the deduction code block&quot;</span>);</span><br><span class="line">    Integer userAccountBalance = accountMap.get(userId);</span><br><span class="line">    <span class="keyword">if</span> (userAccountBalance &gt;= amount) &#123;</span><br><span class="line">      <span class="comment">// deduction</span></span><br><span class="line">      TimeUnit.MILLISECONDS.sleep(<span class="number">2000</span>);</span><br><span class="line">      userAccountBalance -= amount;</span><br><span class="line">      accountMap.put(userId, userAccountBalance);</span><br><span class="line">      System.out.println(Thread.currentThread().getName() + <span class="string">&quot; deduction success&quot;</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      TimeUnit.MILLISECONDS.sleep(<span class="number">1000</span>);</span><br><span class="line">      System.out.println(Thread.currentThread().getName() + <span class="string">&quot; deduction failed, insufficient account balance.&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    hashLock.unlock(userId);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用代码其实和分段锁的使用差不多的，至于里面加的那些睡眠可以不用管，只是为了测试的时候更能看出效果而已。</p>
+<p>优点：很好地解决了不同用户共用锁的问题</p>
+<p>缺点：需要通过分段锁来维护锁的获取和移除，同时还要维护加锁的次数，分段锁这里锁的数量会成为性能的瓶颈，而且稍有不慎锁没释放成功可能会产生内存泄漏的问题。</p>
+<p> –弱引用锁</p>
+<p>上面对 HashLock 缺点中也提到由于需要通过分段锁来维护锁的获取和移除，同时分段锁锁的数量可能会成为性能的瓶颈。那么有没有更好地解决办法呢。既然说到了这里那肯定是有的，这里就涉及到了之前 &lt;&lt;谈谈 Java 中的各种引用类型&gt;&gt; 这篇文章中的知识点了，利用弱引用的特性，这样就能够拿掉分段锁，把锁对象的资源回收交给 Java 虚拟机，然后对于已经被回收的锁进行移除，能有效避免不小心发生内存泄漏的问题。代码实现:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">WeakHashLock</span>&lt;<span class="title">T</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * map 中锁数量阈值.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> LOCK_SIZE_THRESHOLD = <span class="number">1000</span>;</span><br><span class="line">    <span class="keyword">private</span> ReferenceQueue&lt;ReentrantLock&gt; queue = <span class="keyword">new</span> ReferenceQueue&lt;&gt;();</span><br><span class="line">    <span class="keyword">private</span> ConcurrentHashMap&lt;T, WeakRefLock&lt;T, ReentrantLock&gt;&gt; lockMap = <span class="keyword">new</span> ConcurrentHashMap&lt;&gt;();</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> ReentrantLock <span class="title">get</span><span class="params">(T key)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 可以设置一个阈值，当锁的数量超过这个阈值时移除一部分被回收的锁</span></span><br><span class="line">        <span class="keyword">if</span> (<span class="keyword">this</span>.lockMap.size() &gt; LOCK_SIZE_THRESHOLD) &#123;</span><br><span class="line">            clearEmptyRef();</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        WeakRefLock&lt;T, ReentrantLock&gt; weakRefLock = <span class="keyword">this</span>.lockMap.get(key);</span><br><span class="line">        ReentrantLock lock = weakRefLock == <span class="keyword">null</span> ? <span class="keyword">null</span> : weakRefLock.get();</span><br><span class="line">        <span class="keyword">while</span> (lock == <span class="keyword">null</span>) &#123;</span><br><span class="line">            lockMap.putIfAbsent(key, <span class="keyword">new</span> WeakRefLock&lt;&gt;(<span class="keyword">new</span> ReentrantLock(), <span class="keyword">this</span>.queue, key));</span><br><span class="line">              <span class="comment">// 再次从 Map 中获取，保证同一用户获取的锁是一致的</span></span><br><span class="line">            weakRefLock = lockMap.get(key);</span><br><span class="line">            lock = weakRefLock == <span class="keyword">null</span> ? <span class="keyword">null</span> : weakRefLock.get();</span><br><span class="line">            <span class="keyword">if</span> (lock != <span class="keyword">null</span>) &#123;</span><br><span class="line">                <span class="keyword">return</span> lock;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 这里注意如果堆资源过于紧张可能会返回空的情况，需要移除一部分被回收的锁</span></span><br><span class="line">            clearEmptyRef();</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> lock;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">clearEmptyRef</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        Reference&lt;? extends ReentrantLock&gt; ref;</span><br><span class="line">        <span class="keyword">while</span> ((ref = <span class="keyword">this</span>.queue.poll()) != <span class="keyword">null</span>) &#123;</span><br><span class="line">            WeakRefLock&lt;T, ? extends ReentrantLock&gt; weakRefLock = (WeakRefLock&lt;T, ? extends ReentrantLock&gt;) ref;</span><br><span class="line">            <span class="keyword">this</span>.lockMap.remove(weakRefLock.key);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">final</span> <span class="class"><span class="keyword">class</span> <span class="title">WeakRefLock</span>&lt;<span class="title">T</span>, <span class="title">K</span>&gt; <span class="keyword">extends</span> <span class="title">WeakReference</span>&lt;<span class="title">K</span>&gt; </span>&#123;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">final</span> T key;</span><br><span class="line"></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="title">WeakRefLock</span><span class="params">(K referent, ReferenceQueue&lt;? <span class="keyword">super</span> K&gt; queue, T key)</span> </span>&#123;</span><br><span class="line">            <span class="keyword">super</span>(referent, queue);</span><br><span class="line">            <span class="keyword">this</span>.key = key;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面代码中主要是利用了弱引用的特性，拿掉了锁的获取和创建时维护加锁次数的判断过程，在获取锁时直接从 Map 中获取，如果拿到为空则创建，同时这里要解释一下代码里面清理被回收的锁的过程。第一处在 Map 中的锁数量超过设定的阈值后将已经被回收的锁进行移除，主要是为了不让 Map 中存放过多的已经被回收的锁占用资源，第二处移除主要是以防资源过于紧张的情况，刚刚创建的弱引用锁立即就被回收了，这时急需移除一部分已经被回收的锁。当然如果资源真的都已经紧张到这个程度了的话，也应该考虑考虑提高一下机器的配置了。使用代码:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> WeakHashLock&lt;String&gt; weakHashLock = <span class="keyword">new</span> WeakHashLock&lt;&gt;();</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">consume2</span><span class="params">(String userId, <span class="keyword">int</span> amount)</span> </span>&#123;</span><br><span class="line">  System.out.println(<span class="string">&quot;verify that the account is normal...&quot;</span>);</span><br><span class="line">  TimeUnit.MILLISECONDS.sleep(<span class="number">500</span>);</span><br><span class="line">  ReentrantLock lock = weakHashLock.get(userId);</span><br><span class="line">  lock.lock();</span><br><span class="line">  <span class="keyword">try</span> &#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;enter the deduction code block&quot;</span>);</span><br><span class="line">    Integer userAccountBalance = accountMap.get(userId);</span><br><span class="line">    <span class="keyword">if</span> (userAccountBalance &gt;= amount) &#123;</span><br><span class="line">      <span class="comment">// deduction</span></span><br><span class="line">      TimeUnit.MILLISECONDS.sleep(<span class="number">2000</span>);</span><br><span class="line">      userAccountBalance -= amount;</span><br><span class="line">      accountMap.put(userId, userAccountBalance);</span><br><span class="line">      System.out.println(Thread.currentThread().getName() + <span class="string">&quot; deduction success&quot;</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">      TimeUnit.MILLISECONDS.sleep(<span class="number">1000</span>);</span><br><span class="line">      System.out.println(Thread.currentThread().getName() + <span class="string">&quot; deduction failed, insufficient account balance.&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">    lock.unlock();</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>使用上这里就不多说了，都基本上差不多，主要的区别还是锁的实现上不同而已。</p>
+<p>优点：利用了弱引用的特性，解除了分段锁那部分代码带来的性能瓶颈问题，将回收操作交给 Java 虚拟机。</p>
+<p>缺点：获取锁的代码实现看起来有点繁琐，应该还有更优雅的方式实现。</p>
+<p>好了，到这里就基本上将细粒度锁的实现方式都说完了，每种实现方式优缺点也大概总结了一下，根据优缺点其实也就能够知道每种实现方式所适用的场景，在选择的时候根据业务需求来进行选择。对于最后一种实现方式其实还有更优雅的实现，我们接下来再用一篇文章来说下最后一种实现方式。</p>
+
+    </div>
+
+    
+    
+    
+        
+  <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
+    <div>扫描上面图中二维码关注微信公众号</div>
+  </div>
+<!-- 
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg">
+            <span class="icon">
+              <i class="wechat"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </a>
+        </div>
+    </div>
+  </div>
+-->
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/synchronized-%E7%9A%84%E6%9B%BF%E4%BB%A3%E5%93%81-ReentrantLock/" rel="prev" title="synchronized 的替代品 ReentrantLock">
+      <i class="fa fa-chevron-left"></i> synchronized 的替代品 ReentrantLock
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/Java-%E7%BB%86%E7%B2%92%E5%BA%A6%E9%94%81%E7%BB%AD%E7%AF%87/" rel="next" title="Java 细粒度锁续篇">
+      Java 细粒度锁续篇 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">rookiedev</p>
+  <div class="site-description" itemprop="description">daily development technology summary</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">45</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rookiedev-z" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rookiedev-z" rel="noopener" target="_blank"><i class="github fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rookiedev</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

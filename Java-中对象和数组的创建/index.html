@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="在上篇文章中，主要介绍了 JVM 的运行时数据区域分布情况，包括堆，程序计数器，栈，方法区，运行时常量池，直接内存等，接下来我们就先来看下和堆区相关的知识点，之前说过堆区是提供所有的类实例以及数组进行内存分配的地方，那实例和数组又是怎么创建的呢？我们一起来看下吧。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java 中对象和数组的创建">
+<meta property="og:url" content="http://gittab.net/Java-%E4%B8%AD%E5%AF%B9%E8%B1%A1%E5%92%8C%E6%95%B0%E7%BB%84%E7%9A%84%E5%88%9B%E5%BB%BA/index.html">
+<meta property="og:site_name" content="rookiedev">
+<meta property="og:description" content="在上篇文章中，主要介绍了 JVM 的运行时数据区域分布情况，包括堆，程序计数器，栈，方法区，运行时常量池，直接内存等，接下来我们就先来看下和堆区相关的知识点，之前说过堆区是提供所有的类实例以及数组进行内存分配的地方，那实例和数组又是怎么创建的呢？我们一起来看下吧。">
+<meta property="og:locale">
+<meta property="article:published_time" content="2021-02-23T16:02:17.000Z">
+<meta property="article:modified_time" content="2021-02-23T16:02:55.956Z">
+<meta property="article:author" content="rookiedev">
+<meta property="article:tag" content="Java MySQL Life">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://gittab.net/Java-%E4%B8%AD%E5%AF%B9%E8%B1%A1%E5%92%8C%E6%95%B0%E7%BB%84%E7%9A%84%E5%88%9B%E5%BB%BA/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'default'
+  };
+</script>
+
+  <title>Java 中对象和数组的创建 | rookiedev</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <a target="_blank" rel="noopener" href="https://github.com/rookiedev-z"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">rookiedev</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">just do it</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/Java-%E4%B8%AD%E5%AF%B9%E8%B1%A1%E5%92%8C%E6%95%B0%E7%BB%84%E7%9A%84%E5%88%9B%E5%BB%BA/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Java 中对象和数组的创建
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-02-24 00:02:17 / Modified: 00:02:55" itemprop="dateCreated datePublished" datetime="2021-02-24T00:02:17+08:00">2021-02-24</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/JVM/" itemprop="url" rel="index"><span itemprop="name">JVM</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在上篇文章中，主要介绍了 JVM 的运行时数据区域分布情况，包括堆，程序计数器，栈，方法区，运行时常量池，直接内存等，接下来我们就先来看下和堆区相关的知识点，之前说过堆区是提供所有的类实例以及数组进行内存分配的地方，那实例和数组又是怎么创建的呢？我们一起来看下吧。</p>
+<a id="more"></a>
+
+<p>在 Java 程序员圈子中我们可能都听说过类似这样的段子：”程序员找不到对象没关系，我们可以直接 new 一个“，这句话虽说是程序员的自我调侃，但在 Java 语言层面我们确实是通过 new 这个关键字来创建对象的，而且在程序的运行过程中无时无刻都在创建。</p>
+<p>在 Java 语言层面我们通过 new 关键字很快就创建出一个对象，比如说像下面这样:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Object object = <span class="keyword">new</span> Object();</span><br></pre></td></tr></table></figure>
+
+<p>Java 语言层面看起来很简单，但这一行代码在 Java 虚拟机中却伴随着一系列的过程，首先 JVM 既然要创建 Object 类的对象，那它肯定需要先有 Object 类才能创建，于是就需要先将 Object 这个类加载到 JVM 中，也就是我们经常听到的类加载。类加载分为以下几个过程：<strong>加载，连接，初始化</strong>。</p>
+<h3 id="加载"><a href="#加载" class="headerlink" title="加载"></a>加载</h3><p>首先说明这里的加载并不是指上面提到的类加载过程，这里只是类加载过程中的一个阶段，拿上面的代码来说，也就是将 Object 这个类的字节流加载到 JVM 中，至于字节流从哪里来其实没有明确的规定，所以可以有很多种方式，可以从 jar 包读取，反射动态生成(动态生成代理类)，网络读取，以及 Class 文件，其中我们最为常见的可能就是从 Class 文件中读取。在读取时则需要借助类加载器来完成这个过程，同时根据类加载器的功能特征可将类加载器分成三级，在 Java 9 之前从上到下分别是启动类加载器(bootstrap class loader) &gt; 扩展类加载器(extension class loader) &gt; 应用类加载器(application class loader)。</p>
+<p>从名字也可以大概知道启动类加载器一般负责加载最基础以及最重要的类，包括其它下面的类加载器类，比如说扩展类加载器和应用类加载器都是 java.lang.ClassLoader 的子类，也就是这些类加载器类也是需要通过启动类加载器先进行加载才可使用。对于扩展类加载器主要负责 jre/lib/ext 目录下 jar 包中对应的类，而应用类加载器则负责加载应用程序路径下的类，通俗的来说就是我们指定的 classpath 路径下的类。从 Java 9 开始会有一些变化，比如说扩展类加载器改名成为平台类加载器(platform class loader)，如果对具体细节感兴趣的话可以去查阅相关资料，这里就不再深究了，知道个大概就行。</p>
+<p>除了 Java 提供的这三类核心加载器之外，我们也可以自定义我们自己的类加载器实现一些特殊的需求，比如说我们将一个 Class 文件内容先进行了加密操作，那么在加载时就需要进行解密，这时就需要通过我们自定义的类加载器来实现了。</p>
+<p>对于类加载器还有一个比较重要的点就是我们也经常听到的双亲委派模型，什么意思呢？前面我们提到类加载器是分等级的，在类加载器尝试加载一个类时，它首先需要先将这个加载请求转发给它的父类加载器，只有在父类加载器无法加载的情况下它才会去加载这个类，这也就是类加载器的双亲委派模型，其实主要是避免重复加载，如果每个类加载器都去加载自己所需要的类，那么就可能造成多个类加载器都去加载同一个类的情况。</p>
+<h3 id="连接"><a href="#连接" class="headerlink" title="连接"></a>连接</h3><p>连接里面又可细分为 <strong>验证，准备，解析</strong> 三个阶段，在类加载之后，JVM 首先需要对加载的字节流是符合 JVM 的规范进行验证，比如说加载的字节流当前版本的虚拟机是否能够处理，超出当前版本则无法处理，当然还有一些更为精细的校验。</p>
+<p>其次是准备阶段，在这一阶段中正式为类变量在方法区中分配内存以及设置初始值，也就是为 static 修饰的变量分配内存，对于基本数据类型，比如说 int 类型初始值为 0，boolean 类型为 false，对于引用类型则为 null，而真正的赋值是在第三阶段初始化阶段来完成。这里有个特殊情况，当类变量同时被 final 修饰的话，则会直接赋予代码中所给定的值。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">int</span> a = <span class="number">100</span>; <span class="comment">// 准备阶段 a 的初始值为 0</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">int</span> b = <span class="number">200</span>; <span class="comment">// 准备阶段 b 直接赋实际值 200</span></span><br></pre></td></tr></table></figure>
+
+<p>某个类在加载到虚拟机前，它是不知道它所依赖的类，以及它里面的字段和方法对应的具体地址的，因此 Java 编译器在编译时会生成一些符号引用来指代它所引用的类，字段，方法，那么在解析阶段就是将这些符号引用解析成内存中具体的地址，如果解析过程中某个类还没有加载那么就会触发该类的加载，但不一定会触发连接和初始化。</p>
+<h3 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h3><p>在初始化阶段，将根据代码的实际赋值进行初始化，比如说上面的 a 正式赋值为 100，这一过程 JVM 是通过执行 &lt;clinit&gt; 方法实现的，在 &lt;clinit&gt; 方法中包括了所有的类变量的赋值操作以及所有的静态代码块， &lt;clinit&gt; 方法具有以下主要的特征:</p>
+<ol>
+<li>&lt;clinit&gt; 方法和实例构造器(&lt;init&gt;)不同，它不需要显式调用父类实例构造器，虚拟机会保证子类的 &lt;clinit&gt; 方法执行前，父类的  &lt;clinit&gt; 方法已经执行完成，由此可见，JVM 中第一个被执行的 &lt;clinit&gt; 方法的类是 Object 类。</li>
+<li>对于接口，它和类有所不同，执行接口中的 &lt;clinit&gt; 方法不需要先执行父接口中的 &lt;clinit&gt; 方法，只有当父接口中的类变量需要赋值时才会执行，同时接口的实现类执行  &lt;clinit&gt; 方法也不会执行接口中的  &lt;clinit&gt; 方法。</li>
+<li>从第一点中可以看出，父类的 &lt;clinit&gt; 方法先执行意味着父类的静态代码块在子类的静态代码块之前执行。</li>
+<li>&lt;clinit&gt; 方法不是必需的，如果类中没有类变量的初始化赋值操作，也没有静态代码块，那么可以不用生产 &lt;clinit&gt; 方法。</li>
+<li>虚拟机会通过加锁的方式保证一个类的 &lt;clinit&gt; 方法在多线程环境中只会被执行一次，因此需要注意如果在 &lt;clinit&gt; 方法中有耗时操作，可能会造成阻塞。</li>
+</ol>
+<p>哪些情况下会触发类的初始化呢？下面则是比较常见的需要对类进行初始化的情况，对于个别复杂的暂时不提了。</p>
+<ol>
+<li>虚拟机启动时会先初始化用户指定的主类，比如 SpringBoot 里面的 Application 类</li>
+<li>通过 new 创建对象的类需先初始化</li>
+<li>通过类访问静态变量，对类中静态变量赋值，调用类的静态方法都会触发该类的初始化，这里需要注意，无论是静态变量的访问，赋值，以及静态方法的调用都是直接定义这些变量和方法的类才会初始化，比如说通过子类调用父类中的静态变量则只会触发父类初始化，而不会初始化子类</li>
+<li>初始化一个类时如果它的父类还没初始化会先将父类初始化</li>
+<li>对一个类进行反射调用也会触发该类的初始化</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Singleton</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="title">Singleton</span><span class="params">()</span></span>&#123;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="class"><span class="keyword">class</span> <span class="title">Holder</span> </span>&#123;</span><br><span class="line">        <span class="keyword">private</span> <span class="keyword">static</span> Singleton INSTANCE = <span class="keyword">new</span> Singleton();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> Singleton <span class="title">getSingleton</span><span class="params">()</span></span>&#123;</span><br><span class="line">        <span class="keyword">return</span> Holder.INSTANCE;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果你研究过单例模式的实现的话应该看到过上面面这种延时加载并且线程安全的实现方式，这里其实就是利用了 JVM 的类加载机制，当通过 Singleton 访问 getSingleton 方法，然后调用 Holder 类的类变量 singleton，这时才会触发 Holder 类的初始化，然后新建 Singleton 的实例，前面提到过，初始化过程 JVM 是保证线程安全并且只会执行一次，所以这里也就做到了线程安全的单例。</p>
+<h3 id="创建对象"><a href="#创建对象" class="headerlink" title="创建对象"></a>创建对象</h3><p>前面花了很大一部分介绍了对象在创建前的准备工作，也就是在创建 Object 的对象前，对 Object 类的一个加载的过程，那么在 Object 类加载完成之后，就可以开始创建 Object 的对象了。</p>
+<p>首先为新创建的对象在堆中进行内存分配，至于分配多大的内存在类加载完成之后就已经确定了，内存分配完之后，会将分配的内存空间初始化零值，这也是为什么我们在代码中可以不用赋值就能直接使用的原因。紧接着设置对象的头信息，比如说在 HotSpot 虚拟机中，一个对象在内存中主要包含三部分数据: <strong>对象头，实例数据，对齐填充</strong>，其中对象头中的信息比较重要，可以分为两部分，一部分是存储对象自身的运行时数据：哈希码，GC 分代年龄，锁状态标志，线程持有的锁，偏向线程 ID 等，而另一部分则是对象的类型指针，指向它的类元数据的指针，也就是该对象是属于哪个类的实例，但这部分数据并非所有的 JVM 都会保留，因为可通过其他的方式获取到该对象的类型数据。</p>
+<p>在设置完对象头信息之后，在虚拟机中一个对象的创建算是完成了，但是在 Java 语言层面才算刚刚开始，因为这时候对象的字段值都为零值，然后通过实例构造器 &lt;init&gt; 方法进行赋值操作，在 &lt;init&gt; 方法执行完成之后，对象的创建也就正式完成了。</p>
+<h3 id="创建数组"><a href="#创建数组" class="headerlink" title="创建数组"></a>创建数组</h3><p>对于数组类来说，它是由 JVM 直接创建的，而不会像非数组类创建对象时需要经历类加载器加载的过程，但是需要注意的是虽然数组类不会使用类加载器加载，但是数组类中的元素类型(非基本类型的情况下)还是需要经历类加载的过程的。还有一个值得注意的就是当我们定义一个数组而没有使用，这时只是将元素类型加载了，而不会触发元素类型类的初始化，就相当于只是开辟了一块空间出来，定义了用来保存对应元素类型的容器，而并没有开始真正使用到相应的元素类，只有在真正使用时才会初始化。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Object[] objects = <span class="keyword">new</span> Object[<span class="number">5</span>]; <span class="comment">// 定义一个 Object 类型的数组</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="访问对象"><a href="#访问对象" class="headerlink" title="访问对象"></a>访问对象</h3><p>对象创建好之后，我们可以通过引用中所存储的地址来找到堆中对象的具体位置，而引用中的地址可能有两种情况，一种是直接指向堆中对象的地址，另一种则是指向句柄池中句柄的地址，句柄中才真正存有对象在堆中的地址。通过下面的这幅图你应该就能明白两者的区别:</p>
+<p>第一种方式可以直接定位到对象的内存数据，第二种则需要进行多一次的地址定位才能找到对象的内存数据，相比下来块一些，但是第二种方式的优势在于垃圾收集时，对象地址发生了移动，这时只需要修改句柄池中句柄的指向即可，而不用修改引用本身。</p>
+<p>上面就是创建一个对象的整个过程了，可能就像前面提到的，在 Java 层面，创建一个对象直接 new 就好了，看起来非常简单，但如果我们对底层做了哪些事情有个初步的了解，这对我们在排查错误，理解代码为什么是按这样的顺序执行都是有很大帮助的。</p>
+
+    </div>
+
+    
+    
+    
+        
+  <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
+    <div>扫描上面图中二维码关注微信公众号</div>
+  </div>
+<!-- 
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg">
+            <span class="icon">
+              <i class="wechat"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </a>
+        </div>
+    </div>
+  </div>
+-->
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/JVM-%E7%9A%84%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E5%9F%9F%E5%88%86%E5%B8%83/" rel="prev" title="JVM 的运行时数据区域分布">
+      <i class="fa fa-chevron-left"></i> JVM 的运行时数据区域分布
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/%E5%AF%B9%E8%B1%A1%E5%92%8C%E6%95%B0%E7%BB%84%E7%9A%84%E5%88%9B%E5%BB%BA%E7%AE%80%E5%8D%95%E5%AE%9E%E8%B7%B5/" rel="next" title="对象和数组的创建简单实践">
+      对象和数组的创建简单实践 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8A%A0%E8%BD%BD"><span class="nav-number">1.</span> <span class="nav-text">加载</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%9E%E6%8E%A5"><span class="nav-number">2.</span> <span class="nav-text">连接</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9D%E5%A7%8B%E5%8C%96"><span class="nav-number">3.</span> <span class="nav-text">初始化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%AF%B9%E8%B1%A1"><span class="nav-number">4.</span> <span class="nav-text">创建对象</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E6%95%B0%E7%BB%84"><span class="nav-number">5.</span> <span class="nav-text">创建数组</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%BF%E9%97%AE%E5%AF%B9%E8%B1%A1"><span class="nav-number">6.</span> <span class="nav-text">访问对象</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">rookiedev</p>
+  <div class="site-description" itemprop="description">daily development technology summary</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">45</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rookiedev-z" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rookiedev-z" rel="noopener" target="_blank"><i class="github fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rookiedev</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

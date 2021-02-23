@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="说到 Java 虚拟机(Java Virtual Machine, 简称 JVM)，可能对于我们大部分 Java 程序员来说都感觉望而生畏，都觉得它很高大上，毕竟我们都知道因为它我们的 Java 程序才能做到一次编写，到处运行，而且因为它我们才能够做到只专注于业务代码实现，而不用去关心内存分配和回收的事情，仅从这两点就能看出 Java 虚拟机为我们做了多少事情，但也正因为它为我们做的事情太多了，以">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JVM 的运行时数据区域分布">
+<meta property="og:url" content="http://gittab.net/JVM-%E7%9A%84%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E5%9F%9F%E5%88%86%E5%B8%83/index.html">
+<meta property="og:site_name" content="rookiedev">
+<meta property="og:description" content="说到 Java 虚拟机(Java Virtual Machine, 简称 JVM)，可能对于我们大部分 Java 程序员来说都感觉望而生畏，都觉得它很高大上，毕竟我们都知道因为它我们的 Java 程序才能做到一次编写，到处运行，而且因为它我们才能够做到只专注于业务代码实现，而不用去关心内存分配和回收的事情，仅从这两点就能看出 Java 虚拟机为我们做了多少事情，但也正因为它为我们做的事情太多了，以">
+<meta property="og:locale">
+<meta property="article:published_time" content="2021-02-23T16:00:00.000Z">
+<meta property="article:modified_time" content="2021-02-23T16:01:16.417Z">
+<meta property="article:author" content="rookiedev">
+<meta property="article:tag" content="Java MySQL Life">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://gittab.net/JVM-%E7%9A%84%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E5%9F%9F%E5%88%86%E5%B8%83/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'default'
+  };
+</script>
+
+  <title>JVM 的运行时数据区域分布 | rookiedev</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <a target="_blank" rel="noopener" href="https://github.com/rookiedev-z"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">rookiedev</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">just do it</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/JVM-%E7%9A%84%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E5%9F%9F%E5%88%86%E5%B8%83/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          JVM 的运行时数据区域分布
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-02-24 00:00:00 / Modified: 00:01:16" itemprop="dateCreated datePublished" datetime="2021-02-24T00:00:00+08:00">2021-02-24</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/JVM/" itemprop="url" rel="index"><span itemprop="name">JVM</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>说到 Java 虚拟机(Java Virtual Machine, 简称 JVM)，可能对于我们大部分 Java 程序员来说都感觉望而生畏，都觉得它很高大上，毕竟我们都知道因为它我们的 Java 程序才能做到一次编写，到处运行，而且因为它我们才能够做到只专注于业务代码实现，而不用去关心内存分配和回收的事情，仅从这两点就能看出 Java 虚拟机为我们做了多少事情，但也正因为它为我们做的事情太多了，以至于我们只需要一心一意的去实现我们的需求，在大多数情况下我们都不用去关心底层如何做到的，但也因为它做了太多，导致我们在编码过程中遇到一些问题时根本不知道发生了什么，更别提如何解决了，因此我们还是有必要去了解一下 Java 虚拟机到底是怎么为我们服务的，这样在遇到问题时才不至于手足无措。</p>
+<a id="more"></a>
+
+<p>首先，让我们对 JVM 有个初步的印象，知道它是什么，然后能做什么。JVM 在维基百科上的定义如下：</p>
+<p><strong>Java 虚拟机(Java Virtual Machine，JVM)，一种能够运行 Java bytecode(字节码) 的虚拟机，以堆栈结构机器来进行实现。最早由 Sun 微系统所研发并实现第一个实现版本，是 Java 平台的一部分，能够运行以 Java 语言写作的软件程序。</strong></p>
+<p><strong>Java 虚拟机有自己完善的硬体架构，如处理器、堆栈、寄存器等，还具有相应的指令系统。JVM 屏蔽了与具体操作系统平台相关的信息，使得 Java 程序只需生成在 Java 虚拟机上运行的目标代码（字节码），就可以在多种平台上不加修改地运行。</strong></p>
+<p><strong>作为一种编程语言的虚拟机，实际上不只是专用于 Java 语言，只要生成的编译文件符合 JVM 对加载编译文件格式要求，任何语言都可以由 JVM 编译运行。</strong></p>
+<p>以上是维基百科对 JVM 的有关定义，通俗一点来说就是我们编写的 Java 程序经过编译之后得到的字节码就可以放到 JVM 上去运行了，至于是怎么运行的就和 JVM 内部的实现有关了，然后由于最终在 JVM 上运行的是编译之后的字节码，所以它不仅仅是只能运行 Java 程序，只要编译之后的文件符合 JVM 的要求就能够运行。</p>
+<p>下面我们就从 JVM 的运行时数据区域结构说起，其实这也是我们经常看到的一道面试题: Java 虚拟机的运行时数据区域分布是怎样的？如果你准备过面试，相信你肯定看到过这道面试题，我记得我刚毕业出来准备面试的时候就经常看到这道面试题，而当时说实话可能对 Java 虚拟机都没什么概念，所以可想而知在准备面试的时候只能是死记硬背答案了，以至于过一段时间就忘了，而现在对 Java 虚拟机不敢说非常熟悉，但起码也算是知道个一二了，下面就一起来看看回答这道题需要准备哪些知识点，看完这些知识点之后相信你也知道该怎么回答这道题了。</p>
+<p>JVM 定义了在程序执行期间各种运行时数据区域，主要有<strong>堆，程序计数器，栈，方法区，运行时常量池</strong>，其中一些数据区域随着 JVM 的启动而创建，在 JVM 退出时销毁，有一些则是线程私有的，在线程创建时初始化，线程退出时销毁，每个区域承担着不同的使命，下面来简单看下每个区域主要负责的内容。</p>
+<h3 id="堆"><a href="#堆" class="headerlink" title="堆"></a>堆</h3><p>所有的类实例以及数组在这里进行内存分配，在 JVM 启动时创建，并且所有 JVM 线程共享，即该区域的类实例和数组所有线程都能够访问，该区域大小可以是固定的，也可以根据需要弹性扩展，JVM 提供了启动参数供程序员指定堆的初始化大小，如果是弹性的需指定堆的最大值。JVM 指定堆内存的初始化大小参数为 -Xms，配置堆内存的最大值参数为 -Xmx。如果需要堆内存大小固定，只需要将 -Xms 和 -Xmx 的值配置相同即可，比如说 -Xms20m -Xmx20m。</p>
+<p>由于我们的程序可能无时无刻不在创建对象和数组，而有的对象或数组在创建好用完一次可能再也不需要了，这时就需要垃圾收集器来进行内存回收，因此堆区相对来说是垃圾收集器重点关注的区域，当 JVM 在该区域进行内存分配时遇到所需要的堆内存大于该区域可用的内存时，JVM 将会抛出 OutOfMemoryError 错误。</p>
+<p>至于堆区中的对象实例是如何分配以及垃圾收集器又是如何回收的，可能需要单独用好几篇文章来说明，这个先知道有这回事就行，待下回分解，今天先重点关注 JVM 的运行时内存区域分布。</p>
+<h3 id="程序计数器"><a href="#程序计数器" class="headerlink" title="程序计数器"></a>程序计数器</h3><p>JVM 支持一次多个线程的执行，每个线程都拥有自己的程序计数器，在任意时刻，每个线程当前正在执行的方法称为该线程的当前方法，如果当前方法不是本地方法(Native Method),程序计数器中的值是当前线程正在执行的当前方法中指令的地址，如果是本地方法，它的值是 undefined。在多线程环境中，每个线程的调度执行都是通过 CPU 来分配时间片的，当一个线程分配的时间片执行完之后需要重新回到就绪状态，等待下一次调度再恢复执行，而线程的恢复执行能回到上次执行的位置继续执行靠的就是程序计数器中记录的值。</p>
+<h3 id="栈"><a href="#栈" class="headerlink" title="栈"></a>栈</h3><ul>
+<li><p>虚拟机栈</p>
+<p>同样地每个线程也都拥有一个自己的虚拟机栈，随着线程的创建而创建，它里面主要存储着方法执行过程中产生的方法栈帧，栈帧中包含有局部变量表，操作数栈，动态连接，方法的出口等信息，每一个方法从被调用到执行返回的过程都对应着一个栈帧在虚拟机栈中压栈到弹栈的过程。</p>
+<p>在 JVM 规范中该区域大小可以是固定的，也可以根据需要弹性扩展，JVM 提供了启动参数供程序员指定虚拟机栈的初始化大小，如果是弹性的需指定最大值。而且该区域可能有两种异常产生，一个是如果线程中请求的栈深度超过了 JVM 所允许的最大深度，将抛出 StackOVerflowError 错误，另一个是如果 JVM 的栈内存支持动态扩展的话，当栈在尝试扩展的过程中已经没有足够的内存来支持扩展，或者在创建线程的时候就已经没有足够的内存来为新创建的线程初始化栈，JVM 将抛出 OutOfMemoryError 错误。</p>
+<p>而对于具体的 HotSpot 虚拟机来说，它是不支持扩展的，在创建线程初始化栈内存时就已经确定大小了，可通过 -Xss 参数指定栈容量的大小，比如说 -Xss20m 就是指定栈容量大小为 20MB。因此在 HotSpot 虚拟机中是不存在线程运行过程中由于栈的扩展而产生 OutOfMemoryError 错误，只可能在创建线程初始化栈内存的时候就已经无法初始化才会产生 OutOfMemoryError 错误。</p>
+</li>
+<li><p>本地方法栈</p>
+<p>本地方法栈(Native Method Stacks)和虚拟机栈的作用其实是一样的，只不过为了支持 Java 中的本地方法所以才有了本地方法栈的存在，相关特征可参考虚拟机栈中的内容。</p>
+</li>
+</ul>
+<h3 id="方法区"><a href="#方法区" class="headerlink" title="方法区"></a>方法区</h3><p>和堆区一样同样是在 JVM 启动时就创建，所有 JVM 线程共享，但该区域主要用于存储加载完成的每个类的运行时常量池，类型信息，常量，静态变量，字段和方法以及即时编译器编译后的代码缓存等这些类的结构。方法区逻辑上来说是堆区的一部分，但有时为了将它与堆作区分从而叫它非堆。</p>
+<p>JVM 规范中对方法区的规定其实是很宽泛的，对于方法区的实现方式也就由具体的虚拟机自己去定义了，在 JDK 8 以前，其中 HotSpot 虚拟机通过永久代(垃圾收集器的分代设计中的永久代)的方式来实现方法区，这样就可以直接采取垃圾收集器管理堆区的方式去管理方法区，省去了为方法区设计内存管理的工作。但是因为永久代的大小有个上限，通过 -XX:MaxPermSize=size 设置，即使不设置也会有个默认值，这就导致了 JVM 更容易遇到内存溢出的问题，因此在后来 JDK 发展的过程中开始逐步放弃永久代的实现方式，JDK 8 之后直接改成通过元空间(Metaspace)的方式实现，可通过 -XX:MaxMetaspaceSize=size 设置元空间最大值，默认是不做限制的，但由于元空间位于本地内存，也就是仅仅受限于本地内存的大小。</p>
+<p>对于该区域在 JVM 规范中明确说明简单的实现可以选择不进行垃圾收集或压缩，那是因为该区域存储的是主要是类的结构数据，垃圾收集器回收的也就是类的信息，而对于类的回收，需要进行类卸载，类卸载的条件又异常严格，也就导致垃圾收集器在该区域的回收效果实在是差强人意，但不管如何还是有必要对该区域进行回收，以防该区域产生内存泄漏问题。</p>
+<p>尽管 JVM 规范中描述如果方法区中的内存不能够继续满足内存分配请求的话将会抛出 OutOfMemoryError 错误，但是由于在 JDK 8 之后已经改为通过元空间(Metaspace)的方式实现该区域，因此基本上不会在该区域产生 OutOfMemoryError 错误，除非本地内存严重不够，已经无法为运行时产生的类信息分配内存了。</p>
+<h3 id="运行时常量池"><a href="#运行时常量池" class="headerlink" title="运行时常量池"></a>运行时常量池</h3><p>在方法区中其实也提到了运行时常量池，它是方法区中的一部分，主要存储着编译期间生成的各种字面量和符号引用，这些内容在类加载后存放至该区域中。同样的在 JVM 规范描述中，创建类或接口时，如果运行时常量池构造所需的内存已经超过 Java 虚拟机方法区中可用的内存，则 Java 虚拟机将抛出 OutOfMemoryError 错误，但正如上面所说的原因已经很难在该区域产生 OutOfMemoryError 错误了。</p>
+<h3 id="直接内存"><a href="#直接内存" class="headerlink" title="直接内存"></a>直接内存</h3><p>直接内存不是 JVM 运行时数据区域的一部分，在 JVM 的规范中也没有定义该内存区域，只不过由于这部分内存也是经常用到的，也可能导致 OutOfMemoryError 错误，可通过 -XX:MaxDirectMemorySize=size 参数来设置可使用的最大直接内存。其实这部分内存我也不是非常懂，可能很少接触到的原因，只是在《深入理解 Java 虚拟机》一书中看到说在 JDK 1.4 中加入的 NIO 中就利用到了这部分内存，避免了由于使用 Native 方法在 Java 堆和 Native 堆中来回复制数据的开销，显著提高了性能。</p>
+<p>这部分内存虽然说不会像其他区域一样有大小限制，但最终还是会受到本机的总内存大小的限制，因此我们可能只记得设置堆的大小参数，却忘了还有这部分内存的消耗，导致各个区域的内存加起来超过了本机的总内存大小，从而产生 OutOfMemoryError 错误。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>上面主要介绍了 Java 虚拟机的运行时数据区域分布，以及每个区域所负责的内容，这里我强烈推荐周志明著的《深入理解Java虚拟机》这本书，书中对上面的每个知识点都有非常全面的解析，相信这本书看完之后你对 JVM 会有更加全面的认识。这里先通过上面的内容让我们对 Java 虚拟机能够有一个初步的了解，接下来我将对每个区域进行扩展，并且进行深入了解，在这个深入了解的过程中再进一步的熟悉 Java 虚拟机，这可以帮助我们在遇到诡异的问题的时候知道是怎么产生的，然后该怎么去解决，同时也会对我们的日常编码有很好地指导作用，知其然而且知其所以然。</p>
+
+    </div>
+
+    
+    
+    
+        
+  <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
+    <div>扫描上面图中二维码关注微信公众号</div>
+  </div>
+<!-- 
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg">
+            <span class="icon">
+              <i class="wechat"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </a>
+        </div>
+    </div>
+  </div>
+-->
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/Java-%E7%BB%86%E7%B2%92%E5%BA%A6%E9%94%81%E7%BB%AD%E7%AF%87/" rel="prev" title="Java 细粒度锁续篇">
+      <i class="fa fa-chevron-left"></i> Java 细粒度锁续篇
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/Java-%E4%B8%AD%E5%AF%B9%E8%B1%A1%E5%92%8C%E6%95%B0%E7%BB%84%E7%9A%84%E5%88%9B%E5%BB%BA/" rel="next" title="Java 中对象和数组的创建">
+      Java 中对象和数组的创建 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A0%86"><span class="nav-number">1.</span> <span class="nav-text">堆</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A8%8B%E5%BA%8F%E8%AE%A1%E6%95%B0%E5%99%A8"><span class="nav-number">2.</span> <span class="nav-text">程序计数器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%88"><span class="nav-number">3.</span> <span class="nav-text">栈</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%96%B9%E6%B3%95%E5%8C%BA"><span class="nav-number">4.</span> <span class="nav-text">方法区</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%90%E8%A1%8C%E6%97%B6%E5%B8%B8%E9%87%8F%E6%B1%A0"><span class="nav-number">5.</span> <span class="nav-text">运行时常量池</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%9B%B4%E6%8E%A5%E5%86%85%E5%AD%98"><span class="nav-number">6.</span> <span class="nav-text">直接内存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">rookiedev</p>
+  <div class="site-description" itemprop="description">daily development technology summary</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">45</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rookiedev-z" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rookiedev-z" rel="noopener" target="_blank"><i class="github fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rookiedev</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

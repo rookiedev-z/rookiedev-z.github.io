@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Java 中除了八种基本类型(byte, short, int, long, float, double, char, boolean)之外就是引用类型，而引用类型又有强引用，软引用，弱引用和幻象引用。可能我们平常代码中用到最多的是强引用，对于其他的一般用的很少，但有些框架中还是会用到的，所以我们还是有必要去了解下这块的东西，这有利于我们更好地去理解相关的框架原理。下面我们就来分别看下这几类引用都">
+<meta property="og:type" content="article">
+<meta property="og:title" content="谈谈 Java 中的引用">
+<meta property="og:url" content="http://gittab.net/%E8%B0%88%E8%B0%88-Java-%E4%B8%AD%E7%9A%84%E5%BC%95%E7%94%A8/index.html">
+<meta property="og:site_name" content="rookiedev">
+<meta property="og:description" content="Java 中除了八种基本类型(byte, short, int, long, float, double, char, boolean)之外就是引用类型，而引用类型又有强引用，软引用，弱引用和幻象引用。可能我们平常代码中用到最多的是强引用，对于其他的一般用的很少，但有些框架中还是会用到的，所以我们还是有必要去了解下这块的东西，这有利于我们更好地去理解相关的框架原理。下面我们就来分别看下这几类引用都">
+<meta property="og:locale">
+<meta property="article:published_time" content="2021-02-23T15:44:16.000Z">
+<meta property="article:modified_time" content="2021-02-23T15:45:07.373Z">
+<meta property="article:author" content="rookiedev">
+<meta property="article:tag" content="Java MySQL Life">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://gittab.net/%E8%B0%88%E8%B0%88-Java-%E4%B8%AD%E7%9A%84%E5%BC%95%E7%94%A8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'default'
+  };
+</script>
+
+  <title>谈谈 Java 中的引用 | rookiedev</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <a target="_blank" rel="noopener" href="https://github.com/rookiedev-z"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">rookiedev</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">just do it</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E8%B0%88%E8%B0%88-Java-%E4%B8%AD%E7%9A%84%E5%BC%95%E7%94%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          谈谈 Java 中的引用
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-02-23 23:44:16 / Modified: 23:45:07" itemprop="dateCreated datePublished" datetime="2021-02-23T23:44:16+08:00">2021-02-23</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Java 中除了八种基本类型(byte, short, int, long, float, double, char, boolean)之外就是引用类型，而引用类型又有强引用，软引用，弱引用和幻象引用。可能我们平常代码中用到最多的是强引用，对于其他的一般用的很少，但有些框架中还是会用到的，所以我们还是有必要去了解下这块的东西，这有利于我们更好地去理解相关的框架原理。下面我们就来分别看下这几类引用都各有什么特性：</p>
+<a id="more"></a>
+
+<p>声明：下面的代码测试是基于 java 11.0.8 版本下运行。</p>
+<h3 id="强引用"><a href="#强引用" class="headerlink" title="强引用"></a>强引用</h3><p>强引用算是我们经常使用的，也是我们平常代码中常见的普通对象引用，比如说下面代码中的对象引用：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ReferenceObject referenceObject1 = <span class="keyword">new</span> ReferenceObject();</span><br><span class="line">referenceObject1 = <span class="keyword">null</span>;</span><br></pre></td></tr></table></figure>
+
+<p>上面代码中 ReferenceObject 是一个普通的对象，referenceObject1 就是强引用，强引用所引用的对象实例不会被 GC 回收，JVM 宁愿抛出OutOfMemoryError 运行时错误让程序异常终止，也不会回收强引用所指向的对象实例。随后显式地将 referenceObject1 赋值为 null 之后，那么当第一行中创建的对象实例已经没有引用指向该实例了，那么 GC 将会回收该对象实例所在的内存空间。</p>
+<p>除了强引用之外，剩下的软引用，弱引用，幻象引用(虚引用)都是继承自 Reference 抽象类，对应的类分别是 SoftReference，WeakReference，PhantomReference，下面我们一个一个看下这几个引用。</p>
+<h3 id="软引用"><a href="#软引用" class="headerlink" title="软引用"></a>软引用</h3><p>软引用，也就是通过 SoftReference 来实现，这类引用相对强引用来说更弱一些，这类引用在内存充足的情况下不会被回收，通常是在内存不足产生 OutOfMemoryError 之前 GC 将决定回收这类引用所指向的对象实例。下面让尝试模拟这种情况的发生：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">String soft = <span class="keyword">new</span> String(<span class="string">&quot;soft&quot;</span>);</span><br><span class="line">SoftReference&lt;String&gt; softReference = <span class="keyword">new</span> SoftReference&lt;&gt;(soft);</span><br><span class="line">soft = <span class="keyword">null</span>;</span><br><span class="line">System.gc();</span><br><span class="line"><span class="comment">// print soft</span></span><br><span class="line">System.out.println(softReference.get());</span><br></pre></td></tr></table></figure>
+
+<p>上面代码中第一行创建的 String 对象实例在将 soft 强引用显式地赋值为 null 之后就只有 softreference 软引用指向该对象实例了，然后就算我们主动发起 GC，GC 在内存充足的情况下也不会去回收软引用指向的这个对象实例，这时是还可以通过 softReference 的 get 方法来获取该对象的。接下来我们创建更多的对象实例模拟消耗更多的内存，直到内存不足产生 OutOfMemoryError 之前 GC 将会回收 softReference 指向的对象实例，一旦 GC 决定回收这类引用指向的对象实例，那么我们再去通过 get 方法获取该对象将会返回 null。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">List&lt;String&gt; list = <span class="keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line"><span class="keyword">while</span> (<span class="keyword">true</span>)&#123;</span><br><span class="line">  String string = <span class="keyword">new</span> String(<span class="string">&quot;123&quot;</span>);</span><br><span class="line">  list.add(string);</span><br><span class="line">  <span class="comment">// 只有当 JVM 发现堆中内存不够用了，快要发生 OOM 时才会去回收软引用</span></span><br><span class="line">  <span class="keyword">if</span>(softReference.get() == <span class="keyword">null</span>)&#123;</span><br><span class="line">    <span class="comment">// print true</span></span><br><span class="line">    System.out.println(softReference.get() == <span class="keyword">null</span>);</span><br><span class="line">    <span class="keyword">break</span>;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面代码中是模拟创建无限多的对象来占用更多的内存，直到 GC 决定将 softReference 引用指向的对象实例才停止创建，也就是我们通过 get 方法得到的是个 null 来判断 GC 已经决定将该对象实例进行回收。</p>
+<p>注意：上面的代码最好是加上 JVM 启动参数 ‘-Xms3m -Xmx3m’ 来配置堆内存的初始大小和最大堆内存为 3m，不然可能需要执行有一段时间才会停下来。</p>
+<p>软引用一般适合用来缓存那些在内存中比较难以构建的数据，一旦构建之后就会缓存下来，一般也不会将该缓存删掉，只会在内存不足的情况下才会移除该缓存。</p>
+<h3 id="弱引用"><a href="#弱引用" class="headerlink" title="弱引用"></a>弱引用</h3><p>弱引用是通过 WeakReference 实现，和 SoftReference 比较类似，只是它相对软引用来说更弱，在下一次的 GC 就会将这类引用指向的对象回收掉，而不会像软引用一样只会在内存不足的情况下才决定回收。同样的看下面代码测试：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">String weak = <span class="keyword">new</span> String(<span class="string">&quot;weak&quot;</span>);</span><br><span class="line">WeakReference&lt;String&gt; weakReference = <span class="keyword">new</span> WeakReference&lt;&gt;(weak);</span><br><span class="line">weak = <span class="keyword">null</span>;</span><br><span class="line"><span class="comment">// print weak</span></span><br><span class="line">System.out.println(weakReference.get());</span><br><span class="line">System.gc();</span><br><span class="line"><span class="comment">// 在经过一次 GC 标记之后，弱引用所指向的对象内存实例将会被回收</span></span><br><span class="line"><span class="comment">// print true</span></span><br><span class="line">System.out.println(weakReference.get() == <span class="keyword">null</span>);</span><br></pre></td></tr></table></figure>
+
+<p>上面代码中 weakReference 所指向的对象实例在发起一次 GC 之后再次通过 get 方法返回的就是 null 了。</p>
+<p>对于弱引用 Java 还提供了一个 WeakHashMap 的数据结构，和我们常用的 HashMap 很像，区别就是它是使用 WeakReference 作为 key，而且如果 WeakHashMap 中 key 被 GC 回收之后，对应的 entry 也会被自动移除。可以通过下面的代码来验证：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">String weakKey = <span class="keyword">new</span> String(<span class="string">&quot;weakKey&quot;</span>);</span><br><span class="line">WeakHashMap&lt;String, Boolean&gt; weakHashMap = <span class="keyword">new</span> WeakHashMap&lt;&gt;();</span><br><span class="line">weakHashMap.put(weakKey, <span class="keyword">true</span>);</span><br><span class="line">weakKey = <span class="keyword">null</span>;</span><br><span class="line">System.gc();</span><br><span class="line"><span class="comment">// 在经过一次 GC 之后，GC 就已经决定将弱引用所指向的对象进行回收，</span></span><br><span class="line"><span class="comment">// 对应的 entry 也会被自动移除，weakHashMap 为空</span></span><br><span class="line"><span class="comment">// print true</span></span><br><span class="line">System.out.println(weakHashMap.isEmpty());</span><br></pre></td></tr></table></figure>
+
+<p>通过上面的代码测试可以看到在 GC 决定将弱引用所指向的对象进行回收之后，相应的 weakHashMap 中的 entry 也被自动移除了，weakHashMap 的大小为 0。这个特性其实可以用于创建本地锁，锁在使用时不会被回收，一旦锁使用完了之后一段时间就可能会被回收掉了，下次再次获取时不存在则创建，存在则直接返回即可，也就是将创建的锁资源交给 JVM 来管理，这样就避免了大量锁创建之后没有得到及时的回收占用太多的内存空间。</p>
+<p>同样的，和软引用一样，弱引用也适合用来作缓存，只不过适用的场景不一样，弱引用则适合那种资源创建快速，同时缓存时间较短的情况。</p>
+<h3 id="幻象引用"><a href="#幻象引用" class="headerlink" title="幻象引用"></a>幻象引用</h3><p>对于幻象引用，也可以称为虚引用，这类引用通过 get 方法得到的始终是个 null，防止恢复一个几乎已经删除的对象。幻象引用一般是配合引用队列一块使用，不然好像也没有什么其他用处了，当幻象引用所指向的对象的物理内存被回收时，幻象引用将会进入队列，接下来就可以轮询该队列做一些对象内存被回收之后的动作。可通过下面的代码测试验证：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">ReferenceObject referenceObject = <span class="keyword">new</span> ReferenceObject();</span><br><span class="line">ReferenceQueue&lt;ReferenceObject&gt; referenceQueue = <span class="keyword">new</span> ReferenceQueue&lt;&gt;();</span><br><span class="line">PhantomReference&lt;ReferenceObject&gt; phantomReference = <span class="keyword">new</span> PhantomReference&lt;&gt;(referenceObject, referenceQueue);</span><br><span class="line"><span class="comment">// print null</span></span><br><span class="line">System.out.println(phantomReference.get());</span><br><span class="line">referenceObject = <span class="keyword">null</span>;</span><br><span class="line">System.gc();</span><br><span class="line"><span class="comment">// print true</span></span><br><span class="line">System.out.println(phantomReference.isEnqueued());</span><br><span class="line"><span class="comment">// print true</span></span><br><span class="line">System.out.println(referenceQueue.poll() == phantomReference);</span><br></pre></td></tr></table></figure>
+
+<p>从上面代码中可以看到幻象引用调用 get 方法得到的是个 null，在产生 GC 之后，幻象引用指向的对象物理内存被回收，幻象引用进入队列，通过队列的 poll 方法拿到的和幻象引用的地址是相同的。</p>
+<p>注：这里你可以尝试在 ReferenceObject 类中重写 finalize 方法，finalize 方法中先采用空实现看上面的运行结果，然后在 finalize 方法中加上调用父类的 finalize 方法的操作，这时再看运行结果，可以去研究下为什么会出现这种情况(我也还没搞懂为啥，可能和 JVM 的优化有关吧)。</p>
+<p>幻象引用的作用主要是能够确定对象何时从内存中删除，当我们有一个业务操作需要分配比较大的内存时，我们就可以采用幻象引用来监视这个操作，通过幻象引用来实现只有当上一个业务操作分配的大内存被回收了之后才进行下一次的大内存分配操作，这样就能避免上一个业务操作分配的大内存还没被回收再次分配一个大内存有可能导致 OOM 的情况发生。</p>
+<p>好了，到这里引用的四种类型就已经介绍完了，从上面的整体描述来看，引用类型主要是和 GC 回收引用指向的对象的时机有关，不同的引用类型所指向的对象实例在不同的时间点，不同的条件下被回收，然后我们就可以根据这些特性来做匹配我们业务类型的事情，其实我是想通过这个来引出接下来我想写的和锁有关的知识点，上面弱引用中我已经稍微提到了，下篇文章开始我们就一起来看下和锁相关的介绍。</p>
+
+    </div>
+
+    
+    
+    
+        
+  <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
+    <div>扫描上面图中二维码关注微信公众号</div>
+  </div>
+<!-- 
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg">
+            <span class="icon">
+              <i class="wechat"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </a>
+        </div>
+    </div>
+  </div>
+-->
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/Java-%E4%B8%AD%E9%80%9A%E8%BF%87%E6%9E%9A%E4%B8%BE%E5%AE%9E%E7%8E%B0%E5%8D%95%E4%BE%8B%E5%92%8C%E7%AD%96%E7%95%A5%E6%A8%A1%E5%BC%8F/" rel="prev" title="Java 中通过枚举实现单例和策略模式">
+      <i class="fa fa-chevron-left"></i> Java 中通过枚举实现单例和策略模式
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/synchronized-%E5%8A%A0%E9%94%81%E5%AE%9E%E7%8E%B0%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/" rel="next" title="synchronized 加锁实现线程安全">
+      synchronized 加锁实现线程安全 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%BA%E5%BC%95%E7%94%A8"><span class="nav-number">1.</span> <span class="nav-text">强引用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BD%AF%E5%BC%95%E7%94%A8"><span class="nav-number">2.</span> <span class="nav-text">软引用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BC%B1%E5%BC%95%E7%94%A8"><span class="nav-number">3.</span> <span class="nav-text">弱引用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%B9%BB%E8%B1%A1%E5%BC%95%E7%94%A8"><span class="nav-number">4.</span> <span class="nav-text">幻象引用</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">rookiedev</p>
+  <div class="site-description" itemprop="description">daily development technology summary</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">45</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rookiedev-z" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rookiedev-z" rel="noopener" target="_blank"><i class="github fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rookiedev</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

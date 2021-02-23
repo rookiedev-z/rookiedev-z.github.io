@@ -194,7 +194,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E4%BD%A0%E8%BF%98%E5%9C%A8%E4%B9%A0%E6%83%AF%E7%9A%84%E4%BD%BF%E7%94%A8-keys-%E6%9F%A5%E7%9C%8B-redis-%E4%B8%AD%E7%9A%84%E6%89%80%E6%9C%89%E6%95%B0%E6%8D%AE%E5%90%97/">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/JVM-%E7%9A%84%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E7%AE%97%E6%B3%95/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -208,7 +208,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/%E4%BD%A0%E8%BF%98%E5%9C%A8%E4%B9%A0%E6%83%AF%E7%9A%84%E4%BD%BF%E7%94%A8-keys-%E6%9F%A5%E7%9C%8B-redis-%E4%B8%AD%E7%9A%84%E6%89%80%E6%9C%89%E6%95%B0%E6%8D%AE%E5%90%97/" class="post-title-link" itemprop="url">你还在习惯的使用 keys * 查看 redis 中的所有数据吗</a>
+            <a href="/JVM-%E7%9A%84%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E7%AE%97%E6%B3%95/" class="post-title-link" itemprop="url">JVM 的垃圾收集算法</a>
         </h2>
 
         <div class="post-meta">
@@ -219,7 +219,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2020-08-31 21:02:11 / Modified: 21:03:16" itemprop="dateCreated datePublished" datetime="2020-08-31T21:02:11+08:00">2020-08-31</time>
+              <time title="Created: 2021-02-24 00:05:15 / Modified: 00:11:02" itemprop="dateCreated datePublished" datetime="2021-02-24T00:05:15+08:00">2021-02-24</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -227,7 +227,7 @@
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/redis/" itemprop="url" rel="index"><span itemprop="name">redis</span></a>
+                  <a href="/categories/JVM/" itemprop="url" rel="index"><span itemprop="name">JVM</span></a>
                 </span>
             </span>
 
@@ -242,12 +242,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>redis 在我们的日常开发中其实还是用的比较多的，常用来做缓存或者存放一些热点数据，主要为了提高系统的响应速度。在我们平常使用中，我们可能都习惯的使用 keys * 命令来查询数据库中的数据存储情况。</p>
-<p>这时也许我们都是在开发环境执行，开发环境 redis 中的数据量不是很多，redis 也很快的能给我们响应。但是如果你要查询的 redis 中存储了非常大的数据量，这时候你还能愉快的使用这个命令吗？</p>
-<p>首先，我们来大概了解下 keys 命令是用来干嘛的，它是用来查找所有符合给定模式 pattern 的 key ，上面的 * 表示匹配所有数据，同时还有下面几种用法:</p>
+          <p>在《Java 中对象和数组的创建》一文中我们主要介绍了在 Java 虚拟机中创建一个对象的完整过程，而我们的程序在运行时可能无时无刻不在创建对象，每创建一个对象就需要在堆中进行内存分配，可是堆内存大小毕竟是有限的，总会有用完的时候，那如果用完了该怎么办呢？</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/%E4%BD%A0%E8%BF%98%E5%9C%A8%E4%B9%A0%E6%83%AF%E7%9A%84%E4%BD%BF%E7%94%A8-keys-%E6%9F%A5%E7%9C%8B-redis-%E4%B8%AD%E7%9A%84%E6%89%80%E6%9C%89%E6%95%B0%E6%8D%AE%E5%90%97/#more" rel="contents">
+              <a class="btn" href="/JVM-%E7%9A%84%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E7%AE%97%E6%B3%95/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -271,7 +269,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/macOS-%E4%B8%8B%E4%BD%BF%E7%94%A8-Docker-%E8%BF%90%E8%A1%8C-MySQL-%E6%9C%8D%E5%8A%A1%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98%E8%AF%B4%E6%98%8E/">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E5%AF%B9%E8%B1%A1%E5%92%8C%E6%95%B0%E7%BB%84%E7%9A%84%E5%88%9B%E5%BB%BA%E7%AE%80%E5%8D%95%E5%AE%9E%E8%B7%B5/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -285,7 +283,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/macOS-%E4%B8%8B%E4%BD%BF%E7%94%A8-Docker-%E8%BF%90%E8%A1%8C-MySQL-%E6%9C%8D%E5%8A%A1%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98%E8%AF%B4%E6%98%8E/" class="post-title-link" itemprop="url">macOS 下使用 Docker 运行 MySQL 服务遇到的问题说明</a>
+            <a href="/%E5%AF%B9%E8%B1%A1%E5%92%8C%E6%95%B0%E7%BB%84%E7%9A%84%E5%88%9B%E5%BB%BA%E7%AE%80%E5%8D%95%E5%AE%9E%E8%B7%B5/" class="post-title-link" itemprop="url">对象和数组的创建简单实践</a>
         </h2>
 
         <div class="post-meta">
@@ -296,7 +294,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2020-08-19 20:45:14 / Modified: 20:53:59" itemprop="dateCreated datePublished" datetime="2020-08-19T20:45:14+08:00">2020-08-19</time>
+              <time title="Created: 2021-02-24 00:03:43 / Modified: 00:04:28" itemprop="dateCreated datePublished" datetime="2021-02-24T00:03:43+08:00">2021-02-24</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -304,7 +302,7 @@
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Docker/" itemprop="url" rel="index"><span itemprop="name">Docker</span></a>
+                  <a href="/categories/JVM/" itemprop="url" rel="index"><span itemprop="name">JVM</span></a>
                 </span>
             </span>
 
@@ -319,11 +317,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>在之前的使用 Docker 运行 MySQL 服务的这篇文章中，有个问题没有描述清楚，这里我纠正下当时的说法，并且详细解释下缘由。</p>
-<p>当时我做的测试是在 macOS 系统下完成的，当时使用 Docker 启动服务的时候报错了，报错信息如下:</p>
+          <p>在《Java 中对象和数组的创建》一文中提到了很多 JVM 的理论知识，而且里面可能还有很多关联的 JVM 知识点没有介绍到，所以可能初次看起来都比较抽象，但是没关系，先硬着头皮坚持看下去，对这些东西有个初步的印象，等到后面关联的这些知识点都提到了之后你再回过头来看可能就会有种打通任督二脉的感觉了。这里为了加深一下这些理论知识的印象，下面就来看下上一篇文章中提到的有关理论知识的简单实践和验证。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/macOS-%E4%B8%8B%E4%BD%BF%E7%94%A8-Docker-%E8%BF%90%E8%A1%8C-MySQL-%E6%9C%8D%E5%8A%A1%E9%81%87%E5%88%B0%E7%9A%84%E9%97%AE%E9%A2%98%E8%AF%B4%E6%98%8E/#more" rel="contents">
+              <a class="btn" href="/%E5%AF%B9%E8%B1%A1%E5%92%8C%E6%95%B0%E7%BB%84%E7%9A%84%E5%88%9B%E5%BB%BA%E7%AE%80%E5%8D%95%E5%AE%9E%E8%B7%B5/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -347,7 +344,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E5%85%B3%E4%BA%8E%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5%E7%9A%84%E6%95%B0%E6%8D%AE%E9%87%8D%E5%A4%8D%E9%97%AE%E9%A2%98/">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/Java-%E4%B8%AD%E5%AF%B9%E8%B1%A1%E5%92%8C%E6%95%B0%E7%BB%84%E7%9A%84%E5%88%9B%E5%BB%BA/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -361,7 +358,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/%E5%85%B3%E4%BA%8E%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5%E7%9A%84%E6%95%B0%E6%8D%AE%E9%87%8D%E5%A4%8D%E9%97%AE%E9%A2%98/" class="post-title-link" itemprop="url">关于批量插入的数据重复问题</a>
+            <a href="/Java-%E4%B8%AD%E5%AF%B9%E8%B1%A1%E5%92%8C%E6%95%B0%E7%BB%84%E7%9A%84%E5%88%9B%E5%BB%BA/" class="post-title-link" itemprop="url">Java 中对象和数组的创建</a>
         </h2>
 
         <div class="post-meta">
@@ -372,7 +369,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2020-08-12 21:31:20 / Modified: 21:33:05" itemprop="dateCreated datePublished" datetime="2020-08-12T21:31:20+08:00">2020-08-12</time>
+              <time title="Created: 2021-02-24 00:02:17 / Modified: 00:02:55" itemprop="dateCreated datePublished" datetime="2021-02-24T00:02:17+08:00">2021-02-24</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -380,7 +377,7 @@
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/JdbcTemplate/" itemprop="url" rel="index"><span itemprop="name">JdbcTemplate</span></a>
+                  <a href="/categories/JVM/" itemprop="url" rel="index"><span itemprop="name">JVM</span></a>
                 </span>
             </span>
 
@@ -395,12 +392,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>在上一篇文章中我们谈到了数据库批量插入，如果你已经亲自实践过了的话你会发现有个问题，就是我们在第一次执行完测试之后，再次执行的话会报错，除非你删掉数据库中的数据再执行。</p>
-<p>那是因为 activity_stats 表中 activity_id 是表的主键，第二次执行的话就会因为主键重复而报错了，当然你也可以选择去掉这个主键的限制来进行测试。</p>
-<p>但真正在项目中可就不能这么做了，项目中我们可能就是想要 activity_id 字段作为主键，不允许插入重复数据。</p>
+          <p>在上篇文章中，主要介绍了 JVM 的运行时数据区域分布情况，包括堆，程序计数器，栈，方法区，运行时常量池，直接内存等，接下来我们就先来看下和堆区相关的知识点，之前说过堆区是提供所有的类实例以及数组进行内存分配的地方，那实例和数组又是怎么创建的呢？我们一起来看下吧。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/%E5%85%B3%E4%BA%8E%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5%E7%9A%84%E6%95%B0%E6%8D%AE%E9%87%8D%E5%A4%8D%E9%97%AE%E9%A2%98/#more" rel="contents">
+              <a class="btn" href="/Java-%E4%B8%AD%E5%AF%B9%E8%B1%A1%E5%92%8C%E6%95%B0%E7%BB%84%E7%9A%84%E5%88%9B%E5%BB%BA/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -424,7 +419,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/JdbcTemplate-%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5/">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/JVM-%E7%9A%84%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E5%9F%9F%E5%88%86%E5%B8%83/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -438,7 +433,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/JdbcTemplate-%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5/" class="post-title-link" itemprop="url">JdbcTemplate 实现批量插入</a>
+            <a href="/JVM-%E7%9A%84%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E5%9F%9F%E5%88%86%E5%B8%83/" class="post-title-link" itemprop="url">JVM 的运行时数据区域分布</a>
         </h2>
 
         <div class="post-meta">
@@ -449,7 +444,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2020-08-11 16:34:33 / Modified: 16:39:21" itemprop="dateCreated datePublished" datetime="2020-08-11T16:34:33+08:00">2020-08-11</time>
+              <time title="Created: 2021-02-24 00:00:00 / Modified: 00:01:16" itemprop="dateCreated datePublished" datetime="2021-02-24T00:00:00+08:00">2021-02-24</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -457,7 +452,7 @@
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/JdbcTemplate/" itemprop="url" rel="index"><span itemprop="name">JdbcTemplate</span></a>
+                  <a href="/categories/JVM/" itemprop="url" rel="index"><span itemprop="name">JVM</span></a>
                 </span>
             </span>
 
@@ -472,11 +467,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>项目中有时候我们会遇到 excel 导入的需求, excle 文件的每一行记录对应的可能都是数据库中的一条记录，一个 excel 中可能有很多行，所以导入一个 excel 就意味着 excel 里面有多少行，我们就要插入多少条记录。如果我们采用一条一条记录插入的方式，毫无疑问，这可能要执行很久。</p>
-<p>如果是采用同步的方式的话，页面就会需要等好长一段时间才能有响应。就算采用异步的方式，先给前端一个响应，后台异步执行插入操作，用户也会需要等好长一段时间才能看到刚才 excel 导入的数据。</p>
+          <p>说到 Java 虚拟机(Java Virtual Machine, 简称 JVM)，可能对于我们大部分 Java 程序员来说都感觉望而生畏，都觉得它很高大上，毕竟我们都知道因为它我们的 Java 程序才能做到一次编写，到处运行，而且因为它我们才能够做到只专注于业务代码实现，而不用去关心内存分配和回收的事情，仅从这两点就能看出 Java 虚拟机为我们做了多少事情，但也正因为它为我们做的事情太多了，以至于我们只需要一心一意的去实现我们的需求，在大多数情况下我们都不用去关心底层如何做到的，但也因为它做了太多，导致我们在编码过程中遇到一些问题时根本不知道发生了什么，更别提如何解决了，因此我们还是有必要去了解一下 Java 虚拟机到底是怎么为我们服务的，这样在遇到问题时才不至于手足无措。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/JdbcTemplate-%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5/#more" rel="contents">
+              <a class="btn" href="/JVM-%E7%9A%84%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E5%9F%9F%E5%88%86%E5%B8%83/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -500,7 +494,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9-%E4%BA%8C/">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/Java-%E7%BB%86%E7%B2%92%E5%BA%A6%E9%94%81%E7%BB%AD%E7%AF%87/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -514,7 +508,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9-%E4%BA%8C/" class="post-title-link" itemprop="url">使用 JdbcTemplate 的 queryForObject 方法时需注意的地方(二)</a>
+            <a href="/Java-%E7%BB%86%E7%B2%92%E5%BA%A6%E9%94%81%E7%BB%AD%E7%AF%87/" class="post-title-link" itemprop="url">Java 细粒度锁续篇</a>
         </h2>
 
         <div class="post-meta">
@@ -525,7 +519,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2020-08-11 16:26:56 / Modified: 16:33:41" itemprop="dateCreated datePublished" datetime="2020-08-11T16:26:56+08:00">2020-08-11</time>
+              <time title="Created: 2021-02-23 23:57:12 / Modified: 23:59:12" itemprop="dateCreated datePublished" datetime="2021-02-23T23:57:12+08:00">2021-02-23</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -533,7 +527,7 @@
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/JdbcTemplate/" itemprop="url" rel="index"><span itemprop="name">JdbcTemplate</span></a>
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
                 </span>
             </span>
 
@@ -548,11 +542,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>上一篇文章中提到了 JdbcTemplate 的 queryForObject 方法在使用时需要注意的地方，其实这里还有一个地方也是我们在使用时容易忽略的，为了避免踩坑，这里我也一并提出来。</p>
-<p>同样的，继续用活动的状态表来举例，在上次的例子中我们是通过活动 id 查询活动的浏览量这一列数据，但是如果我们想要一并查出活动的浏览量，作品数和用户数。先让我们同样使用 queryForObject 方法，然后把 SQL 改成查询所有列的数据,返回类型改成实体类。</p>
+          <p>在上篇文章中大概介绍了 Java 中细粒度锁的几种实现方式，并且针对每种方式都做了优缺点说明，在使用的时候就需要根据业务需求选择更合适的一种。上篇文章中的最后一种弱引用锁的实现方式，我在里面也说了其实还有更优雅的实现，其实也算不上更优雅，只是看起来更优雅，原理还是一样的，今天我打算用一篇文章的篇幅来好好说下。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9-%E4%BA%8C/#more" rel="contents">
+              <a class="btn" href="/Java-%E7%BB%86%E7%B2%92%E5%BA%A6%E9%94%81%E7%BB%AD%E7%AF%87/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -576,7 +569,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9/">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/Java-%E4%B8%AD%E5%B8%B8%E8%A7%81%E7%9A%84%E7%BB%86%E7%B2%92%E5%BA%A6%E9%94%81%E5%AE%9E%E7%8E%B0/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -590,89 +583,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9/" class="post-title-link" itemprop="url">使用 JdbcTemplate 的 queryForObject 方法时需注意的地方(一)</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2020-08-10 22:38:56" itemprop="dateCreated datePublished" datetime="2020-08-10T22:38:56+08:00">2020-08-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-11 16:24:20" itemprop="dateModified" datetime="2020-08-11T16:24:20+08:00">2020-08-11</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/JdbcTemplate/" itemprop="url" rel="index"><span itemprop="name">JdbcTemplate</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>我们应该都使用过 JdbcTemplate 来查询数据库，一般用在配置了多数据源的情况下，在一个服务里面需要简单查询多个数据库的数据，这时通过 JdbcTemplate 来构建 SQL 查询数据库往往比较方便快捷些，不需要用封装的 repository 那一套东西。</p>
-<p>举一个简单的例子，比如查询一个活动的浏览量。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E4%BD%BF%E7%94%A8-Docker-%E8%BF%90%E8%A1%8C-MySQL-%E6%9C%8D%E5%8A%A1/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="rookiedev">
-      <meta itemprop="description" content="daily development technology summary">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="rookiedev">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/%E4%BD%BF%E7%94%A8-Docker-%E8%BF%90%E8%A1%8C-MySQL-%E6%9C%8D%E5%8A%A1/" class="post-title-link" itemprop="url">使用 Docker 运行 MySQL 服务</a>
+            <a href="/Java-%E4%B8%AD%E5%B8%B8%E8%A7%81%E7%9A%84%E7%BB%86%E7%B2%92%E5%BA%A6%E9%94%81%E5%AE%9E%E7%8E%B0/" class="post-title-link" itemprop="url">Java 中常见的细粒度锁实现</a>
         </h2>
 
         <div class="post-meta">
@@ -683,7 +594,7 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2020-08-10 22:32:38 / Modified: 22:37:39" itemprop="dateCreated datePublished" datetime="2020-08-10T22:32:38+08:00">2020-08-10</time>
+              <time title="Created: 2021-02-23 23:49:41 / Modified: 23:56:44" itemprop="dateCreated datePublished" datetime="2021-02-23T23:49:41+08:00">2021-02-23</time>
             </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -691,7 +602,7 @@
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Docker/" itemprop="url" rel="index"><span itemprop="name">Docker</span></a>
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
                 </span>
             </span>
 
@@ -706,10 +617,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>对于 MySQL 数据库，我们基本上都用得到，在工作上有些情况下不太想连云上的库，比如说网络比较慢，或者我们只是刚开始开发，还没来得及在云上建立数据库，这时候在本地跑一下 MySQL 服务也许比较方便，但是呢 MySQL 安装下来占的内存还是比较大的，像我们不是经常连本地的库开发的在本地电脑安装一个 MySQL 确实有点浪费空间了，再加上可能本来笔记本电脑内存就不是非常富余的情况下再去安装，实在是有些肉疼。</p>
+          <p>上篇文章大致说了下 ReentrantLock 类的使用，对 ReentrantLock 类有了初步的认识之后让我们一起来看下基于 ReentrantLock 的几种细粒度锁实现。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/%E4%BD%BF%E7%94%A8-Docker-%E8%BF%90%E8%A1%8C-MySQL-%E6%9C%8D%E5%8A%A1/#more" rel="contents">
+              <a class="btn" href="/Java-%E4%B8%AD%E5%B8%B8%E8%A7%81%E7%9A%84%E7%BB%86%E7%B2%92%E5%BA%A6%E9%94%81%E5%AE%9E%E7%8E%B0/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -733,7 +644,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E6%9E%81%E5%8A%9B%E6%8E%A8%E8%8D%90%E7%9A%84%E5%8D%9A%E6%96%87%E6%8E%92%E7%89%88%E6%8C%87%E5%8D%97/">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/synchronized-%E7%9A%84%E6%9B%BF%E4%BB%A3%E5%93%81-ReentrantLock/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -747,7 +658,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/%E6%9E%81%E5%8A%9B%E6%8E%A8%E8%8D%90%E7%9A%84%E5%8D%9A%E6%96%87%E6%8E%92%E7%89%88%E6%8C%87%E5%8D%97/" class="post-title-link" itemprop="url">极力推荐的博文排版指南</a>
+            <a href="/synchronized-%E7%9A%84%E6%9B%BF%E4%BB%A3%E5%93%81-ReentrantLock/" class="post-title-link" itemprop="url">synchronized 的替代品 ReentrantLock</a>
         </h2>
 
         <div class="post-meta">
@@ -756,23 +667,17 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
+              
 
-              <time title="Created: 2018-07-23 23:32:52" itemprop="dateCreated datePublished" datetime="2018-07-23T23:32:52+08:00">2018-07-23</time>
+              <time title="Created: 2021-02-23 23:47:56 / Modified: 23:48:51" itemprop="dateCreated datePublished" datetime="2021-02-23T23:47:56+08:00">2021-02-23</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-02 19:17:14" itemprop="dateModified" datetime="2020-08-02T19:17:14+08:00">2020-08-02</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E5%86%99%E4%BD%9C/" itemprop="url" rel="index"><span itemprop="name">写作</span></a>
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
                 </span>
             </span>
 
@@ -787,10 +692,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>作为程序员来说，养成写博客的习惯真的是一件值得去做的事，尽管刚开始可能没有那么高质量的知识输出，但是不是有这样一句话吗？「知识的输入应转化为输出」，也就是说你应该把你所学到的都转化为输出，只有这样你才能更好的掌握你所学的知识，并且在这个过程中你也会对你所学的知识点进行很好的补充。既然要写博文，是不是刚开始就随便写写呢？当然不是，一篇排版好内容不是很好的博文相比于内容好排版很乱的博文能够让人更乐于看下去，尤其是那些对代码有洁癖的程序员我相信你更看不下去，那么以下便是我极力推荐的博客排版指南：</p>
+          <p>v本来这篇文章打算写下细粒度锁的几种通用实现的，但在实践的过程中，我觉得有必要先介绍一下 ReentrantLock 这个类，可能大部分人都没有使用过，其实我也是一样，在接触到这个类之前都是只用过 synchronized 关键字，直到接触到了 ReentrantLock 这个类才知道还有这个东西，哎，还是对并发编程不是非常熟悉，对 JUC 并发包还需要进一步的去学习，下面我们就一起来看下 ReentrantLock 这个类是怎样的。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/%E6%9E%81%E5%8A%9B%E6%8E%A8%E8%8D%90%E7%9A%84%E5%8D%9A%E6%96%87%E6%8E%92%E7%89%88%E6%8C%87%E5%8D%97/#more" rel="contents">
+              <a class="btn" href="/synchronized-%E7%9A%84%E6%9B%BF%E4%BB%A3%E5%93%81-ReentrantLock/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -814,7 +719,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F%E7%9A%84%E5%9F%BA%E6%9C%AC%E8%BF%90%E7%94%A8/">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/synchronized-%E5%8A%A0%E9%94%81%E5%AE%9E%E7%8E%B0%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -828,7 +733,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F%E7%9A%84%E5%9F%BA%E6%9C%AC%E8%BF%90%E7%94%A8/" class="post-title-link" itemprop="url">正则表达式的基本运用</a>
+            <a href="/synchronized-%E5%8A%A0%E9%94%81%E5%AE%9E%E7%8E%B0%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/" class="post-title-link" itemprop="url">synchronized 加锁实现线程安全</a>
         </h2>
 
         <div class="post-meta">
@@ -837,23 +742,17 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
+              
 
-              <time title="Created: 2018-07-19 01:20:57" itemprop="dateCreated datePublished" datetime="2018-07-19T01:20:57+08:00">2018-07-19</time>
+              <time title="Created: 2021-02-23 23:46:16 / Modified: 23:47:14" itemprop="dateCreated datePublished" datetime="2021-02-23T23:46:16+08:00">2021-02-23</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-02 20:44:52" itemprop="dateModified" datetime="2020-08-02T20:44:52+08:00">2020-08-02</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F/" itemprop="url" rel="index"><span itemprop="name">正则表达式</span></a>
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
                 </span>
             </span>
 
@@ -868,10 +767,11 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>正则表达式，听起来就很高大上，用起来其实挺复杂的，毕竟人家也算是一门语言，但我们在日常开发中如果会一点正则，你会发现有意想不到的效果，对我们开发的效率还是有一定的提高的。刚开始我一直想学习一下一些简单的正则，但每次看完一些资料当时好像明白怎么回事了，但过一段时间没用又忘了，其实说到底就是自己就根本没掌握好，加上又没去实践，当时理解了，长时间不用自然就忘了。所以说学到的知识需要用起来，这样才能加深理解，也不容易忘记。下面主要说一下正则表达式的简单运用，更加高深的正则可能需要花好些时间去系统的学习一番。</p>
+          <p>在 Java 里面我们可能会遇到由于资源共享导致线程安全的问题，经常性的就是多个线程同一时间对共享的资源数据进行修改，这时可能就会出现数据不是我们预期的情况。</p>
+<p>拿一个通俗点的例子来说的话就是多个线程对同一个账户进行扣款操作，比如说下面的例子：</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F%E7%9A%84%E5%9F%BA%E6%9C%AC%E8%BF%90%E7%94%A8/#more" rel="contents">
+              <a class="btn" href="/synchronized-%E5%8A%A0%E9%94%81%E5%AE%9E%E7%8E%B0%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -895,7 +795,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/zookeeper-%E5%8D%95%E6%9C%BA%E6%A8%A1%E5%BC%8F%E4%BB%A5%E5%8F%8A%E4%BC%AA%E9%9B%86%E7%BE%A4%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E8%B0%88%E8%B0%88-Java-%E4%B8%AD%E7%9A%84%E5%BC%95%E7%94%A8/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -909,7 +809,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/zookeeper-%E5%8D%95%E6%9C%BA%E6%A8%A1%E5%BC%8F%E4%BB%A5%E5%8F%8A%E4%BC%AA%E9%9B%86%E7%BE%A4%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/" class="post-title-link" itemprop="url">zookeeper 单机模式以及伪集群模式搭建</a>
+            <a href="/%E8%B0%88%E8%B0%88-Java-%E4%B8%AD%E7%9A%84%E5%BC%95%E7%94%A8/" class="post-title-link" itemprop="url">谈谈 Java 中的引用</a>
         </h2>
 
         <div class="post-meta">
@@ -918,23 +818,17 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
+              
 
-              <time title="Created: 2018-07-16 22:32:57" itemprop="dateCreated datePublished" datetime="2018-07-16T22:32:57+08:00">2018-07-16</time>
+              <time title="Created: 2021-02-23 23:44:16 / Modified: 23:45:07" itemprop="dateCreated datePublished" datetime="2021-02-23T23:44:16+08:00">2021-02-23</time>
             </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-10 22:43:45" itemprop="dateModified" datetime="2020-08-10T22:43:45+08:00">2020-08-10</time>
-              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Zookeeper/" itemprop="url" rel="index"><span itemprop="name">Zookeeper</span></a>
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
                 </span>
             </span>
 
@@ -949,10 +843,86 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>首先说一下我对 <code>zookeeper</code> 的学习，在刚开始听的时候觉得很高大上，但又觉得很陌生，也不知道是干嘛的，然后就网上查各种资料开始慢慢对 <code>zookeeper</code> 好像有点感觉了，又好像还是似懂非懂的样子，然后还看到网上都在告诉我们 <code>zookeeper</code> 的安装以及 <code>zookeeper</code> 集群的搭建，又尝试着去搭建了一遍。到最后还是有点晕乎乎的样子，总觉得好像不是很理解，包括网上说的 <code>zookeeper</code> 一些使用场景。</p>
+          <p>Java 中除了八种基本类型(byte, short, int, long, float, double, char, boolean)之外就是引用类型，而引用类型又有强引用，软引用，弱引用和幻象引用。可能我们平常代码中用到最多的是强引用，对于其他的一般用的很少，但有些框架中还是会用到的，所以我们还是有必要去了解下这块的东西，这有利于我们更好地去理解相关的框架原理。下面我们就来分别看下这几类引用都各有什么特性：</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/zookeeper-%E5%8D%95%E6%9C%BA%E6%A8%A1%E5%BC%8F%E4%BB%A5%E5%8F%8A%E4%BC%AA%E9%9B%86%E7%BE%A4%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/#more" rel="contents">
+              <a class="btn" href="/%E8%B0%88%E8%B0%88-Java-%E4%B8%AD%E7%9A%84%E5%BC%95%E7%94%A8/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/Java-%E4%B8%AD%E9%80%9A%E8%BF%87%E6%9E%9A%E4%B8%BE%E5%AE%9E%E7%8E%B0%E5%8D%95%E4%BE%8B%E5%92%8C%E7%AD%96%E7%95%A5%E6%A8%A1%E5%BC%8F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java-%E4%B8%AD%E9%80%9A%E8%BF%87%E6%9E%9A%E4%B8%BE%E5%AE%9E%E7%8E%B0%E5%8D%95%E4%BE%8B%E5%92%8C%E7%AD%96%E7%95%A5%E6%A8%A1%E5%BC%8F/" class="post-title-link" itemprop="url">Java 中通过枚举实现单例和策略模式</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-02-23 23:40:47 / Modified: 23:43:23" itemprop="dateCreated datePublished" datetime="2021-02-23T23:40:47+08:00">2021-02-23</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>在上篇文章中主要介绍了 Java 中对于枚举的合理使用能让我们的代码看起来更优雅，但其实枚举还有一个特异功能，可以实现设计模式中的单例模式。</p>
+<p>先来看我们最熟悉的单例模式，我们之前看到的最多的单例模式实现是像下面这种，线程安全的双重检查锁懒汉单例。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/Java-%E4%B8%AD%E9%80%9A%E8%BF%87%E6%9E%9A%E4%B8%BE%E5%AE%9E%E7%8E%B0%E5%8D%95%E4%BE%8B%E5%92%8C%E7%AD%96%E7%95%A5%E6%A8%A1%E5%BC%8F/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -975,7 +945,7 @@
 
   
   <nav class="pagination">
-    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="page-number" href="/page/3/">3</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><span class="space">&hellip;</span><a class="page-number" href="/page/5/">5</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
   </nav>
 
 
@@ -1041,14 +1011,14 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">28</span>
+          <span class="site-state-item-count">45</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">14</span>
+        <span class="site-state-item-count">15</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
   </nav>
@@ -1080,7 +1050,7 @@
 <div class="copyright">
   
   &copy; 2018 – 
-  <span itemprop="copyrightYear">2020</span>
+  <span itemprop="copyrightYear">2021</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

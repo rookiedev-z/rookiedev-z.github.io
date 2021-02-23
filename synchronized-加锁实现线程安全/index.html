@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="在 Java 里面我们可能会遇到由于资源共享导致线程安全的问题，经常性的就是多个线程同一时间对共享的资源数据进行修改，这时可能就会出现数据不是我们预期的情况。 拿一个通俗点的例子来说的话就是多个线程对同一个账户进行扣款操作，比如说下面的例子：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="synchronized 加锁实现线程安全">
+<meta property="og:url" content="http://gittab.net/synchronized-%E5%8A%A0%E9%94%81%E5%AE%9E%E7%8E%B0%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/index.html">
+<meta property="og:site_name" content="rookiedev">
+<meta property="og:description" content="在 Java 里面我们可能会遇到由于资源共享导致线程安全的问题，经常性的就是多个线程同一时间对共享的资源数据进行修改，这时可能就会出现数据不是我们预期的情况。 拿一个通俗点的例子来说的话就是多个线程对同一个账户进行扣款操作，比如说下面的例子：">
+<meta property="og:locale">
+<meta property="article:published_time" content="2021-02-23T15:46:16.000Z">
+<meta property="article:modified_time" content="2021-02-23T15:47:14.669Z">
+<meta property="article:author" content="rookiedev">
+<meta property="article:tag" content="Java MySQL Life">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://gittab.net/synchronized-%E5%8A%A0%E9%94%81%E5%AE%9E%E7%8E%B0%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'default'
+  };
+</script>
+
+  <title>synchronized 加锁实现线程安全 | rookiedev</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <a target="_blank" rel="noopener" href="https://github.com/rookiedev-z"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">rookiedev</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">just do it</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/synchronized-%E5%8A%A0%E9%94%81%E5%AE%9E%E7%8E%B0%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          synchronized 加锁实现线程安全
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2021-02-23 23:46:16 / Modified: 23:47:14" itemprop="dateCreated datePublished" datetime="2021-02-23T23:46:16+08:00">2021-02-23</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>在 Java 里面我们可能会遇到由于资源共享导致线程安全的问题，经常性的就是多个线程同一时间对共享的资源数据进行修改，这时可能就会出现数据不是我们预期的情况。</p>
+<p>拿一个通俗点的例子来说的话就是多个线程对同一个账户进行扣款操作，比如说下面的例子：</p>
+<a id="more"></a>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">int</span> accountBalance = <span class="number">10</span>;</span><br><span class="line"><span class="meta">@SneakyThrows</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">consume</span><span class="params">(<span class="keyword">int</span> amount)</span></span>&#123;</span><br><span class="line">  <span class="keyword">if</span>(accountBalance &gt;= amount)&#123;</span><br><span class="line">    <span class="comment">// deduction</span></span><br><span class="line">    TimeUnit.MILLISECONDS.sleep(<span class="number">1000</span>);</span><br><span class="line">    accountBalance -= amount;</span><br><span class="line">    System.out.println(Thread.currentThread().getName() + <span class="string">&quot; deduction success&quot;</span>);</span><br><span class="line">  &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">    System.out.println(Thread.currentThread().getName() + <span class="string">&quot; deduction failed, insufficient account balance.&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SneakyThrows</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">  Thread thread0 = <span class="keyword">new</span> Thread(() -&gt; consume(<span class="number">10</span>));</span><br><span class="line">  Thread thread1 = <span class="keyword">new</span> Thread(() -&gt; consume(<span class="number">10</span>));</span><br><span class="line">  thread0.start();</span><br><span class="line">  thread1.start();</span><br><span class="line">  TimeUnit.MILLISECONDS.sleep(<span class="number">5000</span>);</span><br><span class="line">  System.out.println(<span class="string">&quot;account balance: &quot;</span> + accountBalance);</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面代码中很简单，大体就是模拟账户余额剩余 10 元，然后有两个线程同时进行消费，两个线程都是消费 10 元，消费方法里面有个判断当账户余额不足 10 元会打印账户余额不足，扣款失败，但是执行上面代码后发现两个线程都消费成功了，最后打印账户余额变成了 -10 元，甚至有时候还会出现 0 元的情况，很明显这不是我们预期的结果，我们想要的是账户余额不足时扣款失败，但上面都成功了，然后账户余额变成了负数。这就是由于多个线程同时对同一个账户进行消费扣款而没有做相应的线程安全的保证措施而导致的，这只是一个很简单的例子演示了多线程下出现的问题，那么在我们日常开发中有哪些措施来保证线程安全呢。</p>
+<p>Java 中保证线程安全的通用做法是通过 synchronized 关键字来对方法或者代码块进行加锁，比如说上面的代码中对 consume 方法进行加锁，这样就能够保证每次只有一个线程能够进入 consume 方法来进行扣款操作，相当于让扣款操作同步执行，这样就不会出现多个线程同时对账户扣款导致出现问题，consume 方法加上 synchronized 关键字之后：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">consume</span><span class="params">(<span class="keyword">int</span> amount)</span></span>&#123;</span><br><span class="line">  <span class="keyword">if</span>(accountBalance &gt;= amount)&#123;</span><br><span class="line">    <span class="comment">// deduction</span></span><br><span class="line">    TimeUnit.MILLISECONDS.sleep(<span class="number">1000</span>);</span><br><span class="line">    accountBalance -= amount;</span><br><span class="line">    System.out.println(Thread.currentThread().getName() + <span class="string">&quot; deduction success&quot;</span>);</span><br><span class="line">  &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">    System.out.println(Thread.currentThread().getName() + <span class="string">&quot; deduction failed, insufficient account balance.&quot;</span>);</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面由于我为了简单起见，方法直接声明成静态的，所以在方法上加锁的话，锁定的是类对象，不同线程执行该方法需要先获取该类对象锁，如果锁已经被其他线程占有，那么就需要等待其他线程释放锁。但是这样直接对整个方法进行加锁可能有点太粗暴了，其实如果方法中还有其他操作的话，我们往往只是需要保证方法中的一小部分代码是线程安全的即可，假如 consume 方法在扣款前还需要对账户进行校验，以验证账户是否正常，那么校验账户是否正常的这部分代码就可以不用进行同步，可以并发执行，而只要对扣款的那部分代码加锁即可：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">consume</span><span class="params">(<span class="keyword">int</span> amount)</span></span>&#123;</span><br><span class="line">  System.out.println(<span class="string">&quot;verify that the account is normal...&quot;</span>);</span><br><span class="line">  TimeUnit.MILLISECONDS.sleep(<span class="number">500</span>);</span><br><span class="line">  <span class="keyword">synchronized</span> (SynchronizedTest.class)&#123;</span><br><span class="line">    <span class="keyword">if</span>(accountBalance &gt;= amount)&#123;</span><br><span class="line">      <span class="comment">// deduction</span></span><br><span class="line">      TimeUnit.MILLISECONDS.sleep(<span class="number">1000</span>);</span><br><span class="line">      accountBalance -= amount;</span><br><span class="line">      System.out.println(Thread.currentThread().getName() + <span class="string">&quot; deduction success&quot;</span>);</span><br><span class="line">    &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">      System.out.println(Thread.currentThread().getName() + <span class="string">&quot; deduction failed, insufficient account balance.&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面 consume 方法只对扣款部分代码进行加锁，加锁的方式和上面其实是一样的，也是通过该类对象来加锁，只不过锁定的范围缩小了，锁定的只是扣款的那部分操作，对于账户校验的操作依然是并发执行，这样可以提高程序执行的最大并发度，从而提高程序执行效率。</p>
+<p>其实上面的代码看起来好像已经是最大限度的并发执行了，但是上面的代码演示的是同一个用户同时进行消费，你可以试想一下如果是两个用户在同时进行消费操作呢，那么找上面的代码执行的话，他们的消费的顺序也是依次按序执行的。</p>
+<p>这里用 A 和 B 来代表两个不同用户，A1，A2 表示 A 用户同时进行的两笔消费，B1，B2 表示 B 用户同时进行的两笔消费，那么当 A，B 用户同时进行消费的时候，按照上面的代码执行逻辑，那就可能产生这种消费顺序: A1 -&gt; A2 -&gt; B1 -&gt; B2，当然这只是可能的消费顺序中其中一种，也有可能 B1 -&gt; B2 -&gt; A1 -&gt; A2，A1 -&gt; B2 -&gt; B1 -&gt; A2 等等一些。</p>
+<p>但不管是哪一种，由于我们通过 synchronize 关键字来保证线程安全，那么这四笔消费都是按顺序依次进行扣款的，但其实呢，这里 A，B 两个用户之间的扣款是没有关联的，因为他们隶属于不同的账户，也就是说他们之间的扣款是可以并发执行的，而不需要按序来进行扣款，所以我们只要保证同一个用户在同一时间的消费扣款是顺序执行的就可以了。因此我们需要通过更细粒度的锁来实现只在同一用户下不同线程之间的扣款是顺序执行，而不同用户之间的扣款依然是并发执行。</p>
+<p>那这种用户级别的细粒度锁又该如何来实现呢？首先我们先来梳理一下我们要实现的预期效果，对于 A，B 两个用户来说，他们之间是不同的账户，他们之间互相的扣款顺序是互不影响的，我们最终仅仅是要保证每个用户他自己在多线程扣款的情况下是安全的即可。那么我们在加锁的时候就应该对该用户进行加锁，A 用户的 T1 线程执行扣款操作时，如果已经有其他线程 T2 已经获取了 A 用户的锁正在执行扣款操作的话，那么 T1 线程就需要等待 T2 线程释放 A 用户的锁才能继续往下执行。而这时如果 B 用户的一个线程也来执行扣款操作，那么 B 用户扣款操作的线程需要获取的是 B 用户的锁，如果 B 用户没有其他线程正在执行扣款，那么 B 用户就可以正常执行扣款，与 A 用户是否存在扣款操作线程无关。</p>
+<p>说了这么多，其实也就是我们的程序在加锁时只要锁定和每个用户各自相关的对象锁，不同用户之间互不影响即可，我们来看看一种简单的用户级别细粒度锁是如何实现的：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SneakyThrows</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">consume</span><span class="params">(String userId, <span class="keyword">int</span> amount)</span></span>&#123;</span><br><span class="line">  System.out.println(<span class="string">&quot;verify that the account is normal...&quot;</span>);</span><br><span class="line">  TimeUnit.MILLISECONDS.sleep(<span class="number">500</span>);</span><br><span class="line">  <span class="keyword">synchronized</span> (userId.intern())&#123;</span><br><span class="line">    System.out.println(<span class="string">&quot;enter the deduction code block&quot;</span>);</span><br><span class="line">    Integer userAccountBalance = accountMap.get(userId);</span><br><span class="line">    <span class="keyword">if</span>(userAccountBalance &gt;= amount)&#123;</span><br><span class="line">      <span class="comment">// deduction</span></span><br><span class="line">      TimeUnit.MILLISECONDS.sleep(<span class="number">2000</span>);</span><br><span class="line">      userAccountBalance -= amount;</span><br><span class="line">      accountMap.put(userId, userAccountBalance);</span><br><span class="line">      System.out.println(Thread.currentThread().getName() + <span class="string">&quot; deduction success&quot;</span>);</span><br><span class="line">    &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">      TimeUnit.MILLISECONDS.sleep(<span class="number">1000</span>);</span><br><span class="line">      System.out.println(Thread.currentThread().getName() + <span class="string">&quot; deduction failed, insufficient account balance.&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面的代码从最初的单个用户扣款经过简单的扩展模拟多个用户进行消费，同时在消费方法加上了用户 id 参数来决定扣款的账户是哪一个，然后使用 Map 来保存用户的账户余额信息。在扣款时先去 Map 中取对应用户的账户然后再执行扣款操作。</p>
+<p>但要注意的是上面加锁的代码中加锁的对象是用户字符串 id 调用 intern() 方法返回的值，那 String 类中的 intern 方法是干嘛的呢？<strong>简单的说是一个字符串对象调用此方法时，如果字符串常量池中已经包含了该字符串，则直接返回常量池中该字符串的引用地址，否则该字符串对象的引用地址将会被加入到常量池中，然后再返回该引用地址。</strong>也就是说一个字符串对象的地址通过调用 intern 方法之后，那么最终在字符串常量池中会生成一份唯一的值，所以我们通过 synchronize 关键字加锁的这个对象是用户 id 字符串在字符串常量池中唯一对象的地址值。(这里可能有点不太好理解，intern 方法下次再用一篇文章单独详细介绍下)</p>
+<p>那么接下来再回到用户 A，B 同时消费的情况，由于我们锁定的是用户 id，那么当用户 A，B 同时进行消费，A 用户获取的是 A 用户 id 的对象锁，而 B 用户获取的是 B 用户 id 的对象锁，不同用户获取的锁是不同的，所以他们之间互不影响，那么他们在同时进行消费扣款时就能同时进入加锁的代码块执行扣款，但相同用户的不同线程则还是会等同一用户的其他线程释放锁之后才能进入加锁的代码块。</p>
+<p>虽然说这种实现方式实现起来相对较简单，但是这种通过 intern 方法的实现方式也是有缺陷的，当用户量特别大的情况下就会有问题了，这时字符串常量池中可能会存储大量的字符串引用，这其实就涉及到 JVM 虚拟机的存储结构了以及 GC 相关的知识了，字符串常量池这块区域相对于 GC 的主要区域堆区来说，这块区域 GC 比较困难，因此一般也不太建议采用这种方式来实现用户级别的细粒度锁，下篇文章我们就来看下比较常见的细粒度锁的实现方式有哪些。</p>
+
+    </div>
+
+    
+    
+    
+        
+  <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
+    <div>扫描上面图中二维码关注微信公众号</div>
+  </div>
+<!-- 
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg">
+            <span class="icon">
+              <i class="wechat"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </a>
+        </div>
+    </div>
+  </div>
+-->
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/%E8%B0%88%E8%B0%88-Java-%E4%B8%AD%E7%9A%84%E5%BC%95%E7%94%A8/" rel="prev" title="谈谈 Java 中的引用">
+      <i class="fa fa-chevron-left"></i> 谈谈 Java 中的引用
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/synchronized-%E7%9A%84%E6%9B%BF%E4%BB%A3%E5%93%81-ReentrantLock/" rel="next" title="synchronized 的替代品 ReentrantLock">
+      synchronized 的替代品 ReentrantLock <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">rookiedev</p>
+  <div class="site-description" itemprop="description">daily development technology summary</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">45</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rookiedev-z" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rookiedev-z" rel="noopener" target="_blank"><i class="github fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rookiedev</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
