@@ -17,13 +17,13 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"rookiedev.top","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="redis 在我们的日常开发中其实还是用的比较多的，常用来做缓存或者存放一些热点数据，主要为了提高系统的响应速度。在我们平常使用中，我们可能都习惯的使用 keys * 命令来查询数据库中的数据存储情况。 这时也许我们都是在开发环境执行，开发环境 redis 中的数据量不是很多，redis 也很快的能给我们响应。但是如果你要查询的 redis 中存储了非常大的数据量，这时候你还能愉快的使用这个命令吗">
 <meta property="og:type" content="article">
 <meta property="og:title" content="你还在习惯的使用 keys * 查看 redis 中的所有数据吗">
-<meta property="og:url" content="http://gittab.net/%E4%BD%A0%E8%BF%98%E5%9C%A8%E4%B9%A0%E6%83%AF%E7%9A%84%E4%BD%BF%E7%94%A8-keys-%E6%9F%A5%E7%9C%8B-redis-%E4%B8%AD%E7%9A%84%E6%89%80%E6%9C%89%E6%95%B0%E6%8D%AE%E5%90%97/index.html">
+<meta property="og:url" content="http://rookiedev.top/%E4%BD%A0%E8%BF%98%E5%9C%A8%E4%B9%A0%E6%83%AF%E7%9A%84%E4%BD%BF%E7%94%A8-keys-%E6%9F%A5%E7%9C%8B-redis-%E4%B8%AD%E7%9A%84%E6%89%80%E6%9C%89%E6%95%B0%E6%8D%AE%E5%90%97/index.html">
 <meta property="og:site_name" content="rookiedev">
 <meta property="og:description" content="redis 在我们的日常开发中其实还是用的比较多的，常用来做缓存或者存放一些热点数据，主要为了提高系统的响应速度。在我们平常使用中，我们可能都习惯的使用 keys * 命令来查询数据库中的数据存储情况。 这时也许我们都是在开发环境执行，开发环境 redis 中的数据量不是很多，redis 也很快的能给我们响应。但是如果你要查询的 redis 中存储了非常大的数据量，这时候你还能愉快的使用这个命令吗">
 <meta property="og:locale">
@@ -33,7 +33,7 @@
 <meta property="article:tag" content="Java MySQL Life">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="http://gittab.net/%E4%BD%A0%E8%BF%98%E5%9C%A8%E4%B9%A0%E6%83%AF%E7%9A%84%E4%BD%BF%E7%94%A8-keys-%E6%9F%A5%E7%9C%8B-redis-%E4%B8%AD%E7%9A%84%E6%89%80%E6%9C%89%E6%95%B0%E6%8D%AE%E5%90%97/">
+<link rel="canonical" href="http://rookiedev.top/%E4%BD%A0%E8%BF%98%E5%9C%A8%E4%B9%A0%E6%83%AF%E7%9A%84%E4%BD%BF%E7%94%A8-keys-%E6%9F%A5%E7%9C%8B-redis-%E4%B8%AD%E7%9A%84%E6%89%80%E6%9C%89%E6%95%B0%E6%8D%AE%E5%90%97/">
 
 
 <script id="page-configurations">
@@ -197,7 +197,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E4%BD%A0%E8%BF%98%E5%9C%A8%E4%B9%A0%E6%83%AF%E7%9A%84%E4%BD%BF%E7%94%A8-keys-%E6%9F%A5%E7%9C%8B-redis-%E4%B8%AD%E7%9A%84%E6%89%80%E6%9C%89%E6%95%B0%E6%8D%AE%E5%90%97/">
+    <link itemprop="mainEntityOfPage" href="http://rookiedev.top/%E4%BD%A0%E8%BF%98%E5%9C%A8%E4%B9%A0%E6%83%AF%E7%9A%84%E4%BD%BF%E7%94%A8-keys-%E6%9F%A5%E7%9C%8B-redis-%E4%B8%AD%E7%9A%84%E6%89%80%E6%9C%89%E6%95%B0%E6%8D%AE%E5%90%97/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">

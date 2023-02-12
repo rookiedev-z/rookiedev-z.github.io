@@ -17,13 +17,13 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"rookiedev.top","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="我们应该都使用过 JdbcTemplate 来查询数据库，一般用在配置了多数据源的情况下，在一个服务里面需要简单查询多个数据库的数据，这时通过 JdbcTemplate 来构建 SQL 查询数据库往往比较方便快捷些，不需要用封装的 repository 那一套东西。 举一个简单的例子，比如查询一个活动的浏览量。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="使用 JdbcTemplate 的 queryForObject 方法时需注意的地方(一)">
-<meta property="og:url" content="http://gittab.net/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9/index.html">
+<meta property="og:url" content="http://rookiedev.top/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9/index.html">
 <meta property="og:site_name" content="rookiedev">
 <meta property="og:description" content="我们应该都使用过 JdbcTemplate 来查询数据库，一般用在配置了多数据源的情况下，在一个服务里面需要简单查询多个数据库的数据，这时通过 JdbcTemplate 来构建 SQL 查询数据库往往比较方便快捷些，不需要用封装的 repository 那一套东西。 举一个简单的例子，比如查询一个活动的浏览量。">
 <meta property="og:locale">
@@ -33,7 +33,7 @@
 <meta property="article:tag" content="Java MySQL Life">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="http://gittab.net/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9/">
+<link rel="canonical" href="http://rookiedev.top/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9/">
 
 
 <script id="page-configurations">
@@ -197,7 +197,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9/">
+    <link itemprop="mainEntityOfPage" href="http://rookiedev.top/%E4%BD%BF%E7%94%A8-JdbcTemplate-%E7%9A%84-queryForObject-%E6%96%B9%E6%B3%95%E6%97%B6%E9%9C%80%E6%B3%A8%E6%84%8F%E7%9A%84%E5%9C%B0%E6%96%B9/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">

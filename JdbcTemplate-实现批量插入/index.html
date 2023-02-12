@@ -17,13 +17,13 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"rookiedev.top","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="项目中有时候我们会遇到 excel 导入的需求, excle 文件的每一行记录对应的可能都是数据库中的一条记录，一个 excel 中可能有很多行，所以导入一个 excel 就意味着 excel 里面有多少行，我们就要插入多少条记录。如果我们采用一条一条记录插入的方式，毫无疑问，这可能要执行很久。 如果是采用同步的方式的话，页面就会需要等好长一段时间才能有响应。就算采用异步的方式，先给前端一个响应，">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JdbcTemplate 实现批量插入">
-<meta property="og:url" content="http://gittab.net/JdbcTemplate-%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5/index.html">
+<meta property="og:url" content="http://rookiedev.top/JdbcTemplate-%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5/index.html">
 <meta property="og:site_name" content="rookiedev">
 <meta property="og:description" content="项目中有时候我们会遇到 excel 导入的需求, excle 文件的每一行记录对应的可能都是数据库中的一条记录，一个 excel 中可能有很多行，所以导入一个 excel 就意味着 excel 里面有多少行，我们就要插入多少条记录。如果我们采用一条一条记录插入的方式，毫无疑问，这可能要执行很久。 如果是采用同步的方式的话，页面就会需要等好长一段时间才能有响应。就算采用异步的方式，先给前端一个响应，">
 <meta property="og:locale">
@@ -41,7 +41,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="http://images.rookiezhou.top/inser_stats_result.png">
 
-<link rel="canonical" href="http://gittab.net/JdbcTemplate-%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5/">
+<link rel="canonical" href="http://rookiedev.top/JdbcTemplate-%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5/">
 
 
 <script id="page-configurations">
@@ -205,7 +205,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/JdbcTemplate-%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5/">
+    <link itemprop="mainEntityOfPage" href="http://rookiedev.top/JdbcTemplate-%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">

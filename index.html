@@ -17,13 +17,13 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"rookiedev.top","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="daily development technology summary">
 <meta property="og:type" content="website">
 <meta property="og:title" content="rookiedev">
-<meta property="og:url" content="http://gittab.net/index.html">
+<meta property="og:url" content="http://rookiedev.top/index.html">
 <meta property="og:site_name" content="rookiedev">
 <meta property="og:description" content="daily development technology summary">
 <meta property="og:locale">
@@ -31,7 +31,7 @@
 <meta property="article:tag" content="Java MySQL Life">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="http://gittab.net/">
+<link rel="canonical" href="http://rookiedev.top/">
 
 
 <script id="page-configurations">
@@ -194,159 +194,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E4%BA%8B%E5%8A%A1%E5%8E%9F%E7%90%86/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="rookiedev">
-      <meta itemprop="description" content="daily development technology summary">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="rookiedev">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E4%BA%8B%E5%8A%A1%E5%8E%9F%E7%90%86/" class="post-title-link" itemprop="url">深入理解 MySQL 事务原理</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2023-02-11 19:54:44 / Modified: 19:55:54" itemprop="dateCreated datePublished" datetime="2023-02-11T19:54:44+08:00">2023-02-11</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>对于 MySQL 事务，可能我们大家都不陌生，事务是对数据库中数据操作保证数据逻辑一致的最小操作单位，一个事务中可能包含多条语句，但这些语句作为一个整体，由事务来保证这个整体的操作要么都成功，要么都失败，不存在部分成功部分失败的情况。</p>
-<p>同时事务还具备 ACID 的特性，分别是原子性(Atomicity)，一致性(Consistency)，隔离性(Isolation)，持久性(Durability)。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E4%BA%8B%E5%8A%A1%E5%8E%9F%E7%90%86/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%9A%84-SQL-%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="rookiedev">
-      <meta itemprop="description" content="daily development technology summary">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="rookiedev">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%9A%84-SQL-%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B/" class="post-title-link" itemprop="url">深入理解 MySQL 的 SQL 执行流程</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2023-02-11 19:52:19 / Modified: 19:53:23" itemprop="dateCreated datePublished" datetime="2023-02-11T19:52:19+08:00">2023-02-11</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>对于 MySQL 的认识，我们大部分人可能都还只是停留在增删改查的阶段，当然我们接触的更多的也就是页面上输入一些信息，调用后台接口保存到数据库，然后再从数据库查询得到值后返回给前端展示在页面上，这也就是业界俗称的 CRUD 工程师。怎么说呢，如果我们日常只能接触到这些 CRUD 的需求，那就算是 CRUD，我们也要努力将 CRUD 做到极致。</p>
-<p>怎么个极致法呢？那就是我们要对我们日常写的这些 CRUD 语句做到心里有数，每写出一个 SQL 我们脑海里都能够知道这个 SQL 经历了哪些过程才得到我们想要的数据，具体体现在 MySQL 在收到我们发出的 SQL 语句之后是怎么执行的，走了哪个索引，为什么选择这个索引，大概需要扫描多少行记录，执行这个 SQL 加了哪些锁，以及为什么有时需要开启事务，不同事务之间看到的数据为什么不一样等等，这些东西都需要我们去了解和熟悉，这样才能在遇到更复杂的需求的时候从容应对。</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%9A%84-SQL-%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E5%A6%82%E4%BD%95%E9%80%9A%E8%BF%87-Redis-%E6%9D%A5%E5%AE%9E%E7%8E%B0%E6%B6%88%E6%81%AF%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97/">
+    <link itemprop="mainEntityOfPage" href="http://rookiedev.top/%E5%A6%82%E4%BD%95%E9%80%9A%E8%BF%87-Redis-%E6%9D%A5%E5%AE%9E%E7%8E%B0%E6%B6%88%E6%81%AF%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -370,14 +218,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2023-02-11 19:38:31" itemprop="dateCreated datePublished" datetime="2023-02-11T19:38:31+08:00">2023-02-11</time>
+              <time title="Created: 2023-02-04 23:38:31" itemprop="dateCreated datePublished" datetime="2023-02-04T23:38:31+08:00">2023-02-04</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2023-02-12 16:38:08" itemprop="dateModified" datetime="2023-02-12T16:38:08+08:00">2023-02-12</time>
+                <time title="Modified: 2023-02-12 17:14:03" itemprop="dateModified" datetime="2023-02-12T17:14:03+08:00">2023-02-12</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -428,7 +276,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/join-%E6%9F%A5%E8%AF%A2%E6%98%AF%E5%A6%82%E4%BD%95%E6%89%A7%E8%A1%8C%E7%9A%84/">
+    <link itemprop="mainEntityOfPage" href="http://rookiedev.top/join-%E6%9F%A5%E8%AF%A2%E6%98%AF%E5%A6%82%E4%BD%95%E6%89%A7%E8%A1%8C%E7%9A%84/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -451,10 +299,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2023-02-11 19:37:50 / Modified: 20:06:00" itemprop="dateCreated datePublished" datetime="2023-02-11T19:37:50+08:00">2023-02-11</time>
+              <time title="Created: 2022-12-17 23:27:50" itemprop="dateCreated datePublished" datetime="2022-12-17T23:27:50+08:00">2022-12-17</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-02-12 17:05:58" itemprop="dateModified" datetime="2023-02-12T17:05:58+08:00">2023-02-12</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -503,7 +357,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/Explain-%E7%9A%84%E4%BD%BF%E7%94%A8%E5%AE%9E%E8%B7%B5/">
+    <link itemprop="mainEntityOfPage" href="http://rookiedev.top/Explain-%E7%9A%84%E4%BD%BF%E7%94%A8%E5%AE%9E%E8%B7%B5/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -526,10 +380,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2023-02-11 19:37:35 / Modified: 20:05:03" itemprop="dateCreated datePublished" datetime="2023-02-11T19:37:35+08:00">2023-02-11</time>
+              <time title="Created: 2022-11-21 22:47:35" itemprop="dateCreated datePublished" datetime="2022-11-21T22:47:35+08:00">2022-11-21</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-02-12 17:11:31" itemprop="dateModified" datetime="2023-02-12T17:11:31+08:00">2023-02-12</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -578,7 +438,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/Explain-%E7%9A%84%E4%BD%BF%E7%94%A8%E8%A7%A3%E6%9E%90/">
+    <link itemprop="mainEntityOfPage" href="http://rookiedev.top/Explain-%E7%9A%84%E4%BD%BF%E7%94%A8%E8%A7%A3%E6%9E%90/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -601,10 +461,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2023-02-11 19:37:22 / Modified: 20:04:19" itemprop="dateCreated datePublished" datetime="2023-02-11T19:37:22+08:00">2023-02-11</time>
+              <time title="Created: 2022-11-01 23:37:22" itemprop="dateCreated datePublished" datetime="2022-11-01T23:37:22+08:00">2022-11-01</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-02-12 17:11:09" itemprop="dateModified" datetime="2023-02-12T17:11:09+08:00">2023-02-12</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -654,83 +520,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/change-buffer-%E7%9A%84%E7%90%86%E8%A7%A3%E4%BB%A5%E5%8F%8A%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E7%9A%84%E9%80%89%E6%8B%A9/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="rookiedev">
-      <meta itemprop="description" content="daily development technology summary">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="rookiedev">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/change-buffer-%E7%9A%84%E7%90%86%E8%A7%A3%E4%BB%A5%E5%8F%8A%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E7%9A%84%E9%80%89%E6%8B%A9/" class="post-title-link" itemprop="url">change buffer 的理解以及唯一索引的选择</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-              
-
-              <time title="Created: 2023-02-11 19:37:01 / Modified: 19:59:03" itemprop="dateCreated datePublished" datetime="2023-02-11T19:37:01+08:00">2023-02-11</time>
-            </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h4 id="change-buffer-介绍"><a href="#change-buffer-介绍" class="headerlink" title="change buffer 介绍"></a>change buffer 介绍</h4><p>在介绍 change buffer 之前，先来看一个 SQL 的执行时涉及索引树的更新过程，比如下面的这个插入语句，</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">insert into users(id, identity) values(1, 4504);</span><br></pre></td></tr></table></figure>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/change-buffer-%E7%9A%84%E7%90%86%E8%A7%A3%E4%BB%A5%E5%8F%8A%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E7%9A%84%E9%80%89%E6%8B%A9/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%B4%A2%E5%BC%95-%E4%BA%8C/">
+    <link itemprop="mainEntityOfPage" href="http://rookiedev.top/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%B4%A2%E5%BC%95-%E4%BA%8C/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -753,10 +543,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2023-02-11 19:36:35 / Modified: 19:57:49" itemprop="dateCreated datePublished" datetime="2023-02-11T19:36:35+08:00">2023-02-11</time>
+              <time title="Created: 2022-10-11 22:26:35" itemprop="dateCreated datePublished" datetime="2022-10-11T22:26:35+08:00">2022-10-11</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-02-12 17:10:09" itemprop="dateModified" datetime="2023-02-12T17:10:09+08:00">2023-02-12</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -806,7 +602,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%B4%A2%E5%BC%95-%E4%B8%80/">
+    <link itemprop="mainEntityOfPage" href="http://rookiedev.top/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%B4%A2%E5%BC%95-%E4%B8%80/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -829,10 +625,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2023-02-11 19:36:25 / Modified: 19:56:52" itemprop="dateCreated datePublished" datetime="2023-02-11T19:36:25+08:00">2023-02-11</time>
+              <time title="Created: 2022-09-15 22:56:25" itemprop="dateCreated datePublished" datetime="2022-09-15T22:56:25+08:00">2022-09-15</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-02-12 17:09:40" itemprop="dateModified" datetime="2023-02-12T17:09:40+08:00">2023-02-12</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -882,7 +684,253 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/JVM-%E4%B8%AD%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E7%AE%80%E5%8D%95%E4%BB%8B%E7%BB%8D/">
+    <link itemprop="mainEntityOfPage" href="http://rookiedev.top/change-buffer-%E7%9A%84%E7%90%86%E8%A7%A3%E4%BB%A5%E5%8F%8A%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E7%9A%84%E9%80%89%E6%8B%A9/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/change-buffer-%E7%9A%84%E7%90%86%E8%A7%A3%E4%BB%A5%E5%8F%8A%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E7%9A%84%E9%80%89%E6%8B%A9/" class="post-title-link" itemprop="url">change buffer 的理解以及唯一索引的选择</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-09-11 22:37:01" itemprop="dateCreated datePublished" datetime="2022-09-11T22:37:01+08:00">2022-09-11</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-02-12 17:04:42" itemprop="dateModified" datetime="2023-02-12T17:04:42+08:00">2023-02-12</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h4 id="change-buffer-介绍"><a href="#change-buffer-介绍" class="headerlink" title="change buffer 介绍"></a>change buffer 介绍</h4><p>在介绍 change buffer 之前，先来看一个 SQL 的执行时涉及索引树的更新过程，比如下面的这个插入语句，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">insert into users(id, identity) values(1, 4504);</span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/change-buffer-%E7%9A%84%E7%90%86%E8%A7%A3%E4%BB%A5%E5%8F%8A%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E7%9A%84%E9%80%89%E6%8B%A9/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://rookiedev.top/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E4%BA%8B%E5%8A%A1%E5%8E%9F%E7%90%86/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E4%BA%8B%E5%8A%A1%E5%8E%9F%E7%90%86/" class="post-title-link" itemprop="url">深入理解 MySQL 事务原理</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-08-24 22:54:44" itemprop="dateCreated datePublished" datetime="2022-08-24T22:54:44+08:00">2022-08-24</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-02-12 17:08:56" itemprop="dateModified" datetime="2023-02-12T17:08:56+08:00">2023-02-12</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>对于 MySQL 事务，可能我们大家都不陌生，事务是对数据库中数据操作保证数据逻辑一致的最小操作单位，一个事务中可能包含多条语句，但这些语句作为一个整体，由事务来保证这个整体的操作要么都成功，要么都失败，不存在部分成功部分失败的情况。</p>
+<p>同时事务还具备 ACID 的特性，分别是原子性(Atomicity)，一致性(Consistency)，隔离性(Isolation)，持久性(Durability)。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E4%BA%8B%E5%8A%A1%E5%8E%9F%E7%90%86/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://rookiedev.top/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%9A%84-SQL-%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%9A%84-SQL-%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B/" class="post-title-link" itemprop="url">深入理解 MySQL 的 SQL 执行流程</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-08-01 22:52:19" itemprop="dateCreated datePublished" datetime="2022-08-01T22:52:19+08:00">2022-08-01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-02-12 17:07:43" itemprop="dateModified" datetime="2023-02-12T17:07:43+08:00">2023-02-12</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>对于 MySQL 的认识，我们大部分人可能都还只是停留在增删改查的阶段，当然我们接触的更多的也就是页面上输入一些信息，调用后台接口保存到数据库，然后再从数据库查询得到值后返回给前端展示在页面上，这也就是业界俗称的 CRUD 工程师。怎么说呢，如果我们日常只能接触到这些 CRUD 的需求，那就算是 CRUD，我们也要努力将 CRUD 做到极致。</p>
+<p>怎么个极致法呢？那就是我们要对我们日常写的这些 CRUD 语句做到心里有数，每写出一个 SQL 我们脑海里都能够知道这个 SQL 经历了哪些过程才得到我们想要的数据，具体体现在 MySQL 在收到我们发出的 SQL 语句之后是怎么执行的，走了哪个索引，为什么选择这个索引，大概需要扫描多少行记录，执行这个 SQL 加了哪些锁，以及为什么有时需要开启事务，不同事务之间看到的数据为什么不一样等等，这些东西都需要我们去了解和熟悉，这样才能在遇到更复杂的需求的时候从容应对。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%9A%84-SQL-%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://rookiedev.top/JVM-%E4%B8%AD%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E7%AE%80%E5%8D%95%E4%BB%8B%E7%BB%8D/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -905,10 +953,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2023-02-11 19:34:49 / Modified: 19:45:51" itemprop="dateCreated datePublished" datetime="2023-02-11T19:34:49+08:00">2023-02-11</time>
+              <time title="Created: 2022-07-11 19:34:49" itemprop="dateCreated datePublished" datetime="2022-07-11T19:34:49+08:00">2022-07-11</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-02-12 17:03:49" itemprop="dateModified" datetime="2023-02-12T17:03:49+08:00">2023-02-12</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>

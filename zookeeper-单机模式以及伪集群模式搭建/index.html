@@ -17,13 +17,13 @@
 
 <script id="hexo-configurations">
     var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+    var CONFIG = {"hostname":"rookiedev.top","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
   <meta name="description" content="首先说一下我对 zookeeper 的学习，在刚开始听的时候觉得很高大上，但又觉得很陌生，也不知道是干嘛的，然后就网上查各种资料开始慢慢对 zookeeper 好像有点感觉了，又好像还是似懂非懂的样子，然后还看到网上都在告诉我们 zookeeper 的安装以及 zookeeper 集群的搭建，又尝试着去搭建了一遍。到最后还是有点晕乎乎的样子，总觉得好像不是很理解，包括网上说的 zookeeper">
 <meta property="og:type" content="article">
 <meta property="og:title" content="zookeeper 单机模式以及伪集群模式搭建">
-<meta property="og:url" content="http://gittab.net/zookeeper-%E5%8D%95%E6%9C%BA%E6%A8%A1%E5%BC%8F%E4%BB%A5%E5%8F%8A%E4%BC%AA%E9%9B%86%E7%BE%A4%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/index.html">
+<meta property="og:url" content="http://rookiedev.top/zookeeper-%E5%8D%95%E6%9C%BA%E6%A8%A1%E5%BC%8F%E4%BB%A5%E5%8F%8A%E4%BC%AA%E9%9B%86%E7%BE%A4%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/index.html">
 <meta property="og:site_name" content="rookiedev">
 <meta property="og:description" content="首先说一下我对 zookeeper 的学习，在刚开始听的时候觉得很高大上，但又觉得很陌生，也不知道是干嘛的，然后就网上查各种资料开始慢慢对 zookeeper 好像有点感觉了，又好像还是似懂非懂的样子，然后还看到网上都在告诉我们 zookeeper 的安装以及 zookeeper 集群的搭建，又尝试着去搭建了一遍。到最后还是有点晕乎乎的样子，总觉得好像不是很理解，包括网上说的 zookeeper">
 <meta property="og:locale">
@@ -39,7 +39,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="http://images.rookiezhou.top/zk-start.png">
 
-<link rel="canonical" href="http://gittab.net/zookeeper-%E5%8D%95%E6%9C%BA%E6%A8%A1%E5%BC%8F%E4%BB%A5%E5%8F%8A%E4%BC%AA%E9%9B%86%E7%BE%A4%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/">
+<link rel="canonical" href="http://rookiedev.top/zookeeper-%E5%8D%95%E6%9C%BA%E6%A8%A1%E5%BC%8F%E4%BB%A5%E5%8F%8A%E4%BC%AA%E9%9B%86%E7%BE%A4%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/">
 
 
 <script id="page-configurations">
@@ -203,7 +203,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/zookeeper-%E5%8D%95%E6%9C%BA%E6%A8%A1%E5%BC%8F%E4%BB%A5%E5%8F%8A%E4%BC%AA%E9%9B%86%E7%BE%A4%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/">
+    <link itemprop="mainEntityOfPage" href="http://rookiedev.top/zookeeper-%E5%8D%95%E6%9C%BA%E6%A8%A1%E5%BC%8F%E4%BB%A5%E5%8F%8A%E4%BC%AA%E9%9B%86%E7%BE%A4%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
