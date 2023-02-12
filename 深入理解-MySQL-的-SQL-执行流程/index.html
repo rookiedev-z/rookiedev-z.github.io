@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="对于 MySQL 的认识，我们大部分人可能都还只是停留在增删改查的阶段，当然我们接触的更多的也就是页面上输入一些信息，调用后台接口保存到数据库，然后再从数据库查询得到值后返回给前端展示在页面上，这也就是业界俗称的 CRUD 工程师。怎么说呢，如果我们日常只能接触到这些 CRUD 的需求，那就算是 CRUD，我们也要努力将 CRUD 做到极致。 怎么个极致法呢？那就是我们要对我们日常写的这些 CRU">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入理解 MySQL 的 SQL 执行流程">
+<meta property="og:url" content="http://gittab.net/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%9A%84-SQL-%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B/index.html">
+<meta property="og:site_name" content="rookiedev">
+<meta property="og:description" content="对于 MySQL 的认识，我们大部分人可能都还只是停留在增删改查的阶段，当然我们接触的更多的也就是页面上输入一些信息，调用后台接口保存到数据库，然后再从数据库查询得到值后返回给前端展示在页面上，这也就是业界俗称的 CRUD 工程师。怎么说呢，如果我们日常只能接触到这些 CRUD 的需求，那就算是 CRUD，我们也要努力将 CRUD 做到极致。 怎么个极致法呢？那就是我们要对我们日常写的这些 CRU">
+<meta property="og:locale">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/simple_query.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/sql_execute_flow.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/update_sql_execute_flow.png">
+<meta property="article:published_time" content="2023-02-11T11:52:19.000Z">
+<meta property="article:modified_time" content="2023-02-11T11:53:23.717Z">
+<meta property="article:author" content="rookiedev">
+<meta property="article:tag" content="Java MySQL Life">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/simple_query.png">
+
+<link rel="canonical" href="http://gittab.net/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%9A%84-SQL-%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'default'
+  };
+</script>
+
+  <title>深入理解 MySQL 的 SQL 执行流程 | rookiedev</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <a target="_blank" rel="noopener" href="https://github.com/rookiedev-z"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">rookiedev</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">just do it</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%9A%84-SQL-%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          深入理解 MySQL 的 SQL 执行流程
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2023-02-11 19:52:19 / Modified: 19:53:23" itemprop="dateCreated datePublished" datetime="2023-02-11T19:52:19+08:00">2023-02-11</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>对于 MySQL 的认识，我们大部分人可能都还只是停留在增删改查的阶段，当然我们接触的更多的也就是页面上输入一些信息，调用后台接口保存到数据库，然后再从数据库查询得到值后返回给前端展示在页面上，这也就是业界俗称的 CRUD 工程师。怎么说呢，如果我们日常只能接触到这些 CRUD 的需求，那就算是 CRUD，我们也要努力将 CRUD 做到极致。</p>
+<p>怎么个极致法呢？那就是我们要对我们日常写的这些 CRUD 语句做到心里有数，每写出一个 SQL 我们脑海里都能够知道这个 SQL 经历了哪些过程才得到我们想要的数据，具体体现在 MySQL 在收到我们发出的 SQL 语句之后是怎么执行的，走了哪个索引，为什么选择这个索引，大概需要扫描多少行记录，执行这个 SQL 加了哪些锁，以及为什么有时需要开启事务，不同事务之间看到的数据为什么不一样等等，这些东西都需要我们去了解和熟悉，这样才能在遇到更复杂的需求的时候从容应对。</p>
+<a id="more"></a>
+
+<p>首先我们来看看一个 SQL 的执行在服务器上经历了哪些过程，对于查询语句和更新语句整体上差不太多，更新语句只不过是先查到结果再进行更新，我们日常使用的最多的应该是查询 SQL 了，先来看一个查询 SQL 发到服务器上会经历那些过程才得到我们想要的数据。</p>
+<p>注: 下面的测试是基于 MySQL 服务器，版本号是 8.0.26</p>
+<h3 id="查询-SQL"><a href="#查询-SQL" class="headerlink" title="查询 SQL"></a>查询 SQL</h3><p>首先通过下面的建表语句创建一张表，并插入几条测试数据，建表语句如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">create table users</span><br><span class="line">(</span><br><span class="line">    id bigint auto_increment primary key,</span><br><span class="line">    name varchar(32) not null comment &#39;用户名&#39;,</span><br><span class="line">    identity varchar(18) not null comment &#39;身份证号&#39;,</span><br><span class="line">    age int default 0 null comment &#39;年龄&#39;,</span><br><span class="line">    sex tinyint(1) default 0 not null comment &#39;性别 0：男，1：女&#39;,</span><br><span class="line">    birthday date null comment &#39;生日&#39;,</span><br><span class="line">    address varchar(128) default &#39;&#39; not null comment &#39;地址&#39;</span><br><span class="line">)</span><br><span class="line">comment &#39;用户表&#39;;</span><br><span class="line"></span><br><span class="line">INSERT INTO activity.users (id, name, identity, age, sex, birthday, address) VALUES (1, &#39;张三&#39;, &#39;362422199401014501&#39;, 27, 0, &#39;1994-01-01&#39;, &#39;&#39;);</span><br><span class="line">INSERT INTO activity.users (id, name, identity, age, sex, birthday, address) VALUES (2, &#39;李四&#39;, &#39;362422199402024502&#39;, 27, 0, &#39;1994-02-02&#39;, &#39;&#39;);</span><br><span class="line">INSERT INTO activity.users (id, name, identity, age, sex, birthday, address) VALUES (3, &#39;王五&#39;, &#39;362422199403034503&#39;, 27, 1, &#39;1994-03-03&#39;, &#39;&#39;);</span><br><span class="line">INSERT INTO activity.users (id, name, identity, age, sex, birthday, address) VALUES (4, &#39;赵六&#39;, &#39;362422199404044504&#39;, 27, 1, &#39;1994-04-04&#39;, &#39;&#39;);</span><br><span class="line">INSERT INTO activity.users (id, name, identity, age, sex, birthday, address) VALUES (5, &#39;小明&#39;, &#39;362422199405054505&#39;, 27, 1, &#39;1994-05-05&#39;, &#39;&#39;);</span><br></pre></td></tr></table></figure>
+
+<p>目前 users 表已经建好了，里面有五条测试数据，现在我们想要查出用户表中 id = 1 的数据，我们的 SQL 应是这样的:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from users where id &#x3D; 1;</span><br></pre></td></tr></table></figure>
+
+<p>不出意外的话你拿这个 SQL 去终端执行，得到的是张三的那条数据。</p>
+<p><img src="/Users/rookiedev/wechat/article_images/simple_query.png" alt="simple_query"></p>
+<p>也许我们实现业务需求的时候可能到这里就结束了，但既然我们要做一个极致的 CRUD 工程师，那可不能就这么结束了，接下来我们要刨根问底，看看这个 SQL 在服务器上到底是怎么执行的。</p>
+<p>MySQL 服务器它是由两部分组成，分别是 Server 层和存储引擎层，Server 层又有连接器，缓存(新版本已经去掉)，分析器，包括词法分析器和语法分析器，优化器，执行器这些服务，存储引擎层则主要是负责数据的存储和提取，同时存储引擎层是可以替换 的，根据业务需要选择合适的引擎，默认是 InnoDB，常见的引擎还有 Memory，MyISAM 等，这里暂时先不讨论这些引擎的优劣。</p>
+<p>我先贴一张 SQL 的执行流程图，下面我会对这个流程图进行详细介绍，你可以对照着这个图看下面的内容，这样更容易理解一些。</p>
+<p><img src="/Users/rookiedev/wechat/article_images/sql_execute_flow.png" alt="SQL 执行流程"></p>
+<p>从上面图中可以看到，首先客户端需要和服务器端建立连接，而服务器端负责和客户端建立连接的是连接器，它先是验证建立连接的用户名密码是否正确，如果不正确会直接报错 Access denied for user 拒绝连接，验证成功后这时会去查询得到该用户所拥有的权限信息，后面在执行 SQL 的过程中所依赖的权限验证就来自于这里获取得到的权限信息，也就是说修改用户的权限信息对于已经连接成功的用户是不生效的，需要重新建立连接后才生效。</p>
+<p>连接建立成功之后，接下来就可以执行 SQL 了，客户端通过建立好的连接向服务器端发送 SQL 语句，服务器端接收到 SQL 后，会经历以下流程:</p>
+<p>在之前的版本中首先会去缓存中看有没有命中的缓存，如果命中就直接返回缓存中的数据，不过后期的版本中已经将缓存去掉了，主要是因为缓存的利用率不高，每次将查询之后得到数据进行缓存，但只要对刚才查询的表有更新，和这个表有关的缓存就都被清空了，所以经常出现的情况就是往往缓存中的数据还没用到就已经被清空了，这可能只适合于一些配置表，查询较频繁但不怎么更新的数据，由于后期的版本中已经将缓存去掉了，所以上面图中我就没画出来。</p>
+<p>从 MySQL 8.0 版本后，SQL 进来通过分析器对 SQL 进行词法分析和语法分析，词法分析主要是解析 SQL 中的关键词，然后看表以及字段是否存在，是查询语句还是更新语句，语法分析则是看提供的 SQL 是否有语法错误，如果有，直接返回客户端语法错误: You have an error in your SQL syntax，并提示错误信息，如果 SQL 没问题则继续往下执行。</p>
+<p>在经过词法和语法分析之后，优化器会对 SQL 进行一个优化，比如说在多个表进行连接查询的时候使用哪一个表作为驱动表，也就是决定先查哪个表，后查哪个表，以及在查询时选择走哪一个索引，这些都是需要在优化器中做的。在经过优化器之后，这个 SQL 的执行方案也就确定下来了，其实也就意味着确定了接下来执行器具体是调用引擎层的哪个接口来提取数据，执行器只管去执行就好了，但优化器只是选择它认为性能最合适的方式执行，却不一定是最优选择，所以也就存在选错索引的情况。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from users where id &#x3D; 1;</span><br></pre></td></tr></table></figure>
+
+<p>拿上面的 SQL 来说，目的是要查询 users 表中 id = 1 的记录，执行器这时会调用引擎层具体的接口，取出满足条件 id = 1 的第一行记录，这里由于 id 是主键，所以执行器在拿到 id = 1 的第一行记录后直接就返回了，同时对于唯一索引也是一样的。</p>
+<p>这是查询条件是主键或者唯一索引的情况，如果说查询条件不是主键或唯一索引只是普通索引会怎么样呢，这时执行器会继续调用引擎层满足条件下一行的接口，直到取到最后没有取到满足条件的行为止。还有就是如果查询条件完全没有索引，我们知道这时会进行全表扫描，就比如说下面的 SQL:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from users where name &#x3D; &#39;123&#39;;</span><br></pre></td></tr></table></figure>
+
+<p>这个 SQL 是要查询 users 表中 name = ’123‘ 的记录，由于 name 字段没有索引，这时执行器会调用引擎层取这个表第一行记录的接口提取数据，取出表中的第一行数据后判断 name 字段是否等于 ’123‘，如果是放入结果集中，不是的话则跳过这一行调用取表中下一行数据的，一直取到表中的最后一行数据，最后将结果集返回给客户端。</p>
+<p>这里需要注意判断是否满足条件是在 Server 层执行器中判断的，而上面有索引的情况是直接取满足条件的记录，这些都是引擎层定义好的接口，执行器根据优化器制定的执行方案调用引擎层不同的接口来提取数据。</p>
+<h3 id="更新-SQL"><a href="#更新-SQL" class="headerlink" title="更新 SQL"></a>更新 SQL</h3><p>上面就是一个查询语句发送给 MySQL 服务之后的大体执行流程，接下来再看下对于一个更新语句 MySQL 服务又是怎么执行的呢。简单的来说，对于更新 SQL 整体流程和上面的流程是一致的，更新 SQL 是先查出来再修改写入，也就是前面的流程都是一致的，包括分析器，优化器，执行器这些流程都会走，唯一不同地方就是执行器在执行的时候先将要更新的数据查出来然后更新，再调用引擎层接口写入，而且这里涉及到更新记录也就还需要记录日志，也就是我们经常听到的 binlog，同时对于 InnoDB 引擎来说其实还要记录一个我们不常听到的 redo log，这两个日志分别是什么，又有什么作用，接下来我们就一起来看下这两个东西。</p>
+<p>首先对于 binlog，可能我们大多数人都听说过，它是属于 Server 层的一个归档日志，所有引擎共用，主要用于数据归档以及主从库间的数据同步，有两种模式，statement 格式记录的是 SQL 语句，row 格式记录的则是一行记录修改前和修改后的内容，有两条记录。</p>
+<p>而 redo log，它是 InnoDB 引擎层特有的一个日志，也叫重做日志，也正是因为它 InnoDB 引擎层才能够做到崩溃恢复的功能，它记录的是数据在页上做了什么改动，而且它的大小是有限的，是一个循环结构，写满之后就要擦除之前的数据从头开始继续写，在服务空闲或者写满时需将还没持久化的数据进行持久化，然后再擦除已经持久化的日志腾出空间提供继续写。redo log 归根结底是 MySQL 实现 WAL(Write-Ahead Logging) 机制(先写日志，再写磁盘)的一种手段，因为 MySQL 在进行更新操作时为了能够快速响应，采用了异步写回磁盘的技术，也就是写入内存后就返回，后续空闲或者 redo 写满了之后再回刷到磁盘，但这时就存在服务器 crash 后内存中数据丢失的风险，而有了 redo log，一是不用每次都实时将数据写到磁盘，只需要记录 redo log，写入内存就可以了，而且 redo log 是顺序写，而如果直接将数据写到磁盘的话很大概率是随机 IO，这种方式可以大大提高响应速度，还一个就是具备 crash safe 的能力，就算服务器 crash 了，重启之后可以通过重放 redo log 进行数据恢复。</p>
+<p>这里可能有点不太好理解，用一个具体的例子来看，比如说我现在要更新上面表中 id 等于 1 的年龄字段，更新 SQL 如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">update users set age &#x3D; 28 where id &#x3D; 1;</span><br></pre></td></tr></table></figure>
+
+<p>这个 SQL 同样的会走一遍上面的 SQL 执行流程，这里我就不再重复，毕竟前面都是一样的，重点说一下走到执行器的那部分的流程，<strong>首先执行器收到优化器制定的执行方案后开始调用引擎层接口取出 id 等于 1 的记录，引擎层会去看要查询的数据是否在内存中，在的话直接从内存中取，没有的话则去磁盘中取，取到后将 age 更新成 28，然后调用引擎层接口将新的记录写入到内存，引擎层在写入内存后记录 redo log，此时处于 prepare 状态，然后返回给执行器，执行器收到之后再记录 binlog，紧接着调用引擎层提交事务的接口，引擎层将刚才记录的 redo log 状态更新成 commit 状态，整个更新结束。</strong></p>
+<p>上面描述相对应的最后执行器那部分的执行流程图如下，其中浅色部分表示的是 Server 层的行为，深色部分表示的是引擎层：</p>
+<p><img src="/Users/rookiedev/wechat/article_images/update_sql_execute_flow.png" alt="更新 SQL 执行流程图"></p>
+<h3 id="两阶段提交"><a href="#两阶段提交" class="headerlink" title="两阶段提交"></a>两阶段提交</h3><p>上面提到了数据在更新的时候，会记录两份日志，一个是 binlog，一个是 redo log，同时也提到了各自大概的作用和区别，接下来我们再来看下 Server 层既然已经有了 binlog，为什么 InnoDB 引擎还要引入 redo log，以及这两个日志是怎么配合使用的。</p>
+<p>第一个问题，Server 层既然已经有了 binlog，为什么 InnoDB 引擎还要引入 redo log？其实上面我们已经提到了，因为它 InnoDB 引擎层才能够做到崩溃恢复的功能，同时 binlog 是 Server 层共用的，设计的初衷也就不具备这一功能，而是直接交给各个引擎层去实现。比如说在某一时刻，MySQL 服务突然挂了，这时可能有一部分修改的数据还在内存中，随着 MySQL 服务的崩溃也就丢失了，而如果有了 redo log，在服务重启后时候就可以将还在内存中没来得及持久化到磁盘上的数据通过重放 redo log 里面的日志来恢复数据。</p>
+<p>当然你也可以说通过 binlog 来恢复数据， 可是 binlog 设计的初衷就不是用来服务 crash 恢复数据的，它更多的是用于恢复到一个之前的某个时间点的数据，由于它是增量写入的，可以记录很长时间的 log，理论上来说可以恢复到之前任意时间点的数据库。比如说数据库在某一天误操作删除了数据，那么就可以找到距离误操作最近的时间节点前的 bin log 重放到临时数据库里，然后选择当天误删的数据恢复到线上数据库。</p>
+<p>第二个问题，这两个日志是怎么配合使用的呢，其实上面的那张 SQL 更新执行器部分的流程图已经可以说明一些问题，更新一条记录时，执行器会在记录 binlog 前后分别调用一次引擎层，然后引擎层第一次在更新完内存中的数据后往 redo log 里面记录日志，状态是 prepare，第二次才更新为 commit 状态，这也就是所谓的两阶段提交，为什么要这么做呢，这主要是为了保证 binlog 和 redo log 两份日志的逻辑一致性。如果说不采用两阶段提交的方式，直接先记录 binlog 再记录 redo log，或者说先记录 redo log 再记录 binlog，这两种方式会出现什么情况呢。</p>
+<p>第一种方式: 先记录 binlog 再记录 redo log<br>假如说更新数据时在写完 binlog 后系统崩溃了，待服务重启后，redo log 里面根本没有记录这条数据的更新，而 binlog 却有这条数据的更新，后期如果说要通过 binlog 备份库或者说要将这个库恢复到某个时间点的时候，由于 binlog 中记录了这个数据的更新，备份或者恢复的库中的数据将是更新后的数据，而原来的库里面却是更新之前的数据，从而就会造成两个库的数据不一致。</p>
+<p>第二种方式: 先记录 redo log 再记录 binlog<br>相反先记录 redo log 再记录 binlog，同样的更新数据时在写完 redo log 后系统崩溃了，待服务重启后，由于 redo log 中记录了数据的更新，通过重放 redo log 将刚才要更新的数据进行更新，但此时 binlog 中是没有记录这条数据的更新的，同样的后期通过 binlog 备份库或者说要将这个库恢复到某个时间点的时候，由于 binlog 中没有记录这个数据的更新，备份或者恢复的库中的数据将是更新前的数据，而原来的库里面是更新后的数据，也会造成两个库的数据不一致。</p>
+<p>从上面两种方式的处理来看都可能会造成两份日志的逻辑不一致，而采用两阶段提交的方式之后，我们来看系统在不同时间点崩溃，两份日志是怎么保证逻辑一致性的。在上面流程图中我将几个记录日志的操作进行了标号 ①②③，这时崩溃的时机可能有以下四种情况:</p>
+<ol>
+<li>在 ① 之前服务崩溃，对应的 redo log 和 binlog 都没有记录，此次数据更新失败，后期通过 binlog 备份或恢复出来的数据是更新前的数据</li>
+<li>在 ③ 之后服务崩溃，对应的 redo log 和 binlog 都有记录，且 redo log 中日志状态是 commit，此次数据更新成功，后期通过 binlog 备份或恢复出来的数据是更新后的数据</li>
+<li>在 ① 和 ② 之间服务崩溃，redo log 中有记录且状态是 prepare，binglog 中没有记录，服务重启之后看到 redo log 中是 prepare 状态，binlog 中没有此次更新日志，事务将会进行回滚，此次数据更新失败，后期通过 binlog 备份或恢复出来的数据是更新前的数据</li>
+<li>在 ② 和 ③ 之间服务崩溃，redo log 中有记录且状态是 prepare，binglog 中也有记录，服务重启之后看到 redo log 中是 prepare 状态，binlog 中也有记录，事务将会进行提交，此次数据更新成功，后期通过 binlog 备份或恢复出来的数据是更新后的数据</li>
+</ol>
+<p>从上面四种情况的分析可以看出，采用两阶段提交之后两份日志保证了逻辑一致性，不存在说后期备份或者恢复出来的数据和原来的数据不一致的情况。</p>
+
+    </div>
+
+    
+    
+    
+        
+  <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
+    <div>扫描上面图中二维码关注微信公众号</div>
+  </div>
+<!-- 
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg">
+            <span class="icon">
+              <i class="wechat"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </a>
+        </div>
+    </div>
+  </div>
+-->
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/%E5%A6%82%E4%BD%95%E9%80%9A%E8%BF%87-Redis-%E6%9D%A5%E5%AE%9E%E7%8E%B0%E6%B6%88%E6%81%AF%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97/" rel="prev" title="如何通过 Redis 来实现消息延迟队列">
+      <i class="fa fa-chevron-left"></i> 如何通过 Redis 来实现消息延迟队列
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E4%BA%8B%E5%8A%A1%E5%8E%9F%E7%90%86/" rel="next" title="深入理解 MySQL 事务原理">
+      深入理解 MySQL 事务原理 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E8%AF%A2-SQL"><span class="nav-number">1.</span> <span class="nav-text">查询 SQL</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9B%B4%E6%96%B0-SQL"><span class="nav-number">2.</span> <span class="nav-text">更新 SQL</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%A4%E9%98%B6%E6%AE%B5%E6%8F%90%E4%BA%A4"><span class="nav-number">3.</span> <span class="nav-text">两阶段提交</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">rookiedev</p>
+  <div class="site-description" itemprop="description">daily development technology summary</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">55</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rookiedev-z" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rookiedev-z" rel="noopener" target="_blank"><i class="github fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rookiedev</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

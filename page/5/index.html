@@ -194,7 +194,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/Ubuntu-%E4%B8%8B-MySQL-%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E9%85%8D%E7%BD%AE%E5%8F%AF%E8%BF%9C%E7%A8%8B%E8%AE%BF%E9%97%AE/">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/nginx-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5%E4%B9%8B%E5%86%85%E7%BD%AE%E7%AD%96%E7%95%A5/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -208,7 +208,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/Ubuntu-%E4%B8%8B-MySQL-%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E9%85%8D%E7%BD%AE%E5%8F%AF%E8%BF%9C%E7%A8%8B%E8%AE%BF%E9%97%AE/" class="post-title-link" itemprop="url">Ubuntu 下 MySQL 安装以及配置远程可访问</a>
+            <a href="/nginx-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5%E4%B9%8B%E5%86%85%E7%BD%AE%E7%AD%96%E7%95%A5/" class="post-title-link" itemprop="url">nginx 负载均衡策略之内置策略</a>
         </h2>
 
         <div class="post-meta">
@@ -218,14 +218,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2018-04-23 22:15:09" itemprop="dateCreated datePublished" datetime="2018-04-23T22:15:09+08:00">2018-04-23</time>
+              <time title="Created: 2018-06-22 23:26:45" itemprop="dateCreated datePublished" datetime="2018-06-22T23:26:45+08:00">2018-06-22</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-08 13:21:21" itemprop="dateModified" datetime="2020-08-08T13:21:21+08:00">2020-08-08</time>
+                <time title="Modified: 2020-08-10 22:42:14" itemprop="dateModified" datetime="2020-08-10T22:42:14+08:00">2020-08-10</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -233,7 +233,7 @@
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+                  <a href="/categories/Nginx/" itemprop="url" rel="index"><span itemprop="name">Nginx</span></a>
                 </span>
             </span>
 
@@ -248,11 +248,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h3 id="Ubuntu-安装-MySQL"><a href="#Ubuntu-安装-MySQL" class="headerlink" title="Ubuntu 安装 MySQL###"></a>Ubuntu 安装 MySQL###</h3><p>最好先执行一次更新操作：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo apt-get update</span><br></pre></td></tr></table></figure>
+          <p>nginx 服务器在开发中我们用的比较多的有 nginx 的负载均衡，nginx 负载均衡主要是利用反向代理来实现，也就是表面上我们访问的是这个服务，其实访问的是该服务背后支撑的众多服务器中的其中一台。比如说全世界同一时间有这么多人同时在访问百度这个网站，它是怎么能够承受的住这么大的访问量呢，这时我们就应该知道其实百度这个网站的背后有很多的服务器在支撑着众多的用户的访问。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/Ubuntu-%E4%B8%8B-MySQL-%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E9%85%8D%E7%BD%AE%E5%8F%AF%E8%BF%9C%E7%A8%8B%E8%AE%BF%E9%97%AE/#more" rel="contents">
+              <a class="btn" href="/nginx-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5%E4%B9%8B%E5%86%85%E7%BD%AE%E7%AD%96%E7%95%A5/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -276,7 +275,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/Ubuntu-%E6%89%A7%E8%A1%8C%E5%91%BD%E4%BB%A4%E6%97%B6%E6%8A%A5%E9%94%99-unable-to-resolve-host/">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/nginx-%E7%9A%84%E6%AD%A3%E5%90%91%E4%BB%A3%E7%90%86%E5%92%8C%E5%8F%8D%E5%90%91%E4%BB%A3%E7%90%86/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -290,7 +289,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/Ubuntu-%E6%89%A7%E8%A1%8C%E5%91%BD%E4%BB%A4%E6%97%B6%E6%8A%A5%E9%94%99-unable-to-resolve-host/" class="post-title-link" itemprop="url">Ubuntu 执行命令时报错 unable to resolve host</a>
+            <a href="/nginx-%E7%9A%84%E6%AD%A3%E5%90%91%E4%BB%A3%E7%90%86%E5%92%8C%E5%8F%8D%E5%90%91%E4%BB%A3%E7%90%86/" class="post-title-link" itemprop="url">nginx 的正向代理和反向代理</a>
         </h2>
 
         <div class="post-meta">
@@ -300,14 +299,500 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2018-04-08 22:26:03" itemprop="dateCreated datePublished" datetime="2018-04-08T22:26:03+08:00">2018-04-08</time>
+              <time title="Created: 2018-06-21 00:38:39" itemprop="dateCreated datePublished" datetime="2018-06-21T00:38:39+08:00">2018-06-21</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-08 13:38:52" itemprop="dateModified" datetime="2020-08-08T13:38:52+08:00">2020-08-08</time>
+                <time title="Modified: 2020-08-10 22:43:10" itemprop="dateModified" datetime="2020-08-10T22:43:10+08:00">2020-08-10</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Nginx/" itemprop="url" rel="index"><span itemprop="name">Nginx</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>nginx 服务器在我们平常的软件开发中可能还是用到的比较多的，那么有一个问题我们就应该明白，也许让你去实现轻而易举，但说到其中的原理就有点不是很清楚了。下面就谈谈我自己对正向代理和反向代理的理解：首先有一个用户 C，三台服务器 S1，S2 和 S3，S1，S2，S3 在同一局域网内互相可访问，但 S1 对外网开放，S2 和 S3 不对外网开放，还有一份数据资源 D，资源 D 放在服务器 S2 和 S3 上。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/nginx-%E7%9A%84%E6%AD%A3%E5%90%91%E4%BB%A3%E7%90%86%E5%92%8C%E5%8F%8D%E5%90%91%E4%BB%A3%E7%90%86/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/Java-8-%E7%89%B9%E6%80%A7-Stream-%E6%B5%81/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java-8-%E7%89%B9%E6%80%A7-Stream-%E6%B5%81/" class="post-title-link" itemprop="url">Java 8 特性--Stream 流</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-06-13 01:06:02" itemprop="dateCreated datePublished" datetime="2018-06-13T01:06:02+08:00">2018-06-13</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-08-02 20:46:22" itemprop="dateModified" datetime="2020-08-02T20:46:22+08:00">2020-08-02</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java-8/" itemprop="url" rel="index"><span itemprop="name">Java 8</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>Java 8 API 添加了一个新的抽象称为流 Stream，可以让你以一种声明的方式处理数据，Stream 使用一种类似用 SQL 语句从数据库查询数据的直观方式来提供一种对 Java 集合运算和表达的高阶抽象。Stream API 可以极大提高 Java 程序员的生产力，让程序员写出高效率、干净、简洁的代码。这种风格将要处理的元素集合看作一种流， 流在管道中传输， 并且可以在管道的节点上进行处理， 比如筛选， 排序，聚合等。元素流在管道中经过中间操作（intermediate operation）的处理，最后由最终操作(terminal operation) 得到前面处理的结果。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/Java-8-%E7%89%B9%E6%80%A7-Stream-%E6%B5%81/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/Java-8-%E7%89%B9%E6%80%A7-Optional-%E7%B1%BB%E3%80%81%E6%97%B6%E9%97%B4-API-%E4%BB%A5%E5%8F%8A-Base64-%E7%BC%96%E8%A7%A3%E7%A0%81/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java-8-%E7%89%B9%E6%80%A7-Optional-%E7%B1%BB%E3%80%81%E6%97%B6%E9%97%B4-API-%E4%BB%A5%E5%8F%8A-Base64-%E7%BC%96%E8%A7%A3%E7%A0%81/" class="post-title-link" itemprop="url">Java 8 特性--Optional 类、时间 API 以及 Base64 编解码</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-06-12 23:07:35" itemprop="dateCreated datePublished" datetime="2018-06-12T23:07:35+08:00">2018-06-12</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-08-02 20:46:00" itemprop="dateModified" datetime="2020-08-02T20:46:00+08:00">2020-08-02</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java-8/" itemprop="url" rel="index"><span itemprop="name">Java 8</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Optional-类"><a href="#Optional-类" class="headerlink" title="Optional 类"></a>Optional 类</h2><p>Optional 类是一个可以为 null 的容器对象，可以保存类型 T 的值，或者仅仅保存 null，它提供很多有用的方法，让我们不用再显式的进行空值检测，Optional 类的引入很好的避免了发生空指针异常，下面我们看一个简单的例子：</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/Java-8-%E7%89%B9%E6%80%A7-Optional-%E7%B1%BB%E3%80%81%E6%97%B6%E9%97%B4-API-%E4%BB%A5%E5%8F%8A-Base64-%E7%BC%96%E8%A7%A3%E7%A0%81/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/Java-8-%E7%89%B9%E6%80%A7-Lambda-%E8%A1%A8%E8%BE%BE%E5%BC%8F%E3%80%81%E6%8E%A5%E5%8F%A3%E9%BB%98%E8%AE%A4%E6%96%B9%E6%B3%95%E4%BB%A5%E5%8F%8A%E6%96%B9%E6%B3%95%E5%BC%95%E7%94%A8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Java-8-%E7%89%B9%E6%80%A7-Lambda-%E8%A1%A8%E8%BE%BE%E5%BC%8F%E3%80%81%E6%8E%A5%E5%8F%A3%E9%BB%98%E8%AE%A4%E6%96%B9%E6%B3%95%E4%BB%A5%E5%8F%8A%E6%96%B9%E6%B3%95%E5%BC%95%E7%94%A8/" class="post-title-link" itemprop="url">Java 8 特性--Lambda 表达式、接口默认方法以及方法引用</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-05-31 00:37:41" itemprop="dateCreated datePublished" datetime="2018-05-31T00:37:41+08:00">2018-05-31</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-08-02 20:45:31" itemprop="dateModified" datetime="2020-08-02T20:45:31+08:00">2020-08-02</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java-8/" itemprop="url" rel="index"><span itemprop="name">Java 8</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>Java 8 (又称为 jdk 1.8) 是 Java 语言开发的一个主要版本，Java 8 增加了许多的新特性，在此先记录一下 Lambda 表达式，接口默认方法和方法引用这三个特性。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/Java-8-%E7%89%B9%E6%80%A7-Lambda-%E8%A1%A8%E8%BE%BE%E5%BC%8F%E3%80%81%E6%8E%A5%E5%8F%A3%E9%BB%98%E8%AE%A4%E6%96%B9%E6%B3%95%E4%BB%A5%E5%8F%8A%E6%96%B9%E6%B3%95%E5%BC%95%E7%94%A8/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B-AES-%E8%A7%A3%E5%AF%86%E6%8A%A5%E9%94%99%E9%97%AE%E9%A2%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B-AES-%E8%A7%A3%E5%AF%86%E6%8A%A5%E9%94%99%E9%97%AE%E9%A2%98/" class="post-title-link" itemprop="url">Linux 系统下 AES 解密报错问题</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-05-28 23:03:31" itemprop="dateCreated datePublished" datetime="2018-05-28T23:03:31+08:00">2018-05-28</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-08-08 13:05:59" itemprop="dateModified" datetime="2020-08-08T13:05:59+08:00">2020-08-08</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Java/" itemprop="url" rel="index"><span itemprop="name">Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>前两天在开发中遇到一个问题，就是一个服务部署在 Window 系统上的，而另一个服务部署在 Linux 系统上，Linux 系统上的服务需要通过 WebService 向 Window 系统上的服务获取数据，而这个数据是经过 AES 加密的，获取到密文之后需要进行解密，然后拿到解密之后的数据进行处理，但是在 Linux 系统服务上进行解密时却报错了，下面就是报错信息。</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B-AES-%E8%A7%A3%E5%AF%86%E6%8A%A5%E9%94%99%E9%97%AE%E9%A2%98/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/Effective-Java-%E5%88%9B%E5%BB%BA%E5%92%8C%E9%94%80%E6%AF%81%E5%AF%B9%E8%B1%A1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Effective-Java-%E5%88%9B%E5%BB%BA%E5%92%8C%E9%94%80%E6%AF%81%E5%AF%B9%E8%B1%A1/" class="post-title-link" itemprop="url">Effective Java - 创建和销毁对象</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-05-23 23:04:37" itemprop="dateCreated datePublished" datetime="2018-05-23T23:04:37+08:00">2018-05-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-08-02 19:18:59" itemprop="dateModified" datetime="2020-08-02T19:18:59+08:00">2020-08-02</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Effective-Java/" itemprop="url" rel="index"><span itemprop="name">Effective Java</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="遇到多个构造器参数时要考虑用构建器"><a href="#遇到多个构造器参数时要考虑用构建器" class="headerlink" title="遇到多个构造器参数时要考虑用构建器"></a>遇到多个构造器参数时要考虑用构建器</h2><p>当我们的类的一些属性是必须的，有些属性是可选的，参数较多的情况下我们可以适当考虑使用构建器，其实在 Java 开发中我们也经常遇到这种通过构建器来创建类实例的情况，然后再结合链式调用写出来的代码还是比较美观的。下面结合一个简单的例子来说明：</p>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/Effective-Java-%E5%88%9B%E5%BB%BA%E5%92%8C%E9%94%80%E6%AF%81%E5%AF%B9%E8%B1%A1/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5%E5%92%8C%E8%BF%9C%E7%A8%8B%E6%8B%B7%E8%B4%9D%E5%91%BD%E4%BB%A4/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5%E5%92%8C%E8%BF%9C%E7%A8%8B%E6%8B%B7%E8%B4%9D%E5%91%BD%E4%BB%A4/" class="post-title-link" itemprop="url">Linux 系统下远程连接和远程拷贝命令</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-05-10 00:45:15" itemprop="dateCreated datePublished" datetime="2018-05-10T00:45:15+08:00">2018-05-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-08-02 20:48:16" itemprop="dateModified" datetime="2020-08-02T20:48:16+08:00">2020-08-02</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -330,10 +815,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="记录一下今天遇到的一个问题"><a href="#记录一下今天遇到的一个问题" class="headerlink" title="记录一下今天遇到的一个问题"></a>记录一下今天遇到的一个问题</h2><p>今天在阿里云服务器上部署应用时遇到一个小问题，每次执行完 sudo 命令都会出现一行错误信息，刚开始还以为执行命令出错了，但仔细一看不像是执行命令的报错信息，而且还发现命令其实已经执行成功了。</p>
+          <p>在平常开发部署中，我们可能经常需要远程连接到服务器上执行一些操作，有时还需要拷贝相应的文件过去，这里记录下平常自己用的比较多的远程连接命令以及远程拷贝文件的命令。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/Ubuntu-%E6%89%A7%E8%A1%8C%E5%91%BD%E4%BB%A4%E6%97%B6%E6%8A%A5%E9%94%99-unable-to-resolve-host/#more" rel="contents">
+              <a class="btn" href="/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5%E5%92%8C%E8%BF%9C%E7%A8%8B%E6%8B%B7%E8%B4%9D%E5%91%BD%E4%BB%A4/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -357,7 +842,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/Java-%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97%E2%80%94%E2%80%94%E5%9F%BA%E7%A1%80%E7%AF%87-%E4%BA%8C/">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/Ubuntu-%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E4%B8%80%E4%BA%9B%E5%BC%80%E5%8F%91%E4%B8%AD%E5%BF%85%E8%A6%81%E7%9A%84%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -371,7 +856,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/Java-%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97%E2%80%94%E2%80%94%E5%9F%BA%E7%A1%80%E7%AF%87-%E4%BA%8C/" class="post-title-link" itemprop="url">Java 面试系列——基础篇(二)</a>
+            <a href="/Ubuntu-%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E4%B8%80%E4%BA%9B%E5%BC%80%E5%8F%91%E4%B8%AD%E5%BF%85%E8%A6%81%E7%9A%84%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/" class="post-title-link" itemprop="url">Ubuntu 系统安装以及一些开发中必要的安装配置</a>
         </h2>
 
         <div class="post-meta">
@@ -381,14 +866,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2018-04-01 18:56:13" itemprop="dateCreated datePublished" datetime="2018-04-01T18:56:13+08:00">2018-04-01</time>
+              <time title="Created: 2018-05-07 23:46:03" itemprop="dateCreated datePublished" datetime="2018-05-07T23:46:03+08:00">2018-05-07</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-02 20:46:57" itemprop="dateModified" datetime="2020-08-02T20:46:57+08:00">2020-08-02</time>
+                <time title="Modified: 2020-08-08 13:25:09" itemprop="dateModified" datetime="2020-08-08T13:25:09+08:00">2020-08-08</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -396,7 +881,7 @@
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97/" itemprop="url" rel="index"><span itemprop="name">面试系列</span></a>
+                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
                 </span>
             </span>
 
@@ -411,10 +896,10 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="Java-中-equals-与-的区别"><a href="#Java-中-equals-与-的区别" class="headerlink" title="Java 中 equals 与 == 的区别"></a>Java 中 equals 与 == 的区别</h2><p>通俗的来说，“==” 比较的是地址，equals 比较的是内容。也就是说前者比较的是对象(堆)在(栈)内存中存放的内存地址，用来判断两个对象的地址是否相同，即是否是指向同一个对象。后者用来比较的是两个对象的内容是否相等，由于所有的类都是继承自java.lang.Object 类的，所以适用于所有对象，注意如果没有对该方法进行重写的话，调用的仍然是 Object 类中的方法，而 Object 中的 equals 方法返回的却是内存地址比较的结果，方法内容如下 ：</p>
+          <p>对于开发人员来说，个人强烈推荐使用 Linux 系统进行开发，至于为什么，这里贴出自己刚开始尝试使用 Linux 系统时看的一个博主写的文章，可以说就是因为看了这位博主的文章才立即决定装上 Linux 系统，开始了我的 Linux 系统之旅，从此停不下来了。下面就是这位博主写的文章地址，里面详细阐述了为什么要使用 Linux 系统。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/Java-%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97%E2%80%94%E2%80%94%E5%9F%BA%E7%A1%80%E7%AF%87-%E4%BA%8C/#more" rel="contents">
+              <a class="btn" href="/Ubuntu-%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E4%B8%80%E4%BA%9B%E5%BC%80%E5%8F%91%E4%B8%AD%E5%BF%85%E8%A6%81%E7%9A%84%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -438,7 +923,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/Java-%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97%E2%80%94%E2%80%94%E5%9F%BA%E7%A1%80%E7%AF%87-%E4%B8%80/">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B%E7%9A%84%E8%BD%AF%E9%93%BE%E6%8E%A5%E5%92%8C%E7%A1%AC%E9%93%BE%E6%8E%A5/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="image" content="/images/avatar.gif">
@@ -452,7 +937,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/Java-%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97%E2%80%94%E2%80%94%E5%9F%BA%E7%A1%80%E7%AF%87-%E4%B8%80/" class="post-title-link" itemprop="url">Java 面试系列——基础篇(一)</a>
+            <a href="/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B%E7%9A%84%E8%BD%AF%E9%93%BE%E6%8E%A5%E5%92%8C%E7%A1%AC%E9%93%BE%E6%8E%A5/" class="post-title-link" itemprop="url">Linux 系统下的软链接和硬链接</a>
         </h2>
 
         <div class="post-meta">
@@ -462,14 +947,14 @@
               </span>
               <span class="post-meta-item-text">Posted on</span>
 
-              <time title="Created: 2018-03-29 23:18:01" itemprop="dateCreated datePublished" datetime="2018-03-29T23:18:01+08:00">2018-03-29</time>
+              <time title="Created: 2018-04-25 23:41:50" itemprop="dateCreated datePublished" datetime="2018-04-25T23:41:50+08:00">2018-04-25</time>
             </span>
               <span class="post-meta-item">
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-02 20:47:19" itemprop="dateModified" datetime="2020-08-02T20:47:19+08:00">2020-08-02</time>
+                <time title="Modified: 2020-08-02 20:47:57" itemprop="dateModified" datetime="2020-08-02T20:47:57+08:00">2020-08-02</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -477,7 +962,7 @@
               </span>
               <span class="post-meta-item-text">In</span>
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97/" itemprop="url" rel="index"><span itemprop="name">面试系列</span></a>
+                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
                 </span>
             </span>
 
@@ -492,91 +977,11 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h2 id="面向对象的特征：封装、继承、多态、抽象"><a href="#面向对象的特征：封装、继承、多态、抽象" class="headerlink" title="面向对象的特征：封装、继承、多态、抽象"></a>面向对象的特征：封装、继承、多态、抽象</h2><p>封装给对象提供了隐藏内部特性和行为的能力，对象提供一些能被其他对象访问的方法来改变它内部的数据。在 Java 当中，有 4 种访问权限，对应有三个修饰符 : public、private 、protected，每一种修饰符给其他的位于同一个包或者不同包下面对象赋予了不同的访问权限。下面列出了使用封装的一些好处:</p>
+          <p>之前一直不是很明白 Linux 系统下的软链接 (soft link) 和硬链接 (hard link) 的区别和用法，今天刚好又用到了，特意花了点时间去了解了一下，暂且在这里记录一下吧。</p>
+<p>在介绍硬链接和软链接之前先介绍一下 Linux 系统下面的文件结构，文件在 Linux 下可以分为两个部分：元数据和用户数据。元数据中主要包含文件的一些附加属性，比如：文件大小，创建时间，所有者信息以及 文件的 inode 索引号，inode 索引号是文件索引节点号，也是文件的唯一标识，我们平常看到的文件名并非是用来区分文件而是一个别名便于我们识别和记忆；用户数据则是文件的数据块内容，也就是该文件保存的真正内容。</p>
           <!--noindex-->
             <div class="post-button">
-              <a class="btn" href="/Java-%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97%E2%80%94%E2%80%94%E5%9F%BA%E7%A1%80%E7%AF%87-%E4%B8%80/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
-    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="rookiedev">
-      <meta itemprop="description" content="daily development technology summary">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="rookiedev">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/" class="post-title-link" itemprop="url">我的第一篇博客</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2018-03-27 19:05:55" itemprop="dateCreated datePublished" datetime="2018-03-27T19:05:55+08:00">2018-03-27</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-02 20:44:27" itemprop="dateModified" datetime="2020-08-02T20:44:27+08:00">2020-08-02</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Markdown/" itemprop="url" rel="index"><span itemprop="name">Markdown</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="好的开始是成功的一半"><a href="#好的开始是成功的一半" class="headerlink" title="好的开始是成功的一半"></a><center>好的开始是成功的一半</center></h2><h1 id="欢迎使用Markdown编辑器写博客"><a href="#欢迎使用Markdown编辑器写博客" class="headerlink" title="欢迎使用Markdown编辑器写博客"></a>欢迎使用Markdown编辑器写博客</h1><p>本Markdown编辑器使用<a target="_blank" rel="noopener" href="https://github.com/benweet/stackedit">StackEdit</a>修改而来，用它写博客，将会带来全新的体验哦：</p>
-          <!--noindex-->
-            <div class="post-button">
-              <a class="btn" href="/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/#more" rel="contents">
+              <a class="btn" href="/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B%E7%9A%84%E8%BD%AF%E9%93%BE%E6%8E%A5%E5%92%8C%E7%A1%AC%E9%93%BE%E6%8E%A5/#more" rel="contents">
                 Read more &raquo;
               </a>
             </div>
@@ -599,7 +1004,7 @@
 
   
   <nav class="pagination">
-    <a class="extend prev" rel="prev" href="/page/4/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/">4</a><span class="page-number current">5</span>
+    <a class="extend prev" rel="prev" href="/page/4/"><i class="fa fa-angle-left" aria-label="Previous page"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/">4</a><span class="page-number current">5</span><a class="page-number" href="/page/6/">6</a><a class="extend next" rel="next" href="/page/6/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
   </nav>
 
 
@@ -665,14 +1070,14 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">45</span>
+          <span class="site-state-item-count">55</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">15</span>
+        <span class="site-state-item-count">16</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
   </nav>
@@ -704,7 +1109,7 @@
 <div class="copyright">
   
   &copy; 2018 – 
-  <span itemprop="copyrightYear">2021</span>
+  <span itemprop="copyrightYear">2023</span>
   <span class="with-love">
     <i class="fa fa-heart"></i>
   </span>

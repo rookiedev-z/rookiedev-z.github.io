@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="SQL 执行速度评估假如现在有一张活动表，表结构如下: 1234567891011121314create table activities(    id bigint unsigned auto_increment comment &#39;主键&#39; primary key,    name varchar(255) default &#39;&#39; not null comment">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Explain 的使用解析">
+<meta property="og:url" content="http://gittab.net/Explain-%E7%9A%84%E4%BD%BF%E7%94%A8%E8%A7%A3%E6%9E%90/index.html">
+<meta property="og:site_name" content="rookiedev">
+<meta property="og:description" content="SQL 执行速度评估假如现在有一张活动表，表结构如下: 1234567891011121314create table activities(    id bigint unsigned auto_increment comment &#39;主键&#39; primary key,    name varchar(255) default &#39;&#39; not null comment">
+<meta property="og:locale">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_intro.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_table_sequence.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_id_sequence.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_type_const.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_type_eq_ref.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_type_ref.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_type_ref_or_null.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_type_index_merge.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_type_range.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_type_index.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_type_all.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_extra_no_matching.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_extra_using_index.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_extra_using_index_for_group_by.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_extra_using_index_for_group_by1.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_extra_using_index_condition.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_extra_using_index_condition1.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_extra_using_where.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_extra_using_where1.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_extra_using_join_buffer_bnl.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_extra_using_join_buffer_hash.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_extra_using_join_buffer_bka.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_extra_using_temporary.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_extra_using_filesort.png">
+<meta property="article:published_time" content="2023-02-11T11:37:22.000Z">
+<meta property="article:modified_time" content="2023-02-11T12:04:19.264Z">
+<meta property="article:author" content="rookiedev">
+<meta property="article:tag" content="Java MySQL Life">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/explain_intro.png">
+
+<link rel="canonical" href="http://gittab.net/Explain-%E7%9A%84%E4%BD%BF%E7%94%A8%E8%A7%A3%E6%9E%90/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'default'
+  };
+</script>
+
+  <title>Explain 的使用解析 | rookiedev</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <a target="_blank" rel="noopener" href="https://github.com/rookiedev-z"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">rookiedev</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">just do it</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/Explain-%E7%9A%84%E4%BD%BF%E7%94%A8%E8%A7%A3%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Explain 的使用解析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2023-02-11 19:37:22 / Modified: 20:04:19" itemprop="dateCreated datePublished" datetime="2023-02-11T19:37:22+08:00">2023-02-11</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h4 id="SQL-执行速度评估"><a href="#SQL-执行速度评估" class="headerlink" title="SQL 执行速度评估"></a>SQL 执行速度评估</h4><p>假如现在有一张活动表，表结构如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">create table activities</span><br><span class="line">(</span><br><span class="line">    id bigint unsigned auto_increment comment &#39;主键&#39; primary key,</span><br><span class="line">    name varchar(255) default &#39;&#39; not null comment &#39;活动名称&#39;,</span><br><span class="line">    city_code varchar(64) default &#39;&#39; not null comment &#39;城市编码&#39;,</span><br><span class="line">    start_time timestamp default CURRENT_TIMESTAMP not null comment &#39;开始时间&#39;,</span><br><span class="line">    end_time timestamp default CURRENT_TIMESTAMP not null comment &#39;结束时间&#39;,</span><br><span class="line">    status tinyint unsigned default &#39;0&#39; not null comment &#39;状态:0-待启用,1-待生效,2-生效中,3-已结束,4-已禁用&#39;,</span><br><span class="line">    create_time timestamp default CURRENT_TIMESTAMP not null comment &#39;创建时间&#39;,</span><br><span class="line">    update_time timestamp default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment &#39;更新时间&#39;</span><br><span class="line">) comment &#39;活动表&#39; CHARSET&#x3D;utf8mb4;</span><br><span class="line">create index idx_city_code on activities(city_code);</span><br><span class="line">create index idx_create_time on activities (create_time);</span><br><span class="line">create index idx_start_end_time on activities (start_time, end_time);</span><br></pre></td></tr></table></figure>
+<a id="more"></a>
+
+
+
+<p>业务中需要查询目前正在生效中的活动有哪些，查询SQL 是下面这样的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from activities where start_time &lt; now() and now() &lt; end_time;</span><br></pre></td></tr></table></figure>
+
+<p>以我们对索引的了解，活动表上已经建了 start_time 和 end_time 的联合索引 idx_start_end_time，上面的 SQL 肯定会通过 idx_start_end_time 索引去查询，因此上面的 SQL 执行速度应该不会慢的，但事实上真的是这样吗，如果不是这样的话，我们该如何去评估这个 SQL 的执行速度呢，那就是通过 EXPLAIN 指令，也是我们今天要重点介绍的内容，通过 explain 的执行结果我们可以看到以下内容：</p>
+<p>1.SQL 语句中表的查询顺序</p>
+<p>2.SQL 的查询类型</p>
+<p>3.查询的是哪个分区表</p>
+<p>4.走的是哪个索引</p>
+<p>5.查询扫描行数</p>
+<p>6.SQL 的执行方式</p>
+<p>通过对这些内容进行分析之后我们就可以优化我们的 SQL 语句或者表的索引结构，进一步提高我们的查询效率</p>
+<h4 id="EXPLAIN-语法介绍"><a href="#EXPLAIN-语法介绍" class="headerlink" title="EXPLAIN 语法介绍"></a>EXPLAIN 语法介绍</h4><p>对于 explain 的使用，其实很简单，只要在要执行的 SQL 语句前面加上 explain 关键字就可以，以上面的 SQL 为例:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from activities where start_time &lt; now() and now() &lt; end_time;</span><br></pre></td></tr></table></figure>
+
+<p>执行结果如下:</p>
+<p><img src="/Users/rookiedev/wechat/article_images/explain_intro.png" alt="image-20220423230701278"></p>
+<p>从执行结果来看，有点类似于在查询一张包含上面输出结果中的这些字段的表一样，这些字段包括 id，select_type, table,partitions, type, possible_keys, key, key_len, ref, rows, filtered, Extra，这些字段当中有些我们稍微了解一下就可以，有些字段对于我们优化 SQL 有很大的帮助，需要重点关注</p>
+<p>针对下面的示例，这里先准备一些表作为测试使用:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">create table cities</span><br><span class="line">(</span><br><span class="line">    id bigint unsigned auto_increment comment &#39;主键&#39; primary key,</span><br><span class="line">    name varchar(255) default &#39;&#39; comment &#39;城市名称&#39;,</span><br><span class="line">    code varchar(64) default &#39;&#39; not null comment &#39;城市编码&#39;</span><br><span class="line">) comment &#39;城市编码表&#39;;</span><br><span class="line">create index idx_name on cities(name);</span><br><span class="line">create unique index uk_code on cities (code);</span><br></pre></td></tr></table></figure>
+
+<h4 id="EXPLAIN-各字段含义"><a href="#EXPLAIN-各字段含义" class="headerlink" title="EXPLAIN 各字段含义"></a>EXPLAIN 各字段含义</h4><p>上面我们提到通过 explain 的执行结果我们可以看到 SQL 执行过程中的一些关键信息，执行结果中每个字段都代表着不同的含义，在理解了这些字段的含义后，对我们优化 SQL 或索引都会起到很大的作用，我们来依次介绍这些字段的含义</p>
+<p>id，table: id 和 table 两个字段可以放在一起来看，id 的值代表了 SQL 语句中表的读取顺序，值越大读取顺序越靠前，当 id 值相同时，table 列按照从上往下的读取顺序。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from activities where city_code &#x3D; (select code from cities limit 1);</span><br></pre></td></tr></table></figure>
+
+<p><img src="/Users/rookiedev/wechat/article_images/explain_table_sequence.png" alt="image-20220425204607073"></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from activities t1 join cities t2 on t1.city_code &#x3D; t2.code;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/Users/rookiedev/wechat/article_images/explain_id_sequence.png" alt="image-20220425204446829"></p>
+<p>select_type: 表示 SQL 语句的查询类型，常见的值有：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">SIMPLE：简单查询，不包含 UNION 或者子查询</span><br><span class="line">PRIMARY：查询中如果包含子查询或其他部分，外层的 SELECT 将被标记为 PRIMARY</span><br><span class="line">SUBQUERY：子查询中的第一个 SELECT 查询</span><br><span class="line">UNION：在 UNION 语句中，UNION 之后出现的 SELECT</span><br><span class="line">DERIVED：在 FROM 中出现的子查询将被标记为 DERIVED</span><br><span class="line">UNION RESULT：UNION 查询的结果</span><br></pre></td></tr></table></figure>
+
+<p>partitions: 如果查询的表是分区表，表示命中的数据记录所在的分区，对于不是分区表，值为 NULL</p>
+<p>type: 表示查询所执行的类型，通过它可以看出查询是如何执行的，这一列可以说是我们要重点优化的对象，它的值比较重要，主要有以下类型:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">system &gt; const &gt; eq_ref &gt; ref &gt; fulltext &gt; ref_or_null &gt; index_merge &gt; unique_subquery &gt; index_subquery &gt; range &gt; index &gt; ALL</span><br></pre></td></tr></table></figure>
+
+<p>上面这些类型从左到右，查询性能依次降低，这里先不详细介绍每种类型的执行效果，先知道有这些类型即可，后面和 Extra 字段一起统一重点介绍。</p>
+<p>possible_keys: 表示查询可能使用到的索引，也有可能里面的索引一个都没用到，取决于优化器分析之后的结果，也就是有可能该列上存在索引，但优化器分析之后决定不使用该索引</p>
+<p>key: 表示查询过程中使用的索引，如果为 null 则表示该查询没有使用索引，该列的值有可能存在 possible_key 列中没有出现的索引，同时当查询满足覆盖索引的条件时，possible_keys 列为 NULL，索引仅在 key 列显示</p>
+<p>key_len: 表示查询过程中使用的索引字节数</p>
+<p>ref: 表示在查询索引时，哪些列或者常量被用来和索引的值进行比较</p>
+<p>rows: 表示查询过程中预估需要扫描的行数，注意这是一个估算的值，并不是具体的值</p>
+<p>filtered: 表示通过索引查询之后匹配到的数据量再经过 server 层 where 条件判断过滤之后剩余数据比例，比如说根据索引条件查询满足条件的数量是 100，经过其他条件过滤之后返回的结果数剩 60，filtered 的值就是 60%，通常这个值越大越好，直接经过索引条件查询得到的结果数就是最终查询的结果数肯定效率是更高的，但也不用过多的关注这个值，这个值对 SQL 性能的整体提升相比其他更重要的字段(type, Extra)来说并不是非常明显</p>
+<p>Extra: 表示 SQL 语句执行过程中一些额外的关键信息，常见的值有:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Using where，Using index，Using index condition，Using index for group-by，Using join buffer (Block Nested Loop)，Using join buffer (hash join)，Using join buffer (Batched Key Access)，Using filesort，Using temporary</span><br></pre></td></tr></table></figure>
+
+<h4 id="Type-列解析"><a href="#Type-列解析" class="headerlink" title="Type 列解析"></a>Type 列解析</h4><p>对于一个 SQL 的优化，我们重点应该关注的是 Type 和 Extra 这两个字段，或者说这两个字段展示出来的信息几乎关系着整个 SQL 执行效率，先来看 Type 字段常见的值的含义:</p>
+<p>const: 主要是在通过主键或者唯一键等值查询的时候，type 字段的值是 const</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from cities where code &#x3D; &#39;330100&#39;;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/Users/rookiedev/wechat/article_images/explain_type_const.png" alt="image-20220426192431443"></p>
+<p>eq_ref: 在联表查询查询时，A 表 join B 表，B 表是通过主键或者唯一键进行关联时，也就是在 A 表中只有唯一一条记录和 B 表中数据相匹配，那 B 表的 type 字段值就是 eq_ref 类型</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from activities t1 join cities t2 on t1.city_code &#x3D; t2.code;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/Users/rookiedev/wechat/article_images/explain_type_eq_ref.png" alt="image-20220426193145085"></p>
+<p>ref: 通过普通索引进行等值查询，也就是表中可能有多条数据记录匹配，那 type 字段值就是 ref 类型</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from cities where name &#x3D; &#39;杭州&#39;;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/Users/rookiedev/wechat/article_images/explain_type_ref.png" alt="image-20220426195602499"></p>
+<p>ref_or_null: 通过普通索引进行等值查询，或者该字段为 null 的情况，注意该字段不能设置为 not null，那 type 字段值就是 ref_or_null 类型</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from cities where name &#x3D; &#39;杭州&#39; or name is null;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/Users/rookiedev/wechat/article_images/explain_type_ref_or_null.png" alt="image-20220426200127808"></p>
+<p>index_merge: 在 where 条件中的字段需要利用多个索引进行查询，这时 type 字段值就是 index_merge 类型，常见于多个索引字段进行 or 查询</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from cities where code &#x3D; &#39;330100&#39; or name &#x3D; &#39;杭州&#39;;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/Users/rookiedev/wechat/article_images/explain_type_index_merge.png" alt="image-20220426201022049"></p>
+<p>range: 索引范围查询，这个可能见的相对比较多一点，常见于带 &lt;&gt;，&gt;，&gt;=，&lt;，&lt;=，between，in，like 等这些查询条件语句中</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from activities where start_time &gt;&#x3D; now();</span><br></pre></td></tr></table></figure>
+
+<p><img src="/Users/rookiedev/wechat/article_images/explain_type_range.png" alt="image-20220426234344870"></p>
+<p>index: 通过遍历索引树就能够得到相应的数据，相比下面的 All 类型来说要好一些，索引文件大小肯定要比数据文件大小要小，而且索引的根节点和第二层节点大概率处于内存当中，相对来说会更快一些，但注意这是索引树扫描，相比其他索引定位查询还是要慢很多的，所以不要看到使用上了索引就以为查询不慢</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select id, name from cities;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/Users/rookiedev/wechat/article_images/explain_type_index.png" alt="image-20220427000036479"></p>
+<p>All: 这个就是通常我们所说的没有可用的索引可以利用，直接全表扫描，相对来说性能是最差的，最直接的方法就是通过加索引来避免全表扫描</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from activities where name &#x3D; &#39;活动一&#39;;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/Users/rookiedev/wechat/article_images/explain_type_all.png" alt="image-20220426235124506"></p>
+<h4 id="Extra-列解析"><a href="#Extra-列解析" class="headerlink" title="Extra 列解析"></a>Extra 列解析</h4><p>上面已经介绍了 Type 字段常见的一些值的含义，但有时还需要配合 Extra 一起来看才能更好的进行优化，接下来我们一起来看 Extra 字段常见值含义:</p>
+<p>no matching row in const table: 通常根据主键查询的数据在表中不存在，Extra 列的值是这个</p>
+<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_no_matching.png" alt="image-20220430181005220"></p>
+<p>Using index: 表示利用到了我们在之前文章里面提到的索引覆盖优化功能，通常是要查询的字段以及条件字段都已经在索引中存在，也就是说通过索引树就可以满足查询条件以及结果，不需要再到主键索引树中查询该记录完整的数据，减少回表的过程</p>
+<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_index.png" alt="image-20220430182906088"></p>
+<p>Using index for group-by: 和 Using index 意思差不多，不过就是查询语句中如果包含了 distinct 和 group by 关键字的时候 Extra 里面的内容就是 Using index for group-by 了</p>
+<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_index_for_group_by.png" alt="image-20220430204616024"></p>
+<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_index_for_group_by1.png" alt="image-20220430204709766"></p>
+<p>Using index condition: 表示利用到了在我们在之前文章里面同样提到过的索引下推优化功能，在 “仅能利用最左前缀索引的场景” 下(无法能利用全部联合索引)，对不在最左前缀索引中的其他联合索引字段加以利用，在遍历索引时，由只传入可以利用到的字段值，改成了多传入下推字段值进行过滤，过滤会减少遍历索引查出的主键条数，从而减少回表次数，提升整体性能，对于 Using index 和 Using index condition 不是很熟悉的话建议去看之前的文章 &lt;&lt;深入索引二&gt;&gt;</p>
+<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_index_condition.png" alt="image-20220430183309242"></p>
+<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_index_condition1.png" alt="image-20220502110908831"></p>
+<p>Using where: 表示该查询需要在 Server 层得到存储引擎返回的结果之后需要再次进行过滤，这种情况可能使用了索引，只不过存在其他条件不在索引字段中，也有可能就完全没有使用索引</p>
+<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_where.png" alt="image-20220430202912973"></p>
+<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_where1.png" alt="image-20220430203040134"></p>
+<p>Using join buffer (Block Nested Loop): 表示在 join 联表查询的时候，当被驱动表的联表字段上没有索引的时候，Extra 里面就会出现这个值，但注意的是在 MySQL 8.0 版本之后 Extra 里面的值是 Using join buffer (hash join)，当出现不管是 Using join buffer (Block Nested Loop) 还是 Using join buffer (hash join) 我们都应该想办法进行优化，简单的做法就是在被驱动表的关联字段上建索引</p>
+<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_join_buffer_bnl.png" alt="image-20220502132957893"></p>
+<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_join_buffer_hash.png" alt="image-20220502122513317"></p>
+<p>Using join buffer (Batched Key Access): 表示在 join 联表查询的时，当被驱动表的联表字段上有索引，Extra 里面就会出现这个值，但注意的是需要将下面的优化开关设置如下</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set optimizer_switch&#x3D;&#39;mrr&#x3D;on,mrr_cost_based&#x3D;off,batched_key_access&#x3D;on&#39;;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_join_buffer_bka.png" alt="image-20220502121822919"></p>
+<p>Using temporary: 表示该查询需要借助临时表来存储中间查询结果才能进一步得到最终的查询结果，通常存在于 group by 的查询语句，同时又没有使用到索引的情况，这种 SQL 一般都需要优化</p>
+<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_temporary.png" alt="image-20220430210911712"></p>
+<p>Using filesort: 表示该查询没办法利用现有的索引对结果进行排序，而需要借助第三方存储空间来进行排序才能得到最终的排序结果，通常存在于包含 order by 的查询语句中，同时又没有使用到索引的情况，这种 SQL 一般都需要优化</p>
+<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_filesort.png" alt="image-20220430211338265"></p>
+<p>好了，上面主要介绍了 explain 执行结果中的一些字段含义，type 字段和 Extra 字段里面常见的一些值以及这些值的含义，通过熟悉这些我们可以大概知道 SQL 是怎么执行的，执行的速度怎么样，是否还有优化空间，下篇文章就来看两个常见的 SQL 优化案例。</p>
+
+    </div>
+
+    
+    
+    
+        
+  <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
+    <div>扫描上面图中二维码关注微信公众号</div>
+  </div>
+<!-- 
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg">
+            <span class="icon">
+              <i class="wechat"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </a>
+        </div>
+    </div>
+  </div>
+-->
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/change-buffer-%E7%9A%84%E7%90%86%E8%A7%A3%E4%BB%A5%E5%8F%8A%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E7%9A%84%E9%80%89%E6%8B%A9/" rel="prev" title="change buffer 的理解以及唯一索引的选择">
+      <i class="fa fa-chevron-left"></i> change buffer 的理解以及唯一索引的选择
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/Explain-%E7%9A%84%E4%BD%BF%E7%94%A8%E5%AE%9E%E8%B7%B5/" rel="next" title="Explain 的使用实践">
+      Explain 的使用实践 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#SQL-%E6%89%A7%E8%A1%8C%E9%80%9F%E5%BA%A6%E8%AF%84%E4%BC%B0"><span class="nav-number">1.</span> <span class="nav-text">SQL 执行速度评估</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#EXPLAIN-%E8%AF%AD%E6%B3%95%E4%BB%8B%E7%BB%8D"><span class="nav-number">2.</span> <span class="nav-text">EXPLAIN 语法介绍</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#EXPLAIN-%E5%90%84%E5%AD%97%E6%AE%B5%E5%90%AB%E4%B9%89"><span class="nav-number">3.</span> <span class="nav-text">EXPLAIN 各字段含义</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Type-%E5%88%97%E8%A7%A3%E6%9E%90"><span class="nav-number">4.</span> <span class="nav-text">Type 列解析</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Extra-%E5%88%97%E8%A7%A3%E6%9E%90"><span class="nav-number">5.</span> <span class="nav-text">Extra 列解析</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">rookiedev</p>
+  <div class="site-description" itemprop="description">daily development technology summary</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">55</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rookiedev-z" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rookiedev-z" rel="noopener" target="_blank"><i class="github fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rookiedev</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

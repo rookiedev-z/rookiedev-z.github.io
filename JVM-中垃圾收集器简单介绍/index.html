@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="之前我们简单提到了 JVM 中的垃圾收集算法，比较常见的包含有标记-清除算法，标记-复制算法，标记-整理算法，那么针对这些算法的各种具体实现也就有了 JVM 中使用的各种垃圾收集器，对于这些垃圾收集器，简单一点可以直接按照新生代和老年代来进行划分，针对新生代中使用的垃圾收集器有: Serial，Parallel New，Parallel Scavenge，针对老年代中使用的收集器有：Serial">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JVM 中垃圾收集器简单介绍">
+<meta property="og:url" content="http://gittab.net/JVM-%E4%B8%AD%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E7%AE%80%E5%8D%95%E4%BB%8B%E7%BB%8D/index.html">
+<meta property="og:site_name" content="rookiedev">
+<meta property="og:description" content="之前我们简单提到了 JVM 中的垃圾收集算法，比较常见的包含有标记-清除算法，标记-复制算法，标记-整理算法，那么针对这些算法的各种具体实现也就有了 JVM 中使用的各种垃圾收集器，对于这些垃圾收集器，简单一点可以直接按照新生代和老年代来进行划分，针对新生代中使用的垃圾收集器有: Serial，Parallel New，Parallel Scavenge，针对老年代中使用的收集器有：Serial">
+<meta property="og:locale">
+<meta property="article:published_time" content="2023-02-11T11:34:49.000Z">
+<meta property="article:modified_time" content="2023-02-11T11:45:51.410Z">
+<meta property="article:author" content="rookiedev">
+<meta property="article:tag" content="Java MySQL Life">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://gittab.net/JVM-%E4%B8%AD%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E7%AE%80%E5%8D%95%E4%BB%8B%E7%BB%8D/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'default'
+  };
+</script>
+
+  <title>JVM 中垃圾收集器简单介绍 | rookiedev</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <a target="_blank" rel="noopener" href="https://github.com/rookiedev-z"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">rookiedev</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">just do it</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/JVM-%E4%B8%AD%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E7%AE%80%E5%8D%95%E4%BB%8B%E7%BB%8D/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          JVM 中垃圾收集器简单介绍
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2023-02-11 19:34:49 / Modified: 19:45:51" itemprop="dateCreated datePublished" datetime="2023-02-11T19:34:49+08:00">2023-02-11</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/JVM/" itemprop="url" rel="index"><span itemprop="name">JVM</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>之前我们简单提到了 JVM 中的垃圾收集算法，比较常见的包含有标记-清除算法，标记-复制算法，标记-整理算法，那么针对这些算法的各种具体实现也就有了 JVM 中使用的各种垃圾收集器，对于这些垃圾收集器，简单一点可以直接按照新生代和老年代来进行划分，<strong>针对新生代中使用的垃圾收集器有: Serial，Parallel New，Parallel Scavenge，针对老年代中使用的收集器有：Serial Old，Parallel Old，CMS(Concurrent Mark Sweep)。</strong>正是因为没有一款收集器能够适用于所有场景，所以才有了各种场景下的收集器出现。</p>
+<a id="more"></a>
+
+<p>目前随着 JVM 版本的不断迭代更新，同时也对垃圾收集器的不断优化，最新的已经出现了一些更为优秀的垃圾收集器，比如说 **G1(Garbage First)**，它是一个横跨新生代和老年代的的垃圾回收器；同时还有宣称能够将暂停时间控制在 10ms 以内的 **ZGC(Z Garbage Collector)**，这些都是随着我们内存越来越大，然后对于低延迟的不断追求而产生的一系列优秀的收集器。</p>
+<h2 id="新生代收集器"><a href="#新生代收集器" class="headerlink" title="新生代收集器"></a>新生代收集器</h2><h3 id="Serial-收集器"><a href="#Serial-收集器" class="headerlink" title="Serial 收集器"></a>Serial 收集器</h3><p>Serial 收集器它算是最古老，也是最基础的新生代垃圾收集器，基于标记-复制算法实现，同时它是工作在单线程模式下，但这里单线程模式需要注意下，它不仅仅是说明它只是采用单条线程来进行垃圾收集工作，同时也强调垃圾收集线程和用户的工作线程不能同时进行工作，垃圾线程工作时需要暂停用户的工作线程，这也就是臭名昭著的“Stop The World”状态，而后来的垃圾收集器也一直在为缩短这个状态的停留时间而努力优化改进。</p>
+<p>正因为 Serial 收集器是单线程工作，实现简单，不需要复杂的数据结构来存储额外的数据，因此它也一直是工作在 Client 模式下的 JVM 垃圾收集器的首选项。</p>
+<h3 id="Parallel-New-收集器"><a href="#Parallel-New-收集器" class="headerlink" title="Parallel New 收集器"></a>Parallel New 收集器</h3><p>Parallel New 收集器是 Serial 收集器的多线程版，也就是说它采用多线程的方式来完成垃圾收集工作，但不可避免的在垃圾收集线程工作时还是要暂停用户的工作线程，其他的则和 Serial 收集器差不多，也是新生代收集器，基于标记-复制算法实现。常见的应用场景是配合老年代的 CMS 收集器一起工作，但随着垃圾收集器的不断优化迭代，更为优秀的垃圾收集器 G1 出现之后，它打乱了堆中新生代和老年代的划分结构，因此自从 G1 出现之后，Parallel New 收集器也就开始慢慢退出历史的舞台了。</p>
+<h3 id="Parallel-Scavenge-收集器"><a href="#Parallel-Scavenge-收集器" class="headerlink" title="Parallel Scavenge 收集器"></a>Parallel Scavenge 收集器</h3><p>Parallel Scavenge 收集器则和 Parallel New 收集器差不多，都是新生代收集器，使用多线程的方式完成垃圾收集工作，基于标记-复制算法实现，但它特殊的地方在于它更加注重吞吐率，这里的吞吐率表示的是用户线程工作时长与垃圾收集线程工作时长加上用户线程工作时长之和的比值，Parallel Scavenge 收集器提供了两个参数用于精确控制吞吐量，一个是控制最大垃圾收集停顿时间 -XX: MaxGCPauseMillis，还一个是直接设置垃圾收集时间占总时间的比值 -XX:GCTimeRatio，前者是一个大于 0 的毫秒数，当然 JVM 也只是会尽力去控制这个垃圾收集时间接近于设置的值，后者是一个大于 0 小于 100 的整数百分比，相当于吞吐率的倒数。</p>
+<h2 id="老年代收集器"><a href="#老年代收集器" class="headerlink" title="老年代收集器"></a>老年代收集器</h2><h3 id="Serial-Old，Parallel-Old-收集器"><a href="#Serial-Old，Parallel-Old-收集器" class="headerlink" title="Serial Old，Parallel Old 收集器"></a>Serial Old，Parallel Old 收集器</h3><p>Serial Old 收集器是 Serial 收集器的老年代版本，同样是单线程的，但它是基于标记-整理算法实现。</p>
+<p>Parallel Old 收集器则是 Parallel Scavenge 收集器的老年代版本，采用多线程的方式进行收集，基于标记-整理算法实现。</p>
+<h3 id="CMS-收集器"><a href="#CMS-收集器" class="headerlink" title="CMS 收集器"></a>CMS 收集器</h3><p>CMS 收集器是基于标记-清除算法实现，并且是并发的，目标是尽量减少停顿时间，它只有少数几个操作需要 Stop The World，大部分是可以在用户程序运行过程中并发进行垃圾回收，当并发收集失败之后则会使用上面两个整理型垃圾回收器进行回收。</p>
+<p>由于是基于标记-清除算法实现，这意味着会存在内存碎片问题，因此在长时间运行之后会产生 Full GC，既然发生了 Full GC 自然就会导致更长时间的停顿。而且由于是并发的，那么在并发收集的过程中也就不可避免会存在垃圾收集线程和用户工作线程互相竞争资源的情况，这些都是 CMS 收集器的比较明显的缺陷。</p>
+<h2 id="更多优秀收集器"><a href="#更多优秀收集器" class="headerlink" title="更多优秀收集器"></a>更多优秀收集器</h2><p><strong>G1(Garbage First)</strong></p>
+<p>G1 收集器是有点打破了之前将整个堆区按照分代区域划分的常规做法，它是以 Region 为单位将堆区划分为一个一个的 Region，然后每个 Region 都可以作为 Eden 区，Survivor 区或老年代，Region 之间是基于标记-复制算法实现，而整体上则是采用标记-整理的算法，可以有效避免内存碎片。在进行垃圾回收时，以 Region 来作为最小回收单元，当然不会每次都对全部的 Region 进行回收，而是对最有回收价值的那些 Region 区域进行回收，也就是优先回收死亡对象较多的区域，这样才能获得更好的回收效果，同时这也是为什么收集器的名称要叫 Garbage First。而且随着 G1 收集器的到来，CMS 收集器也开始逐渐被舍弃，在 JDK9 里面已经被标记为废弃了。</p>
+<p>随着 JVM 的优化迭代，慢慢的已经有了更多更为优秀的垃圾收集器涌现出来，比如说 Shenandoah GC，ZGC，Epsilon GC，说实话这些收集器我也没有仔细去看过他们的特性，只是听说它们在进行垃圾收集时延迟可以做到更低，尤其是对于目前随着硬件配置越来越高的情况下，内存占用以及吞吐量都可以直接得到优化，但对于延迟的影响却是相反的，内存越大，垃圾收集占用的时间越长，同时这也会间接影响到用户线程的正常工作，因此目前对于低延迟的垃圾收集器更是迫在眉睫。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>对于上面提到的这些收集器的工作方式我只是做了个大概的介绍，更多的细节我建议还是去仔细看看 《深入理解 Java 虚拟机》这本书，当然最终的目的是根据这些收集器的特征，然后结合我们的实际应用，给这些收集器配置合理的参数，来达到我们想要的优化效果。可能上面这些描述你看起来觉得很简单，但其实每个收集器后面的实现细节都是非常复杂的，尤其是后面不断涌现出来的收集器，它们的工作方式以及实现细节更是复杂，可能我们说起来就是那么几句话，但背后的细节原理还是需要花好些时间去深入研究的，毕竟每个收集器都是经历过那么多的服务器实践优化之后才正式进入我们的视野，感兴趣的话可以去深入研究这些细节。</p>
+
+    </div>
+
+    
+    
+    
+        
+  <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
+    <div>扫描上面图中二维码关注微信公众号</div>
+  </div>
+<!-- 
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg">
+            <span class="icon">
+              <i class="wechat"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </a>
+        </div>
+    </div>
+  </div>
+-->
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/JVM-%E7%9A%84%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E7%AE%97%E6%B3%95/" rel="prev" title="JVM 的垃圾收集算法">
+      <i class="fa fa-chevron-left"></i> JVM 的垃圾收集算法
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%B4%A2%E5%BC%95-%E4%B8%80/" rel="next" title="深入理解 MySQL 索引(一)">
+      深入理解 MySQL 索引(一) <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%96%B0%E7%94%9F%E4%BB%A3%E6%94%B6%E9%9B%86%E5%99%A8"><span class="nav-number">1.</span> <span class="nav-text">新生代收集器</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Serial-%E6%94%B6%E9%9B%86%E5%99%A8"><span class="nav-number">1.1.</span> <span class="nav-text">Serial 收集器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Parallel-New-%E6%94%B6%E9%9B%86%E5%99%A8"><span class="nav-number">1.2.</span> <span class="nav-text">Parallel New 收集器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Parallel-Scavenge-%E6%94%B6%E9%9B%86%E5%99%A8"><span class="nav-number">1.3.</span> <span class="nav-text">Parallel Scavenge 收集器</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%80%81%E5%B9%B4%E4%BB%A3%E6%94%B6%E9%9B%86%E5%99%A8"><span class="nav-number">2.</span> <span class="nav-text">老年代收集器</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Serial-Old%EF%BC%8CParallel-Old-%E6%94%B6%E9%9B%86%E5%99%A8"><span class="nav-number">2.1.</span> <span class="nav-text">Serial Old，Parallel Old 收集器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CMS-%E6%94%B6%E9%9B%86%E5%99%A8"><span class="nav-number">2.2.</span> <span class="nav-text">CMS 收集器</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%9B%B4%E5%A4%9A%E4%BC%98%E7%A7%80%E6%94%B6%E9%9B%86%E5%99%A8"><span class="nav-number">3.</span> <span class="nav-text">更多优秀收集器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">rookiedev</p>
+  <div class="site-description" itemprop="description">daily development technology summary</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">55</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rookiedev-z" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rookiedev-z" rel="noopener" target="_blank"><i class="github fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rookiedev</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

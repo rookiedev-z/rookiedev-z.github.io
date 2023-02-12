@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="上篇文章中从整体上介绍了 explain 的使用以及 explain 执行得到的这些字段含义和常见的值，那得到这些字段信息后，对于这个 SQL 要不要优化，又该怎么优化，这个似乎没有什么固定的标准，但总体来说的话，要尽量让我们的查询使用上索引，然后在使用上索引之后再进一步看有没有优化的空间，当然对于实在没法用上索引或者说业务上能接受没必要多建一个索引的查询，我们也可以尝试在用不上索引的情况下去看看">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Explain 的使用实践">
+<meta property="og:url" content="http://gittab.net/Explain-%E7%9A%84%E4%BD%BF%E7%94%A8%E5%AE%9E%E8%B7%B5/index.html">
+<meta property="og:site_name" content="rookiedev">
+<meta property="og:description" content="上篇文章中从整体上介绍了 explain 的使用以及 explain 执行得到的这些字段含义和常见的值，那得到这些字段信息后，对于这个 SQL 要不要优化，又该怎么优化，这个似乎没有什么固定的标准，但总体来说的话，要尽量让我们的查询使用上索引，然后在使用上索引之后再进一步看有没有优化的空间，当然对于实在没法用上索引或者说业务上能接受没必要多建一个索引的查询，我们也可以尝试在用不上索引的情况下去看看">
+<meta property="og:locale">
+<meta property="article:published_time" content="2023-02-11T11:37:35.000Z">
+<meta property="article:modified_time" content="2023-02-11T12:05:03.688Z">
+<meta property="article:author" content="rookiedev">
+<meta property="article:tag" content="Java MySQL Life">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://gittab.net/Explain-%E7%9A%84%E4%BD%BF%E7%94%A8%E5%AE%9E%E8%B7%B5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'default'
+  };
+</script>
+
+  <title>Explain 的使用实践 | rookiedev</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <a target="_blank" rel="noopener" href="https://github.com/rookiedev-z"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">rookiedev</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">just do it</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/Explain-%E7%9A%84%E4%BD%BF%E7%94%A8%E5%AE%9E%E8%B7%B5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Explain 的使用实践
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2023-02-11 19:37:35 / Modified: 20:05:03" itemprop="dateCreated datePublished" datetime="2023-02-11T19:37:35+08:00">2023-02-11</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>上篇文章中从整体上介绍了 explain 的使用以及 explain 执行得到的这些字段含义和常见的值，那得到这些字段信息后，对于这个 SQL 要不要优化，又该怎么优化，这个似乎没有什么固定的标准，但总体来说的话，要尽量让我们的查询使用上索引，然后在使用上索引之后再进一步看有没有优化的空间，当然对于实在没法用上索引或者说业务上能接受没必要多建一个索引的查询，我们也可以尝试在用不上索引的情况下去看看还有没有进一步优化的空间。</p>
+<a id="more"></a>
+
+<p>explain 执行的结果中，id，table 这两列有助于帮助我们理解 SQL 的执行顺序，select_type 更多的是告诉我们 SQL 的查询类型, partitions 只在查询分区表的时候有意义，key_len 表示使用索引的长度，更多的是一些 SQL 层面的基本信息，在进行 SQL 优化的时候可以不去看</p>
+<p>rows 表示查询过程中预估需要扫描的行数，但这是一个估算的值，并不是具体的值，当然如果是在已经能使用上索引的情况，可以去考虑让扫描的行数尽可能的少，因此不是首先要关注的字段</p>
+<p>filtered 表示通过索引查询之后匹配到的数据量再经过 server 层 where 条件判断过滤之后剩余数据比例，当然比例越大越好，但如果是一个没有走索引的全表扫描之后得到值再经过 where 条件判断都满足条件，filtered 值 100%，相比于一个走索引查询之后经过 where 条件判断只剩下 50% 的比例满足条件，我们依然会选择后者，因此这个相比于索引优化的情况基本可以忽略不计</p>
+<p>因此在进行 SQL 优化的时候需要重点去看 type，possible_keys， key 以及 Extra 这几列的值，通过这几列就能够大概知道 SQL 是否有优化的空间，通常我们说加索引是最直接的优化方式，如果都没有使用索引那么就可以优先考虑是否有必要增加一个索引，在增加索引后再通过 possible_keys 和 key 字段来看看是否已经用上了，用的是哪个索引。在增加索引之后没有用上那可以考虑为什么 MySQL 评估之后不走索引，是因为数据量太小了或数据分布的问题，还是说 MySQL 判定走索引需要回表得到其他字段信息，还不如直接全表扫描来的划算所以直接全表扫描。</p>
+<p>如果增加索引之后通过 key 字段也看到已经使用上索引了，这时同样也要考虑是否当时的数据分布使得使用了索引，随着数据的增加会不会后面又回到全表扫描的情况，这种情况可能很多人都在建表的时候想着增加索引肯定会使用上索引，往后一段时间也确实使用上了，然而随着数据的慢慢增加，反而不再使用索引了，导致线上一大堆慢 SQL，从而导致一系列其他的问题。下面就以一个时间范围的 SQL 查询和一个模糊查询为例，来看看在优化的过程中所遇到的问题。</p>
+<p>针对时间范围查询的优化</p>
+<p>这里以之前新建的 activities 表为例，刚开始这张表除了主键索引之外，没有建任何其他的索引，建表语句如下:</p>
+<p>1<br>create table activities<br>2<br>(<br>3<br>  id bigint unsigned auto_increment comment ‘主键’ primary key,<br>4<br>  name varchar(255) default ‘’ not null comment ‘活动名称’,<br>5<br>  city_code varchar(64) default ‘’ not null comment ‘城市编码’,<br>6<br>  start_time timestamp default CURRENT_TIMESTAMP not null comment ‘开始时间’,<br>7<br>  end_time timestamp default CURRENT_TIMESTAMP not null comment ‘结束时间’,<br>8<br>  status tinyint unsigned default ‘0’ not null comment ‘状态:0-待启用,1-待生效,2-生效中,3-已结束,4-已禁用’,<br>9<br>  create_time timestamp default CURRENT_TIMESTAMP not null comment ‘创建时间’,<br>10<br>  update_time timestamp default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment ‘更新时间’<br>11<br>) comment ‘活动表’ CHARSET=utf8mb4;<br>现在我们的业务中有这样一个需求，需要为每一个用户匹配当时能够参加的活动，这里声明下这里的活动都是短期活动，而不是要举行好多年的那种活动。</p>
+<p>从表结构来看筛选的条件主要有城市编码，时间段以及活动的状态，对应的查询 SQL 如下：</p>
+<p>1<br>select * from activities where city_code = ‘用户所在城市编码’ and start_time &lt; now() and end_time &gt; now() and status = 2;<br>如果直接这样去执行，肯定是全表扫描，explain 的执行结果 type 列的值是 all，刚开始数据量不大，当然也是可以接受的，但随着活动创建的越来越多直接全表扫描肯定就不行了，所以在一开始我们就要考虑好该怎么去建索引，从上面的查询 SQL 来看第一反应是在时间字段上建立索引，因为随着这张表的数据量在慢慢增加，城市编码和状态字段不会增加，还是大致分布在经常举办的城市，状态字段就更不用说了，一直都是那几个状态，它们的区分度都不如时间字段，所以我们可以考虑在时间字段上建立索引。</p>
+<p>现在时间字段有两个，一个是开始时间，一个是结束时间，我们先在开始时间这个字段上建索引看看，下面是建立索引前后 explain 执行的结果:</p>
+<p>image-20220503154047423</p>
+<p>image-20220503154136064</p>
+<p>上面 activities1 是没建索引的表结构，activities2 是建了索引的表结构，里面的数据是一样的，可以看到建了索引之后的查询也确实使用了索引 idx_start_time，同时 Extra 里面还出现了 Using index condition; Using where 的信息， 说明这里还使用了索引下推的优化，为什么会使用上索引下推的优化呢，这里由于 type 里面是 range，说明是范围查询，范围查询里面会涉及到 Index Key 的提取规则，用于确定 SQL 查询在索引中的连续范围的查询条件，我想是因为这个原因才会利用到索引下推的优化，具体我还没有深入研究过，感兴趣的可以去试着研究看看。</p>
+<p>上面的 SQL 我们还可以进一步的进行优化，由于每次查询都会将开始结束字段都作为条件，因此可以建立一个联合索引来进一步达到索引下推的效果，idx_start_end_time(start_time, end_time)，一切看起来好像都没什么问题，但随着时间的推移，活动越办越多之后，我们可能会发现上面的 SQL 执行的越来越慢了，这是为什么呢？于是通过 explain 一看发现没有走索引而是直接全表扫描去查询。</p>
+<p>image-20220503174457289</p>
+<p>那么这又是为什么呢，通过分析其实也不难发现，首先可以看到 possible_keys 字段里面确实有出现 idx_start_end_time，说明 MySQL 知道有这个索引的存在，但在评估之后没有去使用，再一个可以看到 rows 字段中预估要扫描的行数多达 11 万多，目前这个表有 100 万数据，按理来说通过索引来查会更快一些，但是别忘了通过索引查询还有一个回表的过程，于是 MySQL 评估直接走全表扫描会更划算，全表扫描也就是直接扫描主键索引树，主键索引树包含了全部字段数据，可以直接进行判断和读取数据，那这么评估是否准确呢？我们尝试强制走索引看看</p>
+<p>image-20220503180509420</p>
+<p>可以看到强制走索引确实也使用了索引，预估扫描行数从 11 万多降到 5 万多，但回表次数也要达到接近 5 万多或者少一点，这样看起来好像也没好多少，这还只是 100 万的数据，但随着时间推移活动越办越多，数据量越大就会发现走索引扫描的行数也越来越多，因为从联合索引 idx_start_end_time(start_time,end_time) 来看，start_time &lt; now() 的条件只能用上联合索引的前缀 start_time 部分，通过 start_time &lt; now() 判断会发现满足的数据行越来越多，因为活动表里除了还未开始的活动基本上所有活动都是满足 start_time &lt; now()，因此这个条件几乎没怎么为我们过滤数据，所以 MySQL 评估下来还不如直接全表扫描来的快。</p>
+<p>那怎么优化呢，其实很简单，将上面联合索引的两个字段换个顺序就好了， idx_start_end_time(start_time,end_time) 换成  idx_end_start_time(end_time, start_time)，这样就能利用上 end_time &gt; now() 的条件了，针对活动表，越往后肯定大部分活动都已经结束了，已经结束的活动不可能满足 end_time &gt; now() 的条件，因此经过 end_time &gt; now() 的条件筛选之后剩下的也就没有多少数据了。</p>
+<p>image-20220503181832129</p>
+<p>从执行结果来看就算我们没有强制 SQL 使用索引，MySQL 评估之后也会使用 idx_end_start_time 的索引，同时由于我的 activities 表中所有活动都已经结束了，所以 SQL 的预估扫描行数只有 1，仅仅一个索引字段顺序的问题就能有如此差别，所以在日常开发中，我们不要想当然的以为建个索引就会走索引查询了，其实不然，MySQL 在评估的时候会综合考虑多方面的因素，其中数据的分布尤其重要，而范围查询的过滤效果更是依赖于数据的分布，很可能由于数据分布的问题就导致 SQL 没有使用索引，直接全表扫描。</p>
+<p>索引扫描和索引搜索</p>
+<p>对于 type 列，上篇文章中提到了它表示查询所执行的类型，通过它可以看出 SQL 是如何执行的，是等值查询还是范围查询，是遍历索引还是直接全表扫描，同时在查看 key 这一列就可以看出当前的 SQL 查询有没有使用索引，但是否看到使用了索引就足够了呢？</p>
+<p>其实一个 SQL 查询过程中都会使用索引，就算 type 列里面的值是 all 也是使用了索引的，只不过我们通常都会说成是全表扫描，但其实它扫描的是主键索引树，这不过这种方式被我们认为是比较低效的，相当于需要遍历整个索引树才能得到结果，还有一个就是扫描二级索引树，也是一样的要遍历整个二级索引树，因此我们对于索引的使用需要注意区分，到底是索引扫描还是索引搜索。</p>
+<p>同样还是以 activities 表为例，然后在 name 字段上建立索引，现在有下面五个 SQL 语句:</p>
+<p>1<br>select id, name from activities where name = ‘活动1’;<br>2<br>select id, name from activities where name like ‘活动1’;<br>3<br>select id, name from activities where name like ‘活动1%’;<br>4<br>select id, name from activities where name like ‘%活动1’;<br>5<br>select id, name from activities where name like ‘%活动1%’;<br>如果问你上面五个 SQL 语句里面哪几个会使用索引，哪几个不会？你觉得是怎样的呢？其中第一个 SQL 和第二个 SQL 效果是一样的，只不过第一个 SQL explain 的结果 type 是 ref，而第二个是 range，剩下三个在日常开发中或多或少见过，并且说的最多的是第三个 SQL 查询以什么开头的 SQL 会使用索引，第四个和第五个都不会使用上索引，那事实真的是这样的吗？下面我分别贴出这五个 SQL explain 出来的结果。</p>
+<p>image-20220504114521004</p>
+<p>从执行结果可以看出，第一个 SQL 的查询 type 类型是 ref，使用的索引是 idx_name，预估扫描行数为 1，同时 Extra 里面有 Using index 的信息，表示使用上了索引覆盖的优化，因为我们只查询了 id 和 name 两个字段，直接通过 idx_name 索引树就可以得到，因此可以达到索引覆盖的优化条件。</p>
+<p>image-20220504114636205</p>
+<p>第二个 SQL 的查询和第一个不同的是 type 类型是 range，使用的索引是 idx_name，预估扫描行数也是 1，同时 Extra 里面也有 Using index 的信息，同样使用上了索引覆盖的优化，同时还有 Using where 的信息，和上面我提到的范围查询涉及到 Index Key 的提取规则场景应该是一样的。</p>
+<p>image-20220504114832942</p>
+<p>image-20220504115704922</p>
+<p>image-20220504115907002</p>
+<p>后面三个 SQL 的执行计划，这三个 SQL 看起来都是用上了索引 idx_name，也都使用上了索引覆盖的优化，但可以看到后面两个 SQL 的 type 类型是 index，预估扫描行数都是 11 万多，而第三个 SQL 的 type 是 range，预估扫描行数只有 1，从结果来看这五个 SQL 其实都使用了索引，但查询效果却并不是一样的。</p>
+<p>前三个 SQL 查询使用的是索引搜索，而后两个使用的索引扫描，它只比全表扫描快一些，但也还是很慢的，这种查询还需要进行优化，因此在评估查询是否走索引时需要注意采用的是索引搜索还是索引扫描，如果是索引扫描的话还需要再进一步优化，要么从业务层面进行优化，要么增加其他索引条件进行查询。</p>
+
+    </div>
+
+    
+    
+    
+        
+  <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
+    <div>扫描上面图中二维码关注微信公众号</div>
+  </div>
+<!-- 
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg">
+            <span class="icon">
+              <i class="wechat"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </a>
+        </div>
+    </div>
+  </div>
+-->
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/Explain-%E7%9A%84%E4%BD%BF%E7%94%A8%E8%A7%A3%E6%9E%90/" rel="prev" title="Explain 的使用解析">
+      <i class="fa fa-chevron-left"></i> Explain 的使用解析
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/join-%E6%9F%A5%E8%AF%A2%E6%98%AF%E5%A6%82%E4%BD%95%E6%89%A7%E8%A1%8C%E7%9A%84/" rel="next" title="join 查询是如何执行的">
+      join 查询是如何执行的 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">rookiedev</p>
+  <div class="site-description" itemprop="description">daily development technology summary</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">55</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rookiedev-z" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rookiedev-z" rel="noopener" target="_blank"><i class="github fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rookiedev</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

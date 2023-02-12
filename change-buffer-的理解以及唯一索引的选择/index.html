@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="change buffer 介绍在介绍 change buffer 之前，先来看一个 SQL 的执行时涉及索引树的更新过程，比如下面的这个插入语句， 1insert into users(id, identity) values(1, 4504);">
+<meta property="og:type" content="article">
+<meta property="og:title" content="change buffer 的理解以及唯一索引的选择">
+<meta property="og:url" content="http://gittab.net/change-buffer-%E7%9A%84%E7%90%86%E8%A7%A3%E4%BB%A5%E5%8F%8A%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E7%9A%84%E9%80%89%E6%8B%A9/index.html">
+<meta property="og:site_name" content="rookiedev">
+<meta property="og:description" content="change buffer 介绍在介绍 change buffer 之前，先来看一个 SQL 的执行时涉及索引树的更新过程，比如下面的这个插入语句， 1insert into users(id, identity) values(1, 4504);">
+<meta property="og:locale">
+<meta property="article:published_time" content="2023-02-11T11:37:01.000Z">
+<meta property="article:modified_time" content="2023-02-11T11:59:03.702Z">
+<meta property="article:author" content="rookiedev">
+<meta property="article:tag" content="Java MySQL Life">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://gittab.net/change-buffer-%E7%9A%84%E7%90%86%E8%A7%A3%E4%BB%A5%E5%8F%8A%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E7%9A%84%E9%80%89%E6%8B%A9/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'default'
+  };
+</script>
+
+  <title>change buffer 的理解以及唯一索引的选择 | rookiedev</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <a target="_blank" rel="noopener" href="https://github.com/rookiedev-z"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">rookiedev</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">just do it</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/change-buffer-%E7%9A%84%E7%90%86%E8%A7%A3%E4%BB%A5%E5%8F%8A%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E7%9A%84%E9%80%89%E6%8B%A9/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          change buffer 的理解以及唯一索引的选择
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2023-02-11 19:37:01 / Modified: 19:59:03" itemprop="dateCreated datePublished" datetime="2023-02-11T19:37:01+08:00">2023-02-11</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h4 id="change-buffer-介绍"><a href="#change-buffer-介绍" class="headerlink" title="change buffer 介绍"></a>change buffer 介绍</h4><p>在介绍 change buffer 之前，先来看一个 SQL 的执行时涉及索引树的更新过程，比如下面的这个插入语句，</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">insert into users(id, identity) values(1, 4504);</span><br></pre></td></tr></table></figure>
+
+<a id="more"></a>
+
+<p>上面的 SQL 很简单，就是将 id = 1，identity = 4504 数据插入到 users 表里面，这里先声明下 users 表 identity 字段上建有普通索引，id 是主键字段。</p>
+<p>在之前的文章 &lt;深入理解 MySQL 索引(一) &gt; 中已经提到，InnoDB 使用的是 B+ 树索引模型，数据都是存储在 B+ 树中的，表的每一个索引在 InnoDB 里面都对应于一棵 B+ 树，B+ 树的节点存储在数据页当中，一个页里面可以存放很多行数据。</p>
+<p>如果不考虑现有的执行流程，我们来看插入这条数据时更新 identity 索引树的过程应该是怎样的，这里假设 identity = 4504 要存放的数据页 Page1 不在内存里面，简单的来说 identity 索引树的更新需要经历下面三个步骤：</p>
+<p>1.从磁盘上读取出 identity = 4504 将要存放的数据页 Page1 到内存</p>
+<p>2.将 identity = 4504，id = 1 的数据存放到相应的数据页 Page1上(内存操作)</p>
+<p>3.将内存中更新之后的数据页 Page1 写回到磁盘上</p>
+<p>上面三个步骤其中 1 和 3 是比较耗时的，涉及到从磁盘中随机读数据和随机写数据到磁盘，而步骤 2 是在内存中的操作，耗时基本可以忽略不计。既然上面提到不考虑 MySQL 现有的执行流程，那实际情况肯定不是这样的，对于步骤 3，在前面的文章 &lt;CRUD 也可以更进一步——更新语句&gt;里面介绍了 redo log，更新数据前先记录 redo log，再将数据写入内存，redo log 是顺序写，可以节省步骤 3 中随机写的时间，同时还能做到崩溃恢复的功能。</p>
+<p>那就还剩步骤一里面的随机读，这时候 change buffer 就派上用场了，当要更新的数据页不在内存里面的时候(在内存中的时候直接更新内存，不需要用到 change buffer)，可以直接将步骤二的操作记录在 change buffer 里面，然后记录 redo log 后直接返回。整个数据更新的流程就变成下面这样：</p>
+<p>1.直接在 change buffer 记录对数据页 Page1 更新</p>
+<p>2.将步骤 1 的操作记录 redo log</p>
+<p>优化之后就只剩下步骤 1 的内存操作和步骤 2 里面的顺序写磁盘操作了，相比上面三个步骤执行时间明显减少。</p>
+<p>从上面前后流程对比可以看到，change buffer 是在要更新的数据页不在内存里面时，直接将对数据页的修改记录在 change buffer 里面，而不需要从磁盘上读取数据页进行修改后再写入磁盘，减少了随机读取和写磁盘的时间，同时由于没有将数据页读入内存，也间接提高了内存的利用率。</p>
+<p>需要注意的是 change buffer 里面的数据页修改记录并不只是存放在内存里面，它也是需要写到磁盘上的，只不过是在后台异步写到磁盘上，同样的对 change buffer 的操作也会记录 redo log，由于记录了 redo log，因此不需要担心数据页修改丢失的问题。</p>
+<p>上面将对数据行的修改记录放在 change buffer 里面，而没有从磁盘上读取这部分数据做修改，并不是说就不去做随机读写的操作了，最终数据肯定都是要写到磁盘上的，只不过将这两个耗时的操作放到后台异步去执行，后台会有定时任务去执行这两个操作。还有一种情况是定时任务还没执行前就需要访问这一数据页时，这时会先将数据页读取到内存，然后应用 change buffer 中和这个数据页有关的修改记录，再将应用之后的数据返回，这样就能保证返回的是修改之后的数据。</p>
+<p>将原有数据页应用 change buffer 里面的修改记录的这一过程称为 merge 的过程，总的来说触发 merge 的过程有下面几种情况:</p>
+<p>1.定时任务执行前访问的数据页有变动，先将数据页读取到内存，然后应用 change buffer</p>
+<p>2.后台定时任务定时执行</p>
+<p>3.数据库正常关闭的过程</p>
+<p>4.数据库异常关闭后再启动，通过 redo log 恢复数据时也可能会产生 merge 的操作</p>
+<h4 id="change-buffer-和-redo-log-的对比"><a href="#change-buffer-和-redo-log-的对比" class="headerlink" title="change buffer 和 redo log 的对比"></a>change buffer 和 redo log 的对比</h4><p>1.redo log 优化的是更新数据页后随机写磁盘的过程，将随机写转变为顺序写，而 change buffer 优化的则是随机读磁盘的过程，直接将对数据页的修改放在 change buffer 里面，把随机读磁盘的操作从更新的流程里面省去了，使得更新语句的执行速度得到明显提升。</p>
+<p>2.change buffer 里面的数据页修改记录并不只是存放在内存里面，它会被写到磁盘上，并且将对数据页的修改放在 change buffer 里面的这一动作需要记录 redo log，由于记录了 redo log，因此没有数据修改丢失的问题。</p>
+<p>3.使用到 change buffer 时，真正对磁盘数据页的修改每次都是将磁盘上的数据页读取到内存，然后应用 change buffer 的修改，再将内存中更新后的数据页回写到磁盘上，而不是根据 redo log 来完成的。</p>
+<p>4.redo log 里面包含了两种日志记录，一种是普通数据页的修改，也就是读取到内存里面的数据页变动，还有一种就是我们这里提到的对 change buffer 里面的操作，使用到 change buffer 说明数据页不在内存里面，因此不存在内存里面的数据页变动，只是在 change buffer 里面记录了一下数据页的变动而已，后续将 change buffer 里面记录的数据页变动应用到磁盘数据页上时，会将磁盘上的数据页读取到内存，然后在内存里面应用 change buffer 里面的修改，这一步会再次记录 redo log，这时记录就是第一种。</p>
+<h4 id="change-buffer-的局限性"><a href="#change-buffer-的局限性" class="headerlink" title="change buffer 的局限性"></a>change buffer 的局限性</h4><p>从上面 change buffer 的介绍来看，change buffer 的确大大提高了数据的更新速度，但也并不是任何时候都能使用 change buffer，比如说下面这些场景就没有办法使用，或者说没必要使用 change buffer。</p>
+<p>1.要更新的数据行所在数据页本身就在内存里面，这时就没必要使用 change buffer 了，直接将内存里面的数据页修改即可</p>
+<p>2.要更新的索引字段也是 where 后面的条件字段，这时也不需要使用 change buffer，因为 where 后面的条件字段本身就要将数据页读取到内存来判断是否符合条件，这时都已经读取出来了，更新的时候直接更新内存就可以</p>
+<p>3.更新后的数据页紧接着就需要进行查询，这时也没有必要去使用 change buffer，因为在你更新之后立马查询，这时需要去读取磁盘上的数据页，然后应用 change buffer 里面的修改再返回，还不如在更新时将数据页读取到内存进行修改，紧接着的查询就可以直接将内存更新后的数据返回即可，因此一般对于那种写多读少的数据就很适合使用 change buffer，比如说日志数据</p>
+<p>4.要更新的索引字段是唯一索引，这时也不适用，具体原因在看完下面的内容之后就知道了</p>
+<h4 id="唯一索引和普通索引的区别"><a href="#唯一索引和普通索引的区别" class="headerlink" title="唯一索引和普通索引的区别"></a>唯一索引和普通索引的区别</h4><p>对于唯一索引和普通索引，它们两者有什么区别呢，可能我们会说唯一索引表明该字段是全局唯一的，而普通索引则没有这个要求，当然这么说肯定没错，但这则是表面上的区别，唯一索引字段全局唯一这个特性相对普通索引会给查询和更新带来哪些变化呢。</p>
+<h4 id="查询时的区别"><a href="#查询时的区别" class="headerlink" title="查询时的区别"></a>查询时的区别</h4><p>首先我们来看针对唯一索引和普通索引查询时的区别，比如下面这个 SQL 语句:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select id, identity from users where identity &#x3D; 4504;</span><br></pre></td></tr></table></figure>
+
+<p>上面的 SQL 查询 users 表里面 identity = 4504 的记录，假设 identity 字段上建立的是普通索引，并且当前 identity 字段上的索引树结构如下:</p>
+<p>在  &lt;深入理解 MySQL 索引(二)&gt; 文章中我们已经提到了索引字段的查询方式，查询过程是下面这样的:</p>
+<p>1.通过 idx_identity 索引树定位到第三个叶子节点</p>
+<p>2.将第三个叶子节点所在数据页读取到内存，取出第一个值 4504，判断满足条件取出主键 id = 4(这里因为只需要查询 id 和 identity 字段的值，所以不存在回表的过程)</p>
+<p>3.接着再取下一个值 4505，大于 4504 不满足条件，查询结束返回</p>
+<p>上面是 identity 字段为普通索引的查询过程，而如果是唯一索引，则是在上面步骤 2 取出第一个值 4504 判断满足条件取出 id = 4 之后直接查询结束返回，而不会执行步骤 3，这是普通索引和唯一索引在查询时的区别。</p>
+<h4 id="更新时的区别"><a href="#更新时的区别" class="headerlink" title="更新时的区别"></a>更新时的区别</h4><p>再来看数据更新时的区别，比如下面这个更新语句:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">update users set identity &#x3D; 4504 where id &#x3D; 3;</span><br></pre></td></tr></table></figure>
+
+<p>上面 SQL 将 users 表中 id = 3 的记录 identity 字段更新成 4504，这个 SQL 首先查询到 id = 3 的记录，除了将主键索引树叶子节点里面的 data 更新，还涉及到 identity 索引树的更新，需要将 identity 索引树上原来 id = 3 的 identity = 4503 更新成 4504(这里先不考虑索引树的页合并以及分裂过程)，假设原来 id = 3 的 identity = 4503 所在的数据页是在 Page3 上，结合上面提到的 change buffer，identity 索引树的更新过程如下:</p>
+<p>第一种情况，数据页 Page3 当前已经在内存里面:</p>
+<p>1.如果 identity 字段上建立的是普通索引，直接将内存里面 Page3 数据页上的 identity = 4503 更新成 4504</p>
+<p>2.如果 identity 字段上建立的是唯一索引，则会先进行判断当前是否已经存在 identity = 4504 的记录，不存在则更新</p>
+<p>第二种情况，数据页 Page3 当前不在内存里面:</p>
+<p>1.如果 identity 字段上建立的是普通索引，直接在 change buffer 记录对数据页 Page3 更新后返回</p>
+<p>2.如果 identity 字段上建立的是唯一索引，则会先将 Page3 数据页读入内存，判断当前是否已经存在 identity = 4504 的记录，不存在则更新</p>
+<p>可以看到由于唯一索引字段全局唯一的特性，没有办法使用到 change buffer 的特性，因为使用到了 change buffer 根本不会去读取磁盘上的数据，也就无法确认磁盘上是否还存在其他 identity = 4504 的数据，直接记录数据页修改可能违反字段全局唯一的特性，这也就回答了我上面提到的如果要更新的索引字段是唯一索引，不适用 change buffer。</p>
+<h4 id="唯一索引和普通索引如何选择"><a href="#唯一索引和普通索引如何选择" class="headerlink" title="唯一索引和普通索引如何选择"></a>唯一索引和普通索引如何选择</h4><p>在一个字段上可以建立普通索引也可以建立唯一索引的时候，我们该如何进行选择呢，看到这里或许你已经有了答案了，但还是有一些我们需要注意的地方。</p>
+<p>首先如果一个字段上可以是普通索引也可以是唯一索引，说明这个字段我们在业务代码层面就已经能够保证不会插入相同值，否则我们肯定还是要建立唯一索引。</p>
+<p>如果两者都可以的时候，使用普通索引在更新时可以利用到 change buffer，极大提高更新速度，但在查询方面其实都差不多，没有太大区别，参考上面提到的普通索引和唯一索引查询时的区别，无非就是多了一个步骤 3 的判断，这一判断大概率是内存中执行的，因为从磁盘上读取数据都是一页一页的读取，极端情况下下一个值刚好在下一个数据页，这时才可能会涉及到从磁盘上再读取一次数据的过程，但概率一般很小</p>
+<p>还有一个要注意的是使用 change buffer 的局限性，如果我们的更新都紧伴随着对该数据的查询，那么这时候就没有必要去使用 change buffer 了，相反还需要关闭 change buffer，因此这种情况下选择唯一索引和普通索引也就没什么区别了。</p>
+
+    </div>
+
+    
+    
+    
+        
+  <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
+    <div>扫描上面图中二维码关注微信公众号</div>
+  </div>
+<!-- 
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg">
+            <span class="icon">
+              <i class="wechat"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </a>
+        </div>
+    </div>
+  </div>
+-->
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%B4%A2%E5%BC%95-%E4%BA%8C/" rel="prev" title="深入理解 MySQL 索引(二)">
+      <i class="fa fa-chevron-left"></i> 深入理解 MySQL 索引(二)
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/Explain-%E7%9A%84%E4%BD%BF%E7%94%A8%E8%A7%A3%E6%9E%90/" rel="next" title="Explain 的使用解析">
+      Explain 的使用解析 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#change-buffer-%E4%BB%8B%E7%BB%8D"><span class="nav-number">1.</span> <span class="nav-text">change buffer 介绍</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#change-buffer-%E5%92%8C-redo-log-%E7%9A%84%E5%AF%B9%E6%AF%94"><span class="nav-number">2.</span> <span class="nav-text">change buffer 和 redo log 的对比</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#change-buffer-%E7%9A%84%E5%B1%80%E9%99%90%E6%80%A7"><span class="nav-number">3.</span> <span class="nav-text">change buffer 的局限性</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E5%92%8C%E6%99%AE%E9%80%9A%E7%B4%A2%E5%BC%95%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">4.</span> <span class="nav-text">唯一索引和普通索引的区别</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9F%A5%E8%AF%A2%E6%97%B6%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">5.</span> <span class="nav-text">查询时的区别</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%9B%B4%E6%96%B0%E6%97%B6%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">6.</span> <span class="nav-text">更新时的区别</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%94%AF%E4%B8%80%E7%B4%A2%E5%BC%95%E5%92%8C%E6%99%AE%E9%80%9A%E7%B4%A2%E5%BC%95%E5%A6%82%E4%BD%95%E9%80%89%E6%8B%A9"><span class="nav-number">7.</span> <span class="nav-text">唯一索引和普通索引如何选择</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">rookiedev</p>
+  <div class="site-description" itemprop="description">daily development technology summary</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">55</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rookiedev-z" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rookiedev-z" rel="noopener" target="_blank"><i class="github fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rookiedev</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

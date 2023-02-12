@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="join 联表查询的性能有时候可能会听说尽量不要使用 join 联表查询，或者更直接一点就禁止使用 join 联表查询，这时如果我们要查询的数据分布在两张关联表中，就不得不先去一张表里面查出要查询的数据，然后再根据关联字段去另一张表里面查出数据，但你有想过从查询性能上来说，这样做的查询速度就一定比 join 联表查询速度要快吗？不妨来看一个具体的例子，下面是活动表和城市编码表的表结构，活动表里面的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="join 查询是如何执行的">
+<meta property="og:url" content="http://gittab.net/join-%E6%9F%A5%E8%AF%A2%E6%98%AF%E5%A6%82%E4%BD%95%E6%89%A7%E8%A1%8C%E7%9A%84/index.html">
+<meta property="og:site_name" content="rookiedev">
+<meta property="og:description" content="join 联表查询的性能有时候可能会听说尽量不要使用 join 联表查询，或者更直接一点就禁止使用 join 联表查询，这时如果我们要查询的数据分布在两张关联表中，就不得不先去一张表里面查出要查询的数据，然后再根据关联字段去另一张表里面查出数据，但你有想过从查询性能上来说，这样做的查询速度就一定比 join 联表查询速度要快吗？不妨来看一个具体的例子，下面是活动表和城市编码表的表结构，活动表里面的">
+<meta property="og:locale">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/image-20220514151259765.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/image-20220514154214185.png">
+<meta property="og:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/image-20220515192053380.png">
+<meta property="article:published_time" content="2023-02-11T11:37:50.000Z">
+<meta property="article:modified_time" content="2023-02-11T12:06:00.997Z">
+<meta property="article:author" content="rookiedev">
+<meta property="article:tag" content="Java MySQL Life">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://gittab.net/Users/rookiedev/wechat/article_images/image-20220514151259765.png">
+
+<link rel="canonical" href="http://gittab.net/join-%E6%9F%A5%E8%AF%A2%E6%98%AF%E5%A6%82%E4%BD%95%E6%89%A7%E8%A1%8C%E7%9A%84/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'default'
+  };
+</script>
+
+  <title>join 查询是如何执行的 | rookiedev</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <a target="_blank" rel="noopener" href="https://github.com/rookiedev-z"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">rookiedev</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">just do it</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/join-%E6%9F%A5%E8%AF%A2%E6%98%AF%E5%A6%82%E4%BD%95%E6%89%A7%E8%A1%8C%E7%9A%84/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          join 查询是如何执行的
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2023-02-11 19:37:50 / Modified: 20:06:00" itemprop="dateCreated datePublished" datetime="2023-02-11T19:37:50+08:00">2023-02-11</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h4 id="join-联表查询的性能"><a href="#join-联表查询的性能" class="headerlink" title="join 联表查询的性能"></a>join 联表查询的性能</h4><p>有时候可能会听说尽量不要使用 join 联表查询，或者更直接一点就禁止使用 join 联表查询，这时如果我们要查询的数据分布在两张关联表中，就不得不先去一张表里面查出要查询的数据，然后再根据关联字段去另一张表里面查出数据，但你有想过从查询性能上来说，这样做的查询速度就一定比 join 联表查询速度要快吗？不妨来看一个具体的例子，下面是活动表和城市编码表的表结构，活动表里面的 city_code 对应于城市编码表中的 code 字段:</p>
+<a id="more"></a>
+
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">create table activities</span><br><span class="line">(</span><br><span class="line">    id bigint unsigned auto_increment comment &#39;主键&#39; primary key,</span><br><span class="line">    name varchar(255) default &#39;&#39; not null comment &#39;活动名称&#39;,</span><br><span class="line">    city_code varchar(64) default &#39;&#39; not null comment &#39;城市编码&#39;,</span><br><span class="line">    start_time timestamp default CURRENT_TIMESTAMP not null comment &#39;开始时间&#39;,</span><br><span class="line">    end_time timestamp default CURRENT_TIMESTAMP not null comment &#39;结束时间&#39;,</span><br><span class="line">    status tinyint unsigned default &#39;0&#39; not null comment &#39;状态:0-待启用,1-待生效,2-生效中,3-已结束,4-已禁用&#39;,</span><br><span class="line">    create_time timestamp default CURRENT_TIMESTAMP not null comment &#39;创建时间&#39;,</span><br><span class="line">    update_time timestamp default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment &#39;更新时间&#39;</span><br><span class="line">) comment &#39;活动表&#39; CHARSET&#x3D;utf8mb4;</span><br><span class="line">create index idx_city_code on activities(city_code);</span><br><span class="line">create index idx_create_time on activities (create_time);</span><br><span class="line">create index idx_end_time_start on activities (end_time, start_time);</span><br><span class="line"></span><br><span class="line">create table cities</span><br><span class="line">(</span><br><span class="line">    id bigint unsigned auto_increment comment &#39;主键&#39; primary key,</span><br><span class="line">    name varchar(255) default &#39;&#39; comment &#39;城市名称&#39;,</span><br><span class="line">    code varchar(64) default &#39;&#39; not null comment &#39;城市编码&#39;</span><br><span class="line">) comment &#39;城市编码表&#39;;</span><br><span class="line">create index idx_name on cities(name);</span><br><span class="line">create unique index uk_code on cities (code);</span><br></pre></td></tr></table></figure>
+
+<p>现在如果要查询出活动的基本信息，包含城市名称，这时候就有两种方法，一种是先从活动表查出 city_code 列的值，然后用 city_code 列的值去 cities 表中查询，还一种就是直接 join 联表查询，先来看第一种，首先去查 activities 表，得到结果之后将 city_code 列字段提取出来组装成 list，再去 cities 表里面做 in 查询，对应 SQL 分别是：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">select * from activities;</span><br><span class="line">select * from cities where code in (cityCodeList);</span><br></pre></td></tr></table></figure>
+
+<p>上面 activities 表中有 1000 条数据，cities 表里面有 3525 条数据，正常来说上面两个 SQL 其实都不算耗时操作，第一个仅仅是全表扫描 1000 行，第二个则是通过索引树所搜索 1000 行，加起来也就是扫描 2000 行，然后就是需要和 MySQL 服务建立两次连接</p>
+<p>接下来再来看另一种直接进行 join 联表查，通过城市编码字段进行关联查询，对应 SQL explain 结果如下：</p>
+<p><img src="/Users/rookiedev/wechat/article_images/image-20220514151259765.png" alt="image-20220514151259765"></p>
+<p>从 explain 结果来看，对表 t1 采取的是全表扫描，扫描 1000 行，表 t2 采取的是等值索引查询，整体的执行流程是这样的:</p>
+<p>1.先从 activities 表里面读出一行数据，提取出 city_code 字段的值</p>
+<p>2.然后去 cities 表中对 code 字段进行索引树搜索，找到了则保存到结果里面</p>
+<p>3.继续重复步骤 1，2，直到 activities 表中的数据都读取完毕</p>
+<p>其实也就是遍历 activities 表，对每一条数据都去 cities 表里面查询，同样也是扫描 activities 表 1000 行，然后循环 1000 次去 cities 表里面搜索，加起来也是扫描 2000 行，同时只需要建立一次连接，但如果采用第一种方式的话，在 activities 表数据量更多的情况下还需要在业务代码里面进行分段 in 查询，这么看来使用 join 查询反而会更好一些。</p>
+<h4 id="join-查询的执行流程"><a href="#join-查询的执行流程" class="headerlink" title="join 查询的执行流程"></a>join 查询的执行流程</h4><p>既然使用 join 联表反而会更好一些，那什么情况下我们不能使用 join 查询呢，如果你仔细看的话，上面参与 join 联表查询的字段无论是 activities 表里面的 city_code 还是 cities 表里面的 code 字段，这两个字段上其实都是建有索引的，如果我们把这两个字段上的索引都去掉会怎么样呢？</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">DROP INDEX idx_city_code ON activities;</span><br><span class="line">DROP INDEX uk_code ON cities;</span><br></pre></td></tr></table></figure>
+
+<p>执行完上面的删除索引的语句后，再来看使用 join 查询 explain 的结果:</p>
+<p><img src="/Users/rookiedev/wechat/article_images/image-20220514154214185.png" alt="image-20220514154214185"></p>
+<p>从图中可以看到，这时无论 activities 表还是 cities 表都是全表扫描，暂时先不去看 t1 表 Extra 里面的信息的话，整体查询流程是这样的:<br>1.先从 activities 表里面读出一行数据，提取出 city_code 字段的值</p>
+<p>2.然后去 cities 表中对 code 字段全表扫描，找到了则保存到结果里面</p>
+<p>3.继续重复步骤 1，2，直到 activities 表中的数据都读取完毕</p>
+<p>由于步骤二里面不再是索引搜索而是全表扫描，于是步骤二里面每次都要扫描 3525 行数据，对 cities 表的扫描行数就是 1000 * 3525 行，总的扫描行数就是 1000 + 1000 * 3525 行，相比有索引的情况下扫描行数直接提高了数倍，这时 join 查询也就不再有优势了。</p>
+<p>这里还有两个问题需要注意，先说第一个问题，上面提到如果不去看 t1 表 Extra 里面的信息的话，执行流程是上面这样的，那 t1 表 Extra 里面的信息代表什么意思呢？你可以去看下之前的文章 &lt;Explain 使用解析一&gt;，里面描述了什么情况下会出现这种信息，其实就是当被驱动表的联表字段上没有索引的时候就会出现，这里的 Using join buffer (hash join) 是 MySQL 8.0 版本之后才会出现的，而我测试使用的正是 8.0 版本的 MySQL，如果是之前的版本的话，Extra 里面应该是 Using join buffer (Block Nested Loop)，我们分开来介绍这两种情况。</p>
+<h4 id="Using-join-buffer-Block-Nested-Loop"><a href="#Using-join-buffer-Block-Nested-Loop" class="headerlink" title="Using join buffer (Block Nested Loop)"></a>Using join buffer (Block Nested Loop)</h4><p>上面我们说不去看 Extra 里面的信息执行的话，需要扫描的行数是 1000 * 3525，主要是由于步骤二里面去被驱动表里面查询的时候每次都是全表扫描，因此如果驱动表数据量为 M，被驱动表数据量为 N，总的扫描行数就是 M + M * N，如果这时两张表的数据量都是 10000，总的扫描行数就上亿了，这样的查询代价就太大了，因此 MySQL 进行了优化，首先将步骤一中驱动表查询得到的数据整个放入 join buffer 里面，然后扫描被驱动表，再和 join buffer 里面的数据进行对比，整体执行流程就变成下面这样：</p>
+<p>1.全表扫描 activities，将查询得到的数据全部放入 join buffer 内存中，保存的是一个无序数组</p>
+<p>2.全表扫描 cities，每扫描一行数据都去 join buffer 内存中遍历步骤一放入的 1000 条数据，判断是否满足 join 条件</p>
+<p>这样的话，扫描行数就变成 1000+3525，然后就是多了步骤二里面 join buffer 内存中 3525 * 1000 次的判断，由于判断是在内存中进行的，因此速度并不算慢，执行效率对应的计算方式也由 M + M * N 变成 M+N 外加 M * N 次内存判断。</p>
+<p>值得注意的是如果步骤一中驱动表中的数据太大，join buffer 内存不够的话怎么办呢？这时会采用**分段(block)**的方式存入 join buffer，若是采用的分段的方式，假设 join buffer 只能存储 100 条数据，执行流程如下：</p>
+<p>1.全表扫描 activities，将查询得到的数据放入 join buffer 内存中，保存的是一个无序数组，到了 100 条的时候 join buffer 内存满了，执行下一步</p>
+<p>2.全表扫描 cities，每扫描一行数据都去 join buffer 内存中遍历步骤一放入的 100 条数据，判断是否满足 join 条件</p>
+<p>3.清空 join buffer，接着扫描 activities 表，将剩下 900 条里面的 100 条继续放入 join buffer，接着执行步骤二，直到驱动表的数据全部扫描完毕</p>
+<p>采取分段的方式，扫描行数为 1000+1000/100 * 3525，内存中的判断次数依然是 3525 * 1000 次，扫描行数对应的计算方式为 M+M/buffer_size * N=M+(M * N)/buffer_size，执行效率对应就是 M+(M * N)/buffer_size 扫描行数外加 M * N 次内存判断。</p>
+<h4 id="Using-join-buffer-hash-join"><a href="#Using-join-buffer-hash-join" class="headerlink" title="Using join buffer (hash join)"></a>Using join buffer (hash join)</h4><p>上面是 MySQL 8.0 之前的  Using join buffer (Block Nested Loop) 的执行过程，同样的如果两张表的数据量都是 10 万的话，那么就要在内存中进行 100 亿次的判断，尽管是在内存中进行判断，但执行 100 亿次的判断也是挺耗时的，于是 MySQL 8.0 做了进一步的优化。</p>
+<p>上面由于步骤一里面将驱动表的数据放入 join buffer 内存时保存的是一个无序数组，所以步骤二每次和 join buffer 里面的数据对比都要循环遍历进行判断，但如果保存的是一个 hash 的结构，步骤二里面就只要将每一行数据都在 hash 里面进行一次查找定位就可以了，优化之后的执行流程如下：</p>
+<p>1.全表扫描 activities，将查询得到的数据全部放入 join buffer 内存中，保存的是一个 hash 结构</p>
+<p>2.全表扫描 cities，每扫描一行数据都去 join buffer 内存 hash 结构中查找一次，找到了则表示满足 join 条件</p>
+<p>优化之后，扫描行数还是 1000+3525，但 3525 * 1000 次的判断变成了 3525 次查找，如果是两个大表，执行速度相比之前也会提高许多，执行效率对应就是 M+N 扫描行数外加 N 次hash 查找。</p>
+<h4 id="为什么要用小表作为驱动表"><a href="#为什么要用小表作为驱动表" class="headerlink" title="为什么要用小表作为驱动表"></a>为什么要用小表作为驱动表</h4><p>接下来看第二个问题，同时如果你仔细看的话会发现，我故意将 SQL 语句中 join 表的顺序调换了，将 cities 表放在前面，从 SQL 语句看起来应该是 cities 作为驱动表，activities 表作为被驱动表才对，但从 explain 的执行结果来看，MySQL 没有按照我们书写的顺序来进行执行，因为 activities 表有 1000 条数据，cities 表有 3525 条数据，相对来说 activities 是小表作为驱动表，cities 是大表作为被驱动表，所以它是先去查询 activities 表，再去查 cities 表，从这一点也可以看出，我们无需可以调整我们的 SQL 语句中 join 表的前后顺序，MySQL 会自动调整，将小表作为驱动表，大表作为被驱动表，那为什么要使用小表作为驱动表呢。</p>
+<p> 从执行效率来看的话，在被驱动表可以使用索引的情况下，执行效率是 M+N，没法用上索引的情况下如果是 Using join buffer (Block Nested Loop)，执行效率是 M + N 或者 M+(M * N)/buffer_size 外加 M * N 次内存判断，如果是 Using join buffer (hash join) 执行效率是 M+N 扫描行数外加 N 次内存 hash 查找，其中 M 表示驱动表的数据量，N 表示被驱动表的数据量，可以得出在不考虑内存中的判断和 hash 查找操作的话:</p>
+<p>1.在有索引的情况下驱动表的 M 是全表扫描，被驱动表的 N 是索引搜索，固然 M 越小越好，应使用小表作为驱动表</p>
+<p>2.没法用上索引(Block Nested Loop)并且 join buffer 内存足够的情况下，执行效率是 M+N，无论驱动表还是被驱动表哪个更小都是全表扫描，所以这种情况下就无所谓哪张表作为驱动表了</p>
+<p>3.没法用上索引(Block Nested Loop)并且 join buffer 内存不够需要分段的情况下，执行效率是 M+(M * N)/buffer_size，显然 M 对结果的影响更大，因此也应尽量使用小表作为驱动表</p>
+<p>4.没法用上索引(hash join)并且 join buffer 内存足够的情况下，执行效率是 M+N，同理也无所谓哪张表作为驱动表了</p>
+<p>5.没法用上索引(hash join)并且 join buffer 内存不够需要分段的情况下，执行效率是 M+(M/buffer_size) * N，同理也是应尽量使用小表作为驱动表</p>
+<p>综上几点可以得出在进行 join 查询时，最好是让小表作为驱动表，大表作为被驱动表来进行查询。</p>
+<h4 id="如何判断小表大表"><a href="#如何判断小表大表" class="headerlink" title="如何判断小表大表"></a>如何判断小表大表</h4><p>在 join 联表查询时既然都说用小表作为驱动表，大表作为被驱动表，那么怎么去判断哪张表是大表，哪张表是小表呢，你可能会说当然数据量大的是大表，数据量小的是小表了，那真的是这样的吗？为了看出效果，我把上面两张表的索引都重新加上了，来看下面的几个例子:</p>
+<p><img src="/Users/rookiedev/wechat/article_images/image-20220515192053380.png" alt="image-20220515192053380"></p>
+<p>同样是最开始的那个 SQL，只是在最后面给 cities 表加上了一个 where 条件，这时候虽然 cities 表的数据量更大，但是在这个 SQL 里面参与 join 的数据量其实只有一条数据(唯一索引)，所以在这个 SQL 里面 cities 应该作为驱动表，因为参与 join 联表查询的数据量更小。</p>
+<p>还有一种情况就是当两张表参与 join 查询的数据量一样时，这时还会去看需要查询的字段大小，MySQL 也会考虑将查询字段更少的表作为驱动表，比如说下面这两个 SQL:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">explain select activities.*, cities.code from activities join cities on activities.city_code &#x3D; cities.code where cities.code &lt;&#x3D; 1000;</span><br><span class="line">explain select activities.code, cities.* from activities join cities on activities.city_code &#x3D; cities.code where cities.code &lt;&#x3D; 1000;</span><br></pre></td></tr></table></figure>
+
+<p>在没有索引的情况下，放到 join buffer 里面的字段是不一样的，第一个 SQL，cities 表只要放入 code 字段加上 id，而 activities 表则是放入整张表的字段，第二个 SQL 则刚好相反，因此 MySQL 采取的也是将放入 join buffer 里面数据更小的表作为驱动表，这样可以避免分段或者分的段数更少。</p>
+<p>因此，我们在判断大表小表的时候，不单单是看表里面的数据量，而是要看实际参与 join 查询的数据量的大小，也就是经过条件过滤之后真正参与 join 的数据以及真正查询的字段的大小。</p>
+
+    </div>
+
+    
+    
+    
+        
+  <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
+    <div>扫描上面图中二维码关注微信公众号</div>
+  </div>
+<!-- 
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg">
+            <span class="icon">
+              <i class="wechat"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </a>
+        </div>
+    </div>
+  </div>
+-->
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/Explain-%E7%9A%84%E4%BD%BF%E7%94%A8%E5%AE%9E%E8%B7%B5/" rel="prev" title="Explain 的使用实践">
+      <i class="fa fa-chevron-left"></i> Explain 的使用实践
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/%E5%A6%82%E4%BD%95%E9%80%9A%E8%BF%87-Redis-%E6%9D%A5%E5%AE%9E%E7%8E%B0%E6%B6%88%E6%81%AF%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97/" rel="next" title="如何通过 Redis 来实现消息延迟队列">
+      如何通过 Redis 来实现消息延迟队列 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#join-%E8%81%94%E8%A1%A8%E6%9F%A5%E8%AF%A2%E7%9A%84%E6%80%A7%E8%83%BD"><span class="nav-number">1.</span> <span class="nav-text">join 联表查询的性能</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#join-%E6%9F%A5%E8%AF%A2%E7%9A%84%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B"><span class="nav-number">2.</span> <span class="nav-text">join 查询的执行流程</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Using-join-buffer-Block-Nested-Loop"><span class="nav-number">3.</span> <span class="nav-text">Using join buffer (Block Nested Loop)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Using-join-buffer-hash-join"><span class="nav-number">4.</span> <span class="nav-text">Using join buffer (hash join)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E7%94%A8%E5%B0%8F%E8%A1%A8%E4%BD%9C%E4%B8%BA%E9%A9%B1%E5%8A%A8%E8%A1%A8"><span class="nav-number">5.</span> <span class="nav-text">为什么要用小表作为驱动表</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E5%88%A4%E6%96%AD%E5%B0%8F%E8%A1%A8%E5%A4%A7%E8%A1%A8"><span class="nav-number">6.</span> <span class="nav-text">如何判断小表大表</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">rookiedev</p>
+  <div class="site-description" itemprop="description">daily development technology summary</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">55</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rookiedev-z" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rookiedev-z" rel="noopener" target="_blank"><i class="github fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rookiedev</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

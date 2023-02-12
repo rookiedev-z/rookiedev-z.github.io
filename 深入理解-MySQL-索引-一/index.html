@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"gittab.net","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="什么是索引在日常开发中，如果遇到一个 SQL 查询比较慢的时候，我们可能会说给这个 SQL 的查询字段加个索引，那为什么给字段加个索引查询就变快了，索引到底是什么？或许只有清楚的知道索引是什么我们才能明白为什么加上索引之后查询就变快了。 索引，简单的来说就像是一本书的目录，通过目录你能很快就知道其中一篇文章具体是在哪一页，而如果没有目录的话那你只能随机去翻，或者一页一页去翻直到翻到你想找的那篇文章">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入理解 MySQL 索引(一)">
+<meta property="og:url" content="http://gittab.net/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%B4%A2%E5%BC%95-%E4%B8%80/index.html">
+<meta property="og:site_name" content="rookiedev">
+<meta property="og:description" content="什么是索引在日常开发中，如果遇到一个 SQL 查询比较慢的时候，我们可能会说给这个 SQL 的查询字段加个索引，那为什么给字段加个索引查询就变快了，索引到底是什么？或许只有清楚的知道索引是什么我们才能明白为什么加上索引之后查询就变快了。 索引，简单的来说就像是一本书的目录，通过目录你能很快就知道其中一篇文章具体是在哪一页，而如果没有目录的话那你只能随机去翻，或者一页一页去翻直到翻到你想找的那篇文章">
+<meta property="og:locale">
+<meta property="og:image" content="http://gittab.net/Users/xxx-xifan/Dropbox/drawio/images/%E4%BA%8C%E5%8F%89%E6%A0%91.png">
+<meta property="og:image" content="http://gittab.net/Users/xxx-xifan/Dropbox/drawio/images/B%E6%A0%91.png">
+<meta property="og:image" content="http://gittab.net/Users/xxx-xifan/Dropbox/drawio/images/B+%E6%A0%91.png">
+<meta property="og:image" content="http://gittab.net/Users/xxx-xifan/Dropbox/drawio/images/%E9%9D%9E%E4%B8%BB%E9%94%AE%E7%B4%A2%E5%BC%95.png">
+<meta property="article:published_time" content="2023-02-11T11:36:25.000Z">
+<meta property="article:modified_time" content="2023-02-11T11:56:52.646Z">
+<meta property="article:author" content="rookiedev">
+<meta property="article:tag" content="Java MySQL Life">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://gittab.net/Users/xxx-xifan/Dropbox/drawio/images/%E4%BA%8C%E5%8F%89%E6%A0%91.png">
+
+<link rel="canonical" href="http://gittab.net/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%B4%A2%E5%BC%95-%E4%B8%80/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'default'
+  };
+</script>
+
+  <title>深入理解 MySQL 索引(一) | rookiedev</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <a target="_blank" rel="noopener" href="https://github.com/rookiedev-z"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">rookiedev</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">just do it</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://gittab.net/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%B4%A2%E5%BC%95-%E4%B8%80/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          深入理解 MySQL 索引(一)
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2023-02-11 19:36:25 / Modified: 19:56:52" itemprop="dateCreated datePublished" datetime="2023-02-11T19:36:25+08:00">2023-02-11</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/MySQL/" itemprop="url" rel="index"><span itemprop="name">MySQL</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h4 id="什么是索引"><a href="#什么是索引" class="headerlink" title="什么是索引"></a>什么是索引</h4><p>在日常开发中，如果遇到一个 SQL 查询比较慢的时候，我们可能会说给这个 SQL 的查询字段加个索引，那为什么给字段加个索引查询就变快了，索引到底是什么？或许只有清楚的知道索引是什么我们才能明白为什么加上索引之后查询就变快了。</p>
+<p>索引，简单的来说就像是一本书的目录，通过目录你能很快就知道其中一篇文章具体是在哪一页，而如果没有目录的话那你只能随机去翻，或者一页一页去翻直到翻到你想找的那篇文章为止。当然这样对比来说的话你可能只是脑子里有这样一个概念，知道索引可以加快查找速度而已，但其实还是没有弄清楚索引到底是什么。</p>
+<a id="more"></a>
+
+<p>更具体的来说，索引其实是一种数据结构模型，我们常用的有数组，哈希，链表，栈，队列，还有一些我们可能用的不多但是又比较重要的，比如说堆，树，跳表等，这些数据结构都有各自自己的特性。</p>
+<p>简单的拿数组来说，数组查询较快，插入删除则比较慢，因为需要移动插入位置或者删除位置元素后面的所有元素；</p>
+<p>链表，元素之间通过指针链接在一起，每次只能通过第一个元素依次遍历才能找到需要的元素，因此查询比较慢，但这种结构反而插入删除元素更快，插入或删除元素只需要改变插入元素位置前后元素的指针即可，而不需要挪动其他元素；</p>
+<p>哈希结构其实就是我们 Java 中常用的 Map 的结构了，通过 key-value 的方式进行存储，存储的时候用 key 按照指定的函数来计算出 value 的存储位置，需要查询的时候也是通过 key 来计算出存储位置，然后再根据计算出的位置读取 value，这种结构更多的是用在需要等值查询的地方。</p>
+<p>其他结构这里就不一一介绍了，从前面简单的介绍可以看出，每种结构都有它自己的特性，日常使用中可以根据我们的需要来选择具体的结构。</p>
+<h4 id="InnoDB-的索引结构模型是什么"><a href="#InnoDB-的索引结构模型是什么" class="headerlink" title="InnoDB 的索引结构模型是什么"></a>InnoDB 的索引结构模型是什么</h4><p>上面已经提到索引是一种数据结构模型，那 MySQL 的索引是什么数据结构模型？在前面的文章中已经介绍过 MySQL 是由 Server 层和存储引擎层组成，而索引是由存储引擎层实现的，MySQL 的存储引擎又有很多种，比如 InnoDB、MyISAM、Memory 等，不同的存储引擎采用的索引数据结构也不一样，我们最常用的则是 InnoDB，InnoDB 的索引它采用的是 B+ 树的数据结构。什么是 B+ 树，它其实是树结构中的一种，当然树有很多种，二叉树，二叉查找树，平衡二叉树，B 树，B+ 树等等。</p>
+<p>那为什么选择 B+ 树，先来看如果选择二叉树，根据二叉树的特点，每个节点都只有左右两个子节点，对于数据量很大的话，这棵索引树的高度也就很高了。如果我们要查找一条数据，则需要从根节点开始向下遍历，由于索引也是存储在磁盘上的，而刚好你要查找的数据可能在叶子节点，那每一次向下查找子节点的过程都要读取一次磁盘，那么在一次查询中，树的高度就决定了需要读取多少次磁盘，读取磁盘其实是很慢的操作，尤其是在以前还是机械硬盘的时代，这种查询效率肯定是不能接受的，因此就需要减少读取磁盘的次数，也就是减少树的高度，这样的话就只能采用多叉树。</p>
+<p><img src="/Users/xxx-xifan/Dropbox/drawio/images/%E4%BA%8C%E5%8F%89%E6%A0%91.png" alt="二叉树"></p>
+<p>B 树和 B+ 树都是多叉树，又为什么选择 B+ 树而没有选择 B 树，其实对于 B 树来说，它的所有节点大小都是一样的，而且都存储索引的值和还有具体的数据，每一个索引键都只出现在一个节点中，因此查询数据时每次读取一个节点到内存进行判断，如果不是要查询的数据，则读取下一个节点到内存，替换当前的节点内容，这种查询效率其实是不稳定的，最好的查询是数据刚好在根节点，一次读取就能够查到，最差的查询是数据在叶子节点或者不存在，则需要频繁的进行内存数据交换，直到读到叶子节点的数据或没有查到数据。</p>
+<p><img src="/Users/xxx-xifan/Dropbox/drawio/images/B%E6%A0%91.png" alt="B树"></p>
+<p>由于 B 树的查询效率不够稳定，且每个节点都存放数据，存放的索引内容就很有限，所以在 B 树的基础上对 B 树进行了改进，引入了 B+ 树，B+ 树它所有的内部节点都不存储数据，只存储索引键值，数据都统一存放在叶子节点，因此一个内部节点中能够存储的索引键就大大增加了，而且这样一来，查询效率基本上是一致的，都需要根据索引键值从根节点依次扫描到叶子节点获取数据，同时 B+ 树将所有的叶子节点通过指针链接起来，这样也就能够实现索引的区间查询。</p>
+<p><img src="/Users/xxx-xifan/Dropbox/drawio/images/B+%E6%A0%91.png" alt="B+树"></p>
+<h4 id="主键索引和非主键索引的区别"><a href="#主键索引和非主键索引的区别" class="headerlink" title="主键索引和非主键索引的区别"></a>主键索引和非主键索引的区别</h4><p>我们应该都知道索引又分为主键索引和非主键索引，也叫聚簇索引和非聚簇索引，从上面我们已经知道 B+ 树所有的内部节点都不存储数据，只存储索引键值，数据统一存储在叶子节点，对于主键索引来说，叶子节点存储的就是整行数据记录，而对于非主键索引来说叶子节点存储的是主键的值。</p>
+<p><img src="/Users/xxx-xifan/Dropbox/drawio/images/%E9%9D%9E%E4%B8%BB%E9%94%AE%E7%B4%A2%E5%BC%95.png" alt="非主键索引"></p>
+<p>通过这点我们也就知道我们平常为什么最好通过主键字段来进行查询，因为通过主键索引字段来查询，可以直接查询到叶子节点中整行数据记录，而通过非主键索引字段进行查询，则需要先从非主键索引树中查询到叶子节点中主键的值，然后再通过主键的值去主键索引树中查询到整行数据记录，这也就是我们日常所说的回表查询的过程。</p>
+<h4 id="索引是否越多越好"><a href="#索引是否越多越好" class="headerlink" title="索引是否越多越好"></a>索引是否越多越好</h4><p>索引既然能提高我们的查询效率，那是不是涉及到每一个字段的查询，都给该字段建一个索引，这样不就极大提高查询效率了吗，但事实却并非如此，像这样虽然能够提高查询效率，但索引是需要维护的。</p>
+<p>因为我们的数据并非是一直不变，我们在一张表上不仅有查询，还会有新增，更新，删除，比如说新增一条数据，如果说这条数据涉及到的索引键字段需要插入到某个索引节点内的中间位置，这时就需要将该位置后面的索引依次往后移动，空出位置给新的索引键，更差的是刚好这个索引节点所在页满了，那则需要新申请一个页，然后将该页的部分数据移到新的页上去，这个过程也称为页分裂，本来数据是存在一个页上，现在需要两个页来存储，整体的空间利用率就下降了。</p>
+<p>更新也是一样的，如果更新的是索引键字段，而且更新之后为了保证索引键有序，这个索引键可能就不应该放在原来的位置，这时也需要进行移动，移动的过程中同样也可能会涉及到页分裂。</p>
+<p>对于删除则会导致页上的利用率降低，当利用率降低到一定程度后，为了提高页的利用率，会将相邻两个页上的数据合并到一个页上，这个过程则称为页合并。这些内部的操作其实都会影响数据新增，更新，删除的性能，索引建的越多，每一次的新增，更新和删除调整索引的时间也会更多，这样一来就会间接影响我们的新增，更新和删除性能，所以说并不是索引建的越多就越好，还是需要平衡之后做出取舍。</p>
+<h4 id="为什么主键都建议采用自增"><a href="#为什么主键都建议采用自增" class="headerlink" title="为什么主键都建议采用自增"></a>为什么主键都建议采用自增</h4><p>在我们的数据库表中，一般每张表都有设置一个主键字段，就算没有设置，InnoDB 也会默认帮我们创建一个 RowId 的自增主键字段。对于主键字段我们通常会采用自增的方式，那么我们有去考虑过为什么这样做吗？</p>
+<p>其实通过上面对索引的介绍已经能够知道答案，对于自增的主键字段，它可以避免主键索引发生频繁的页分裂和页合并，因为是自增长的，所以字段天然就是有序的，在新增数据的时候都是直接在索引节点内部的最后面直接追加，不用考虑往中间插入的情况，而如果采用业务字段作为主键字段的话，业务字段很难保证每次新增的数据都是有序的，那么就会涉及到内部节点索引的移动，间接带来页分裂和页合并的问题。</p>
+<p>尤其是有的表使用 UUID 来当做主键，这种主键不仅是无序的，而且可识别性很差，同时生成的 UUID 字段长度还很长，占用的空间无疑比自增的数字要大，对于非主键索引的叶子节点存的又都是主键的值，这也无形中增加了数据库的存储空间。也就是说主键字段采用自增的数字不仅从性能上来说更好，同时也能够减少一定的存储空间。</p>
+<p>当然有些情况下我们还是会采用业务字段来作为主键字段，比如说整个表就只有一个索引字段，并且是唯一索引，也没有其他的非主键索引，同时又需要频繁的通过该字段来查询数据，那这时我们就可以直接将该字段设为主键索引字段，这样可以减少频繁的回表过程，提高查询效率，这时牺牲一点存储空间也无所谓了。</p>
+
+    </div>
+
+    
+    
+    
+        
+  <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
+    <div>扫描上面图中二维码关注微信公众号</div>
+  </div>
+<!-- 
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg">
+            <span class="icon">
+              <i class="wechat"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </a>
+        </div>
+    </div>
+  </div>
+-->
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/JVM-%E4%B8%AD%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E7%AE%80%E5%8D%95%E4%BB%8B%E7%BB%8D/" rel="prev" title="JVM 中垃圾收集器简单介绍">
+      <i class="fa fa-chevron-left"></i> JVM 中垃圾收集器简单介绍
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%B4%A2%E5%BC%95-%E4%BA%8C/" rel="next" title="深入理解 MySQL 索引(二)">
+      深入理解 MySQL 索引(二) <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AF%E7%B4%A2%E5%BC%95"><span class="nav-number">1.</span> <span class="nav-text">什么是索引</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#InnoDB-%E7%9A%84%E7%B4%A2%E5%BC%95%E7%BB%93%E6%9E%84%E6%A8%A1%E5%9E%8B%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-number">2.</span> <span class="nav-text">InnoDB 的索引结构模型是什么</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%BB%E9%94%AE%E7%B4%A2%E5%BC%95%E5%92%8C%E9%9D%9E%E4%B8%BB%E9%94%AE%E7%B4%A2%E5%BC%95%E7%9A%84%E5%8C%BA%E5%88%AB"><span class="nav-number">3.</span> <span class="nav-text">主键索引和非主键索引的区别</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%B4%A2%E5%BC%95%E6%98%AF%E5%90%A6%E8%B6%8A%E5%A4%9A%E8%B6%8A%E5%A5%BD"><span class="nav-number">4.</span> <span class="nav-text">索引是否越多越好</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%BB%E9%94%AE%E9%83%BD%E5%BB%BA%E8%AE%AE%E9%87%87%E7%94%A8%E8%87%AA%E5%A2%9E"><span class="nav-number">5.</span> <span class="nav-text">为什么主键都建议采用自增</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">rookiedev</p>
+  <div class="site-description" itemprop="description">daily development technology summary</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">55</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">16</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rookiedev-z" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rookiedev-z" rel="noopener" target="_blank"><i class="github fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rookiedev</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
