@@ -459,6 +459,42 @@
       </categories>
   </entry>
   <entry>
+    <title>Java 中通过枚举实现单例和策略模式</title>
+    <url>/Java-%E4%B8%AD%E9%80%9A%E8%BF%87%E6%9E%9A%E4%B8%BE%E5%AE%9E%E7%8E%B0%E5%8D%95%E4%BE%8B%E5%92%8C%E7%AD%96%E7%95%A5%E6%A8%A1%E5%BC%8F/</url>
+    <content><![CDATA[<p>在上篇文章中主要介绍了 Java 中对于枚举的合理使用能让我们的代码看起来更优雅，但其实枚举还有一个特异功能，可以实现设计模式中的单例模式。</p>
+<p>先来看我们最熟悉的单例模式，我们之前看到的最多的单例模式实现是像下面这种，线程安全的双重检查锁懒汉单例。</p>
+<a id="more"></a> 
+
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ThreadSafeSingleton</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">static</span> ThreadSafeSingleton singleton;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="title">ThreadSafeSingleton</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> ThreadSafeSingleton <span class="title">getInstance</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (singleton != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> singleton;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">synchronized</span> (ThreadSafeSingleton.class) &#123;</span><br><span class="line">            <span class="keyword">if</span> (singleton == <span class="keyword">null</span>) &#123;</span><br><span class="line">                singleton = <span class="keyword">new</span> ThreadSafeSingleton();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> singleton;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面这种实现方式是懒汉式单例，同时通过双重检查锁规避了线程安全问题和性能问题，同时利用 volatile 关键字杜绝 JVM 的指令重排，避免了多线程情况下可能出现 NPE 的问题，上面的实现方式既做到了线程安全，同时又不失性能的单例实现。</p>
+<p>那么这里我么说到通过枚举来实现单例又是如何实现的呢，其实很简单，比如下面的代码就是使用枚举来实现的一个单例。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> DeployEnvSingleton &#123;</span><br><span class="line"></span><br><span class="line">    INSTANCE;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面代码实现了一个很简单的单例模式，虽然看起来非常简单，但是做的事情一点也不比上面开头提出的单例模式少，甚至在某些极端情况下还有特殊的效果。先来看看这个简单的单例做到了哪些事情：</p>
+<ul>
+<li>只会创建一个实例，因为枚举类型可确保 JVM 中仅存在所定义的常量的一个实例</li>
+<li>线程安全，因为 Java 虚拟机在加载枚举类的时候，会使用 ClassLoader 的 loadClass 方法，而这个方法使用了同步代码块来保证线程安全</li>
+<li>反射安全，因为JVM 会阻止反射获取枚举类的私有构造方法，而其他的单例实现是可以通过反射来创建对象的</li>
+<li>序列化/反序列化安全，你用序列化工具对该实例进行序列化然后再反序列化会发现得到值是同一个</li>
+<li>优雅简单，从代码就可以看出来实现非常简单</li>
+</ul>
+<p>从列举的这些可以看出使用枚举来实现单例是非常好的选择，当然唯一的一个缺点是不能实现懒加载，枚举中的实例不管我们有没有用到它，它都已经创建好了在那里。</p>
+<p>说完单例，再看下策略模式又是怎样的。一般我们实现策略模式是通过实现接口的方式来实现的，每加一个新的策略就加一个子类实现相应的接口</p>
+<p><img src="http://images.rookiezhou.top/blog/images/strategy_uml.png" alt="strategy_uml"></p>
+<p>上面就是策略模式的 UML 图，Strategy 是接口，ConcreteStrategyA 和 ConcreteStrategyB 是具体的策略实现，增加的新的策略则再加一个子类实现 Strategy 接口，然后我们再看采用枚举的实现方式。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> EnvEnum &#123;</span><br><span class="line"></span><br><span class="line">    DEVELOPMENT&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span> </span>&#123;</span><br><span class="line">            System.out.println(issue.getId() + <span class="string">&quot; issue will deploy to DEVELOPMENT&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;,</span><br><span class="line"></span><br><span class="line">    TESTING&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span> </span>&#123;</span><br><span class="line">            System.out.println(issue.getId() + <span class="string">&quot; issue will deploy to TESTING&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;,</span><br><span class="line"></span><br><span class="line">    PRODUCTION&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span> </span>&#123;</span><br><span class="line">            System.out.println(issue.getId() + <span class="string">&quot; issue will deploy to PRODUCTION&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面的代码就是一个简易的策略模式，预先定义了三个环境，dev，test，prod，后期如果想要再加一个环境 staging 只需要在枚举类中再加一个 STAGING 实例即可。</p>
+<p>整体看下来是不是觉得枚举这个类型还是可以做到很多特性的，不过我最喜欢枚举的一点还是它能够帮助我们写出易于阅读同时又非常优雅的代码。所以说好好利用枚举这个类型，也让你代码实现更优雅一些吧。</p>
+<p>完整测试代码地址：<a href="https://github.com/rookiedev-z/sample/tree/master/java-basic-sample">Java basic sample</a></p>
+<p>参考：<a href="https://www.baeldung.com/a-guide-to-java-enums">https://www.baeldung.com/a-guide-to-java-enums</a></p>
+]]></content>
+      <categories>
+        <category>Java</category>
+      </categories>
+  </entry>
+  <entry>
     <title>Java 中枚举让代码更优雅</title>
     <url>/Java-%E4%B8%AD%E6%9E%9A%E4%B8%BE%E8%AE%A9%E4%BB%A3%E7%A0%81%E6%9B%B4%E4%BC%98%E9%9B%85/</url>
     <content><![CDATA[<p>对于枚举，不知道你对它的使用了解多少，说实话在刚开始使用它的时候，我对它的印象仅次于帮助我们在代码中定义一个对象的字段特定的几种状态，便于我们理解代码中该字段有哪些值，又分别代表哪些含义。</p>
@@ -512,42 +548,6 @@
 
 <p>同样从测试代码中可以看到通过使用 EnumMap 集合我们可以很快的做到按状态分类。</p>
 <p>上面是我们在日常使用枚举的过程中可以稍微进行改进的地方，自我感觉合理的使用好枚举会让我们的代码看起来更加优雅，同时也会减少出错的可能性。当然这些只是关于枚举的一些小技巧，但其实通过枚举我们还可以实现简单的设计模式，接下来就来看看通过枚举怎么实现单例模式和策略模式。</p>
-<p>完整测试代码地址：<a href="https://github.com/rookiedev-z/sample/tree/master/java-basic-sample">Java basic sample</a></p>
-<p>参考：<a href="https://www.baeldung.com/a-guide-to-java-enums">https://www.baeldung.com/a-guide-to-java-enums</a></p>
-]]></content>
-      <categories>
-        <category>Java</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>Java 中通过枚举实现单例和策略模式</title>
-    <url>/Java-%E4%B8%AD%E9%80%9A%E8%BF%87%E6%9E%9A%E4%B8%BE%E5%AE%9E%E7%8E%B0%E5%8D%95%E4%BE%8B%E5%92%8C%E7%AD%96%E7%95%A5%E6%A8%A1%E5%BC%8F/</url>
-    <content><![CDATA[<p>在上篇文章中主要介绍了 Java 中对于枚举的合理使用能让我们的代码看起来更优雅，但其实枚举还有一个特异功能，可以实现设计模式中的单例模式。</p>
-<p>先来看我们最熟悉的单例模式，我们之前看到的最多的单例模式实现是像下面这种，线程安全的双重检查锁懒汉单例。</p>
-<a id="more"></a> 
-
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ThreadSafeSingleton</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">static</span> ThreadSafeSingleton singleton;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="title">ThreadSafeSingleton</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> ThreadSafeSingleton <span class="title">getInstance</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (singleton != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> singleton;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">synchronized</span> (ThreadSafeSingleton.class) &#123;</span><br><span class="line">            <span class="keyword">if</span> (singleton == <span class="keyword">null</span>) &#123;</span><br><span class="line">                singleton = <span class="keyword">new</span> ThreadSafeSingleton();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> singleton;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>上面这种实现方式是懒汉式单例，同时通过双重检查锁规避了线程安全问题和性能问题，同时利用 volatile 关键字杜绝 JVM 的指令重排，避免了多线程情况下可能出现 NPE 的问题，上面的实现方式既做到了线程安全，同时又不失性能的单例实现。</p>
-<p>那么这里我么说到通过枚举来实现单例又是如何实现的呢，其实很简单，比如下面的代码就是使用枚举来实现的一个单例。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> DeployEnvSingleton &#123;</span><br><span class="line"></span><br><span class="line">    INSTANCE;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>上面代码实现了一个很简单的单例模式，虽然看起来非常简单，但是做的事情一点也不比上面开头提出的单例模式少，甚至在某些极端情况下还有特殊的效果。先来看看这个简单的单例做到了哪些事情：</p>
-<ul>
-<li>只会创建一个实例，因为枚举类型可确保 JVM 中仅存在所定义的常量的一个实例</li>
-<li>线程安全，因为 Java 虚拟机在加载枚举类的时候，会使用 ClassLoader 的 loadClass 方法，而这个方法使用了同步代码块来保证线程安全</li>
-<li>反射安全，因为JVM 会阻止反射获取枚举类的私有构造方法，而其他的单例实现是可以通过反射来创建对象的</li>
-<li>序列化/反序列化安全，你用序列化工具对该实例进行序列化然后再反序列化会发现得到值是同一个</li>
-<li>优雅简单，从代码就可以看出来实现非常简单</li>
-</ul>
-<p>从列举的这些可以看出使用枚举来实现单例是非常好的选择，当然唯一的一个缺点是不能实现懒加载，枚举中的实例不管我们有没有用到它，它都已经创建好了在那里。</p>
-<p>说完单例，再看下策略模式又是怎样的。一般我们实现策略模式是通过实现接口的方式来实现的，每加一个新的策略就加一个子类实现相应的接口</p>
-<p><img src="http://images.rookiezhou.top/blog/images/strategy_uml.png" alt="strategy_uml"></p>
-<p>上面就是策略模式的 UML 图，Strategy 是接口，ConcreteStrategyA 和 ConcreteStrategyB 是具体的策略实现，增加的新的策略则再加一个子类实现 Strategy 接口，然后我们再看采用枚举的实现方式。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> EnvEnum &#123;</span><br><span class="line"></span><br><span class="line">    DEVELOPMENT&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span> </span>&#123;</span><br><span class="line">            System.out.println(issue.getId() + <span class="string">&quot; issue will deploy to DEVELOPMENT&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;,</span><br><span class="line"></span><br><span class="line">    TESTING&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span> </span>&#123;</span><br><span class="line">            System.out.println(issue.getId() + <span class="string">&quot; issue will deploy to TESTING&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;,</span><br><span class="line"></span><br><span class="line">    PRODUCTION&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span> </span>&#123;</span><br><span class="line">            System.out.println(issue.getId() + <span class="string">&quot; issue will deploy to PRODUCTION&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>上面的代码就是一个简易的策略模式，预先定义了三个环境，dev，test，prod，后期如果想要再加一个环境 staging 只需要在枚举类中再加一个 STAGING 实例即可。</p>
-<p>整体看下来是不是觉得枚举这个类型还是可以做到很多特性的，不过我最喜欢枚举的一点还是它能够帮助我们写出易于阅读同时又非常优雅的代码。所以说好好利用枚举这个类型，也让你代码实现更优雅一些吧。</p>
 <p>完整测试代码地址：<a href="https://github.com/rookiedev-z/sample/tree/master/java-basic-sample">Java basic sample</a></p>
 <p>参考：<a href="https://www.baeldung.com/a-guide-to-java-enums">https://www.baeldung.com/a-guide-to-java-enums</a></p>
 ]]></content>
