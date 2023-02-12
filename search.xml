@@ -1,6 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Effective Java - 创建和销毁对象</title>
+    <url>/Effective-Java-%E5%88%9B%E5%BB%BA%E5%92%8C%E9%94%80%E6%AF%81%E5%AF%B9%E8%B1%A1/</url>
+    <content><![CDATA[<h2 id="遇到多个构造器参数时要考虑用构建器"><a href="#遇到多个构造器参数时要考虑用构建器" class="headerlink" title="遇到多个构造器参数时要考虑用构建器"></a>遇到多个构造器参数时要考虑用构建器</h2><p>当我们的类的一些属性是必须的，有些属性是可选的，参数较多的情况下我们可以适当考虑使用构建器，其实在 Java 开发中我们也经常遇到这种通过构建器来创建类实例的情况，然后再结合链式调用写出来的代码还是比较美观的。下面结合一个简单的例子来说明：</p>
+<a id="more"></a>
+
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">package com.ecjtu;</span><br><span class="line"></span><br><span class="line">import java.util.Arrays;</span><br><span class="line">&#x2F;**</span><br><span class="line"> * @author zhouxh</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class User &#123;</span><br><span class="line"></span><br><span class="line">    private String username;</span><br><span class="line">    private String password;</span><br><span class="line">    private String phone;</span><br><span class="line">    &#x2F;**</span><br><span class="line">     * 可选参数</span><br><span class="line">     *&#x2F;</span><br><span class="line">    private Integer sex;</span><br><span class="line">    &#x2F;**</span><br><span class="line">     * 可选参数</span><br><span class="line">     *&#x2F;</span><br><span class="line">    private String birthday;</span><br><span class="line">    &#x2F;**</span><br><span class="line">     * 可选参数</span><br><span class="line">     *&#x2F;</span><br><span class="line">    private String[] hobby;</span><br><span class="line"></span><br><span class="line">    public static class Builder &#123;</span><br><span class="line">        private String username;</span><br><span class="line">        private String password;</span><br><span class="line">        private String phone;</span><br><span class="line">        &#x2F;**</span><br><span class="line">         * 可选参数,给个默认值</span><br><span class="line">         *&#x2F;</span><br><span class="line">        private Integer sex &#x3D; 1;</span><br><span class="line">        &#x2F;**</span><br><span class="line">         * 可选参数,给个默认值</span><br><span class="line">         *&#x2F;</span><br><span class="line">        private String birthday &#x3D; &quot;0-0-0-0&quot;;</span><br><span class="line">        &#x2F;**</span><br><span class="line">         * 可选参数,给个默认值</span><br><span class="line">         *&#x2F;</span><br><span class="line">        private String[] hobby &#x3D; new String[]&#123;&#125;;</span><br><span class="line"></span><br><span class="line">        public Builder(String username, String password, String phone) &#123;</span><br><span class="line">            this.username &#x3D; username;</span><br><span class="line">            this.password &#x3D; password;</span><br><span class="line">            this.phone &#x3D; phone;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public Builder sex(Integer sex) &#123;</span><br><span class="line">            sex &#x3D; sex;</span><br><span class="line">            return this;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public Builder birthday(String birthday) &#123;</span><br><span class="line">            birthday &#x3D; birthday;</span><br><span class="line">            return this;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public Builder hobby(String[] hobby) &#123;</span><br><span class="line">            hobby &#x3D; hobby;</span><br><span class="line">            return this;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public User build() &#123;</span><br><span class="line">            return new User(this);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private User(Builder builder) &#123;</span><br><span class="line">        username &#x3D; builder.username;</span><br><span class="line">        password &#x3D; builder.password;</span><br><span class="line">        phone &#x3D; builder.phone;</span><br><span class="line">        sex &#x3D; builder.sex;</span><br><span class="line">        birthday &#x3D; builder.birthday;</span><br><span class="line">        hobby &#x3D; builder.hobby;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public String toString() &#123;</span><br><span class="line">        return &quot;User&#123;&quot; +</span><br><span class="line">                &quot;username&#x3D;&#39;&quot; + username + &#39;\&#39;&#39; +</span><br><span class="line">                &quot;, password&#x3D;&#39;&quot; + password + &#39;\&#39;&#39; +</span><br><span class="line">                &quot;, phone&#x3D;&#39;&quot; + phone + &#39;\&#39;&#39; +</span><br><span class="line">                &quot;, sex&#x3D;&quot; + sex +</span><br><span class="line">                &quot;, birthday&#x3D;&#39;&quot; + birthday + &#39;\&#39;&#39; +</span><br><span class="line">                &quot;, hobby&#x3D;&quot; + Arrays.toString(hobby) +</span><br><span class="line">                &#39;&#125;&#39;;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>User 对象的创建：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">public class App &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        User user &#x3D; new User.Builder(&quot;admin&quot;, &quot;123456&quot;, &quot;13999999999&quot;).sex(0).build();</span><br><span class="line">        System.out.println(user.toString());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>当然，这里只是一个简单的小例子，开发中一般不会用这种方式来创建实体类，可能还是需要看个人开发时具体情况决定是否采用这种方式，这里只对这种创建方式做一个简单的介绍。</p>
+<h2 id="避免创建不必要的对象"><a href="#避免创建不必要的对象" class="headerlink" title="避免创建不必要的对象"></a>避免创建不必要的对象</h2><p>一般来说，最好能重用对象而不是在每次需要时都去频繁的创建，重用的方式快，而且能够避免频繁创建浪费资源。像下面这种情况就推荐重用对象,可以对比以下两种方式的差别。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">package com.ecjtu;</span><br><span class="line"></span><br><span class="line">import java.util.Calendar;</span><br><span class="line">import java.util.Date;</span><br><span class="line">import java.util.TimeZone;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * 不推荐这样做</span><br><span class="line"> *</span><br><span class="line"> * @author zhouxh</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class Person1 &#123;</span><br><span class="line"></span><br><span class="line">    private final Date birthDate &#x3D; new Date();</span><br><span class="line"></span><br><span class="line">    public boolean isBabyBoomer() &#123;</span><br><span class="line">        Calendar calendar &#x3D; Calendar.getInstance(TimeZone.getTimeZone(&quot;GMT&quot;));</span><br><span class="line">        calendar.set(1946, Calendar.JANUARY, 1, 0, 0, 0);</span><br><span class="line">        Date boomStart &#x3D; calendar.getTime();</span><br><span class="line">        calendar.set(1965, Calendar.JANUARY, 1, 0, 0, 0);</span><br><span class="line">        Date boomEnd &#x3D; calendar.getTime();</span><br><span class="line">        return birthDate.compareTo(boomStart) &gt;&#x3D; 0 &amp;&amp; birthDate.compareTo(boomEnd) &lt; 0;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">package com.ecjtu;</span><br><span class="line"></span><br><span class="line">import java.util.Calendar;</span><br><span class="line">import java.util.Date;</span><br><span class="line">import java.util.TimeZone;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * 推荐这样做</span><br><span class="line"> *</span><br><span class="line"> * @author zhouxh</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class Person2 &#123;</span><br><span class="line"></span><br><span class="line">    private final Date birthDate &#x3D; new Date();</span><br><span class="line"></span><br><span class="line">    private static final Date BOOM_START;</span><br><span class="line">    private static final Date BOOM_END;</span><br><span class="line"></span><br><span class="line">    static &#123;</span><br><span class="line">        Calendar calendar &#x3D; Calendar.getInstance(TimeZone.getTimeZone(&quot;GMT&quot;));</span><br><span class="line">        calendar.set(1946, Calendar.JANUARY, 1, 0, 0, 0);</span><br><span class="line">        BOOM_START &#x3D; calendar.getTime();</span><br><span class="line">        calendar.set(1965, Calendar.JANUARY, 1, 0, 0, 0);</span><br><span class="line">        BOOM_END &#x3D; calendar.getTime();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public boolean isBabyBoomer() &#123;</span><br><span class="line">        return birthDate.compareTo(BOOM_START) &gt;&#x3D; 0 &amp;&amp; birthDate.compareTo(BOOM_END) &lt; 0;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<h2 id="消除过期的对象引用"><a href="#消除过期的对象引用" class="headerlink" title="消除过期的对象引用"></a>消除过期的对象引用</h2><p>我们在日常开发中可能稍有不慎就会遇到内存泄漏的问题，这需要我们从细节去防止这种情况的发生，一般而言，只要类是自己管理内存，就应该警惕内存泄漏的问题。下面展示一种可能会发生内存泄漏的情况：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">package com.ecjtu;</span><br><span class="line"></span><br><span class="line">import java.util.Arrays;</span><br><span class="line">import java.util.EmptyStackException;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * @author zhouxh</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class Stack &#123;</span><br><span class="line"></span><br><span class="line">    private Object[] elements;</span><br><span class="line">    private int size &#x3D; 0;</span><br><span class="line">    private static final int DEFAULT_INITIAL_CAPACITY &#x3D; 16;</span><br><span class="line"></span><br><span class="line">    public Stack() &#123;</span><br><span class="line">        elements &#x3D; new Object[DEFAULT_INITIAL_CAPACITY];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void push(Object object) &#123;</span><br><span class="line">        ensureCapacity();</span><br><span class="line">        elements[size++] &#x3D; object;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public Object pop1() &#123;</span><br><span class="line">        if (size &#x3D;&#x3D; 0) &#123;</span><br><span class="line">            throw new EmptyStackException();</span><br><span class="line">        &#125;</span><br><span class="line">        return elements[--size];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public Object pop2() &#123;</span><br><span class="line">        if (size &#x3D;&#x3D; 0) &#123;</span><br><span class="line">            throw new EmptyStackException();</span><br><span class="line">        &#125;</span><br><span class="line">        Object result &#x3D; elements[--size];</span><br><span class="line">        &#x2F;*</span><br><span class="line">        将弹出的值赋空，以便 jvm 回收，如果不赋空将不会被 jvm 回收，因为栈内部依然维护着这些对象的过期引用。</span><br><span class="line">        过期引用是指永远不会被解除的引用，在这里就是指在 elements 数组活动之外的引用，即元素下标小于 size 的那些元素。</span><br><span class="line">        所以一旦数组元素变成了非活动部分的一部分就应该手动清空这些数组元素。</span><br><span class="line">        *&#x2F;</span><br><span class="line">        elements[size] &#x3D; null;</span><br><span class="line">        return result;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private void ensureCapacity() &#123;</span><br><span class="line">        if (elements.length &#x3D;&#x3D; size) &#123;</span><br><span class="line">            elements &#x3D; Arrays.copyOf(elements, 2 * size + 1);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>这个随着栈的不断的弹栈和压栈，每次弹出如果不清空该引用，随着量的增加就可能造成内存泄漏的情况。</p>
+]]></content>
+      <categories>
+        <category>Effective Java</category>
+      </categories>
+  </entry>
+  <entry>
     <title>Explain 的使用实践</title>
     <url>/Explain-%E7%9A%84%E4%BD%BF%E7%94%A8%E5%AE%9E%E8%B7%B5/</url>
     <content><![CDATA[<p>上篇文章中从整体上介绍了 explain 的使用以及 explain 执行得到的这些字段含义和常见的值，那得到这些字段信息后，对于这个 SQL 要不要优化，又该怎么优化，这个似乎没有什么固定的标准，但总体来说的话，要尽量让我们的查询使用上索引，然后在使用上索引之后再进一步看有没有优化的空间，当然对于实在没法用上索引或者说业务上能接受没必要多建一个索引的查询，我们也可以尝试在用不上索引的情况下去看看还有没有进一步优化的空间。</p>
@@ -45,29 +68,6 @@
 ]]></content>
       <categories>
         <category>MySQL</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>Effective Java - 创建和销毁对象</title>
-    <url>/Effective-Java-%E5%88%9B%E5%BB%BA%E5%92%8C%E9%94%80%E6%AF%81%E5%AF%B9%E8%B1%A1/</url>
-    <content><![CDATA[<h2 id="遇到多个构造器参数时要考虑用构建器"><a href="#遇到多个构造器参数时要考虑用构建器" class="headerlink" title="遇到多个构造器参数时要考虑用构建器"></a>遇到多个构造器参数时要考虑用构建器</h2><p>当我们的类的一些属性是必须的，有些属性是可选的，参数较多的情况下我们可以适当考虑使用构建器，其实在 Java 开发中我们也经常遇到这种通过构建器来创建类实例的情况，然后再结合链式调用写出来的代码还是比较美观的。下面结合一个简单的例子来说明：</p>
-<a id="more"></a>
-
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">package com.ecjtu;</span><br><span class="line"></span><br><span class="line">import java.util.Arrays;</span><br><span class="line">&#x2F;**</span><br><span class="line"> * @author zhouxh</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class User &#123;</span><br><span class="line"></span><br><span class="line">    private String username;</span><br><span class="line">    private String password;</span><br><span class="line">    private String phone;</span><br><span class="line">    &#x2F;**</span><br><span class="line">     * 可选参数</span><br><span class="line">     *&#x2F;</span><br><span class="line">    private Integer sex;</span><br><span class="line">    &#x2F;**</span><br><span class="line">     * 可选参数</span><br><span class="line">     *&#x2F;</span><br><span class="line">    private String birthday;</span><br><span class="line">    &#x2F;**</span><br><span class="line">     * 可选参数</span><br><span class="line">     *&#x2F;</span><br><span class="line">    private String[] hobby;</span><br><span class="line"></span><br><span class="line">    public static class Builder &#123;</span><br><span class="line">        private String username;</span><br><span class="line">        private String password;</span><br><span class="line">        private String phone;</span><br><span class="line">        &#x2F;**</span><br><span class="line">         * 可选参数,给个默认值</span><br><span class="line">         *&#x2F;</span><br><span class="line">        private Integer sex &#x3D; 1;</span><br><span class="line">        &#x2F;**</span><br><span class="line">         * 可选参数,给个默认值</span><br><span class="line">         *&#x2F;</span><br><span class="line">        private String birthday &#x3D; &quot;0-0-0-0&quot;;</span><br><span class="line">        &#x2F;**</span><br><span class="line">         * 可选参数,给个默认值</span><br><span class="line">         *&#x2F;</span><br><span class="line">        private String[] hobby &#x3D; new String[]&#123;&#125;;</span><br><span class="line"></span><br><span class="line">        public Builder(String username, String password, String phone) &#123;</span><br><span class="line">            this.username &#x3D; username;</span><br><span class="line">            this.password &#x3D; password;</span><br><span class="line">            this.phone &#x3D; phone;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public Builder sex(Integer sex) &#123;</span><br><span class="line">            sex &#x3D; sex;</span><br><span class="line">            return this;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public Builder birthday(String birthday) &#123;</span><br><span class="line">            birthday &#x3D; birthday;</span><br><span class="line">            return this;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public Builder hobby(String[] hobby) &#123;</span><br><span class="line">            hobby &#x3D; hobby;</span><br><span class="line">            return this;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        public User build() &#123;</span><br><span class="line">            return new User(this);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private User(Builder builder) &#123;</span><br><span class="line">        username &#x3D; builder.username;</span><br><span class="line">        password &#x3D; builder.password;</span><br><span class="line">        phone &#x3D; builder.phone;</span><br><span class="line">        sex &#x3D; builder.sex;</span><br><span class="line">        birthday &#x3D; builder.birthday;</span><br><span class="line">        hobby &#x3D; builder.hobby;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    @Override</span><br><span class="line">    public String toString() &#123;</span><br><span class="line">        return &quot;User&#123;&quot; +</span><br><span class="line">                &quot;username&#x3D;&#39;&quot; + username + &#39;\&#39;&#39; +</span><br><span class="line">                &quot;, password&#x3D;&#39;&quot; + password + &#39;\&#39;&#39; +</span><br><span class="line">                &quot;, phone&#x3D;&#39;&quot; + phone + &#39;\&#39;&#39; +</span><br><span class="line">                &quot;, sex&#x3D;&quot; + sex +</span><br><span class="line">                &quot;, birthday&#x3D;&#39;&quot; + birthday + &#39;\&#39;&#39; +</span><br><span class="line">                &quot;, hobby&#x3D;&quot; + Arrays.toString(hobby) +</span><br><span class="line">                &#39;&#125;&#39;;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>User 对象的创建：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">public class App &#123;</span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        User user &#x3D; new User.Builder(&quot;admin&quot;, &quot;123456&quot;, &quot;13999999999&quot;).sex(0).build();</span><br><span class="line">        System.out.println(user.toString());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>当然，这里只是一个简单的小例子，开发中一般不会用这种方式来创建实体类，可能还是需要看个人开发时具体情况决定是否采用这种方式，这里只对这种创建方式做一个简单的介绍。</p>
-<h2 id="避免创建不必要的对象"><a href="#避免创建不必要的对象" class="headerlink" title="避免创建不必要的对象"></a>避免创建不必要的对象</h2><p>一般来说，最好能重用对象而不是在每次需要时都去频繁的创建，重用的方式快，而且能够避免频繁创建浪费资源。像下面这种情况就推荐重用对象,可以对比以下两种方式的差别。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">package com.ecjtu;</span><br><span class="line"></span><br><span class="line">import java.util.Calendar;</span><br><span class="line">import java.util.Date;</span><br><span class="line">import java.util.TimeZone;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * 不推荐这样做</span><br><span class="line"> *</span><br><span class="line"> * @author zhouxh</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class Person1 &#123;</span><br><span class="line"></span><br><span class="line">    private final Date birthDate &#x3D; new Date();</span><br><span class="line"></span><br><span class="line">    public boolean isBabyBoomer() &#123;</span><br><span class="line">        Calendar calendar &#x3D; Calendar.getInstance(TimeZone.getTimeZone(&quot;GMT&quot;));</span><br><span class="line">        calendar.set(1946, Calendar.JANUARY, 1, 0, 0, 0);</span><br><span class="line">        Date boomStart &#x3D; calendar.getTime();</span><br><span class="line">        calendar.set(1965, Calendar.JANUARY, 1, 0, 0, 0);</span><br><span class="line">        Date boomEnd &#x3D; calendar.getTime();</span><br><span class="line">        return birthDate.compareTo(boomStart) &gt;&#x3D; 0 &amp;&amp; birthDate.compareTo(boomEnd) &lt; 0;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">package com.ecjtu;</span><br><span class="line"></span><br><span class="line">import java.util.Calendar;</span><br><span class="line">import java.util.Date;</span><br><span class="line">import java.util.TimeZone;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * 推荐这样做</span><br><span class="line"> *</span><br><span class="line"> * @author zhouxh</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class Person2 &#123;</span><br><span class="line"></span><br><span class="line">    private final Date birthDate &#x3D; new Date();</span><br><span class="line"></span><br><span class="line">    private static final Date BOOM_START;</span><br><span class="line">    private static final Date BOOM_END;</span><br><span class="line"></span><br><span class="line">    static &#123;</span><br><span class="line">        Calendar calendar &#x3D; Calendar.getInstance(TimeZone.getTimeZone(&quot;GMT&quot;));</span><br><span class="line">        calendar.set(1946, Calendar.JANUARY, 1, 0, 0, 0);</span><br><span class="line">        BOOM_START &#x3D; calendar.getTime();</span><br><span class="line">        calendar.set(1965, Calendar.JANUARY, 1, 0, 0, 0);</span><br><span class="line">        BOOM_END &#x3D; calendar.getTime();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public boolean isBabyBoomer() &#123;</span><br><span class="line">        return birthDate.compareTo(BOOM_START) &gt;&#x3D; 0 &amp;&amp; birthDate.compareTo(BOOM_END) &lt; 0;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h2 id="消除过期的对象引用"><a href="#消除过期的对象引用" class="headerlink" title="消除过期的对象引用"></a>消除过期的对象引用</h2><p>我们在日常开发中可能稍有不慎就会遇到内存泄漏的问题，这需要我们从细节去防止这种情况的发生，一般而言，只要类是自己管理内存，就应该警惕内存泄漏的问题。下面展示一种可能会发生内存泄漏的情况：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">package com.ecjtu;</span><br><span class="line"></span><br><span class="line">import java.util.Arrays;</span><br><span class="line">import java.util.EmptyStackException;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * @author zhouxh</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class Stack &#123;</span><br><span class="line"></span><br><span class="line">    private Object[] elements;</span><br><span class="line">    private int size &#x3D; 0;</span><br><span class="line">    private static final int DEFAULT_INITIAL_CAPACITY &#x3D; 16;</span><br><span class="line"></span><br><span class="line">    public Stack() &#123;</span><br><span class="line">        elements &#x3D; new Object[DEFAULT_INITIAL_CAPACITY];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public void push(Object object) &#123;</span><br><span class="line">        ensureCapacity();</span><br><span class="line">        elements[size++] &#x3D; object;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public Object pop1() &#123;</span><br><span class="line">        if (size &#x3D;&#x3D; 0) &#123;</span><br><span class="line">            throw new EmptyStackException();</span><br><span class="line">        &#125;</span><br><span class="line">        return elements[--size];</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    public Object pop2() &#123;</span><br><span class="line">        if (size &#x3D;&#x3D; 0) &#123;</span><br><span class="line">            throw new EmptyStackException();</span><br><span class="line">        &#125;</span><br><span class="line">        Object result &#x3D; elements[--size];</span><br><span class="line">        &#x2F;*</span><br><span class="line">        将弹出的值赋空，以便 jvm 回收，如果不赋空将不会被 jvm 回收，因为栈内部依然维护着这些对象的过期引用。</span><br><span class="line">        过期引用是指永远不会被解除的引用，在这里就是指在 elements 数组活动之外的引用，即元素下标小于 size 的那些元素。</span><br><span class="line">        所以一旦数组元素变成了非活动部分的一部分就应该手动清空这些数组元素。</span><br><span class="line">        *&#x2F;</span><br><span class="line">        elements[size] &#x3D; null;</span><br><span class="line">        return result;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    private void ensureCapacity() &#123;</span><br><span class="line">        if (elements.length &#x3D;&#x3D; size) &#123;</span><br><span class="line">            elements &#x3D; Arrays.copyOf(elements, 2 * size + 1);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-<p>这个随着栈的不断的弹栈和压栈，每次弹出如果不清空该引用，随着量的增加就可能造成内存泄漏的情况。</p>
-]]></content>
-      <categories>
-        <category>Effective Java</category>
       </categories>
   </entry>
   <entry>
@@ -785,30 +785,6 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
       </categories>
   </entry>
   <entry>
-    <title>Linux 系统下远程连接和远程拷贝命令</title>
-    <url>/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5%E5%92%8C%E8%BF%9C%E7%A8%8B%E6%8B%B7%E8%B4%9D%E5%91%BD%E4%BB%A4/</url>
-    <content><![CDATA[<p>在平常开发部署中，我们可能经常需要远程连接到服务器上执行一些操作，有时还需要拷贝相应的文件过去，这里记录下平常自己用的比较多的远程连接命令以及远程拷贝文件的命令。</p>
-<a id="more"></a>
-<h3 id="远程连接-ssh-命令"><a href="#远程连接-ssh-命令" class="headerlink" title="远程连接 ssh 命令"></a>远程连接 ssh 命令</h3><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssh zhouxh@192.168.0.134</span><br></pre></td></tr></table></figure>
-<p>上面是通过默认 22 端口连接，如果需要指定端口连接，加上 -p 参数指定相应端口：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssh -p 33109 zhouxh@192.168.0.134</span><br></pre></td></tr></table></figure>
-
-<h3 id="远程拷贝-scp-命令"><a href="#远程拷贝-scp-命令" class="headerlink" title="远程拷贝 scp 命令"></a>远程拷贝 scp 命令</h3><p>将本地文件 file1 拷贝到另一台主机用户名为 zhouxh 的家目录下：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp &#x2F;home&#x2F;zhouxh&#x2F;file1 zhouxh@192.168.0.134:&#x2F;home&#x2F;zhouxh&#x2F;</span><br></pre></td></tr></table></figure>
-<p>将本地目录 dir1 拷贝到另一台主机用户名为 zhouxh 的家目录下：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp -r &#x2F;home&#x2F;zhouxh&#x2F;dir1 zhouxh@192.168.0.134:&#x2F;home&#x2F;zhouxh&#x2F;</span><br></pre></td></tr></table></figure>
-<p>将另一台主机用户名为 zhouxh 的家目录下的文件 file1 拷贝到本地家目录下：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp zhouxh@192.168.0.134:&#x2F;home&#x2F;zhouxh&#x2F;file1 &#x2F;home&#x2F;zhouxh&#x2F;</span><br></pre></td></tr></table></figure>
-<p>将另一台主机用户名为 zhouxh 的家目录下的 dir1 目录拷贝到本地家目录下：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp -r zhouxh@192.168.0.134:&#x2F;home&#x2F;zhouxh&#x2F;dir1 &#x2F;home&#x2F;</span><br></pre></td></tr></table></figure>
-<p>以上拷贝命令都是通过默认 22 端口拷贝，如果需要指定端口，加上 -P 参数，注意 P 大写：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp -P 33109 &#x2F;home&#x2F;zhouxh&#x2F;file1 zhouxh@192.168.0.134:&#x2F;home&#x2F;zhouxh&#x2F;</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-  </entry>
-  <entry>
     <title>Linux 系统下的软链接和硬链接</title>
     <url>/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B%E7%9A%84%E8%BD%AF%E9%93%BE%E6%8E%A5%E5%92%8C%E7%A1%AC%E9%93%BE%E6%8E%A5/</url>
     <content><![CDATA[<p>之前一直不是很明白 Linux 系统下的软链接 (soft link) 和硬链接 (hard link) 的区别和用法，今天刚好又用到了，特意花了点时间去了解了一下，暂且在这里记录一下吧。</p>
@@ -852,6 +828,30 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <h3 id="文件类型"><a href="#文件类型" class="headerlink" title="文件类型"></a>文件类型</h3><p>最后说一下文件的类型主要有以下几种：</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">d ：目录   </span><br><span class="line">- ：文件   </span><br><span class="line">l ：链接   </span><br><span class="line">s ：socket   </span><br><span class="line">p ：named pipe   </span><br><span class="line">b ：block device   </span><br><span class="line">c  ：character device  </span><br></pre></td></tr></table></figure>
 
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>Linux 系统下远程连接和远程拷贝命令</title>
+    <url>/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5%E5%92%8C%E8%BF%9C%E7%A8%8B%E6%8B%B7%E8%B4%9D%E5%91%BD%E4%BB%A4/</url>
+    <content><![CDATA[<p>在平常开发部署中，我们可能经常需要远程连接到服务器上执行一些操作，有时还需要拷贝相应的文件过去，这里记录下平常自己用的比较多的远程连接命令以及远程拷贝文件的命令。</p>
+<a id="more"></a>
+<h3 id="远程连接-ssh-命令"><a href="#远程连接-ssh-命令" class="headerlink" title="远程连接 ssh 命令"></a>远程连接 ssh 命令</h3><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssh zhouxh@192.168.0.134</span><br></pre></td></tr></table></figure>
+<p>上面是通过默认 22 端口连接，如果需要指定端口连接，加上 -p 参数指定相应端口：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssh -p 33109 zhouxh@192.168.0.134</span><br></pre></td></tr></table></figure>
+
+<h3 id="远程拷贝-scp-命令"><a href="#远程拷贝-scp-命令" class="headerlink" title="远程拷贝 scp 命令"></a>远程拷贝 scp 命令</h3><p>将本地文件 file1 拷贝到另一台主机用户名为 zhouxh 的家目录下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp &#x2F;home&#x2F;zhouxh&#x2F;file1 zhouxh@192.168.0.134:&#x2F;home&#x2F;zhouxh&#x2F;</span><br></pre></td></tr></table></figure>
+<p>将本地目录 dir1 拷贝到另一台主机用户名为 zhouxh 的家目录下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp -r &#x2F;home&#x2F;zhouxh&#x2F;dir1 zhouxh@192.168.0.134:&#x2F;home&#x2F;zhouxh&#x2F;</span><br></pre></td></tr></table></figure>
+<p>将另一台主机用户名为 zhouxh 的家目录下的文件 file1 拷贝到本地家目录下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp zhouxh@192.168.0.134:&#x2F;home&#x2F;zhouxh&#x2F;file1 &#x2F;home&#x2F;zhouxh&#x2F;</span><br></pre></td></tr></table></figure>
+<p>将另一台主机用户名为 zhouxh 的家目录下的 dir1 目录拷贝到本地家目录下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp -r zhouxh@192.168.0.134:&#x2F;home&#x2F;zhouxh&#x2F;dir1 &#x2F;home&#x2F;</span><br></pre></td></tr></table></figure>
+<p>以上拷贝命令都是通过默认 22 端口拷贝，如果需要指定端口，加上 -P 参数，注意 P 大写：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp -P 33109 &#x2F;home&#x2F;zhouxh&#x2F;file1 zhouxh@192.168.0.134:&#x2F;home&#x2F;zhouxh&#x2F;</span><br></pre></td></tr></table></figure>
 ]]></content>
       <categories>
         <category>Linux</category>
@@ -967,6 +967,86 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <p><img src="http://images.rookiezhou.top/resolve-host.png" alt="hosts 文件"></p>
 <p><img src="http://images.rookiezhou.top/resolve-host2.png" alt="hostname 文件"></p>
 <p>比如上面我电脑上 hostname 文件中内容是 zhouoxh-X550VC ，只要在 hosts 文件中添加一行 127.0.1.1       zhouxh-X550VC，如果不加这一行执行 sudo 命令就会报错。</p>
+]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>Ubuntu 系统安装以及一些开发中必要的安装配置</title>
+    <url>/Ubuntu-%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E4%B8%80%E4%BA%9B%E5%BC%80%E5%8F%91%E4%B8%AD%E5%BF%85%E8%A6%81%E7%9A%84%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/</url>
+    <content><![CDATA[<p>对于开发人员来说，个人强烈推荐使用 Linux 系统进行开发，至于为什么，这里贴出自己刚开始尝试使用 Linux 系统时看的一个博主写的文章，可以说就是因为看了这位博主的文章才立即决定装上 Linux 系统，开始了我的 Linux 系统之旅，从此停不下来了。下面就是这位博主写的文章地址，里面详细阐述了为什么要使用 Linux 系统。</p>
+<a id="more"></a>
+
+<p><a href="http://ghosertblog.github.io/blog/2012/10/14/ubuntu-living-handbook/">http://ghosertblog.github.io/blog/2012/10/14/ubuntu-living-handbook/</a><br><a href="http://ghosertblog.github.io/blog/2012/10/14/ubuntu-living-handbook/">Ubuntu桌面生存指南 (1) — 选择 Linux</a></p>
+<p>这位博主写了 5 篇文章关于 Linux 系统的，建议从第一篇开始看，一直看下去，看完之后如果还是不想进入 Linux 系统的世界，那么可能 Linux 系统与你无缘，这里并无冒犯的意思，纯属个人喜好。</p>
+<p>博主从零开始全面的介绍了 Linux 系统，（当然还是要有点 Linux 系统的基础去看更好）一直到 Linux 系统的安装以及后面的维护和备份，值得去好好的看一遍，那么这里我主要是想记录下自己的安装过程以及开发中的一些必要软件安装和配置，以防以后重复去搜索资源。</p>
+<h3 id="Ubuntu-系统的安装"><a href="#Ubuntu-系统的安装" class="headerlink" title="Ubuntu 系统的安装"></a>Ubuntu 系统的安装</h3><p>U 盘启动盘制作<br>对于 Linux 系统的启动盘制作很简单，只需要下载一个制作工具即可，下载链接如下：</p>
+<p><a href="http://www.pendrivelinux.com/universal-usb-installer-easy-as-1-2-3/#button">U 盘启动盘制作软件</a></p>
+<p><img src="http://images.rookiezhou.top/download.png" alt="制作工具下载网页"></p>
+<p>下载完制作工具后，准备好 Linux 系统镜像文件，以 Ubuntu 镜像为例，最好去官网下载最新的，而且带有 LTS 结尾的 ISO 文件，下载好以后打开刚才下载的制作软件</p>
+<p><img src="http://images.rookiezhou.top/make-usb.jpg" alt="制作工具使用"></p>
+<p>图中三处标红的地方从上到下分别是制作的启动盘要安装的镜像类型，准备好的镜像文件位置，要制作的 U 盘。这里提醒记得备份 U 盘里面的重要资料，制作完成之后会全部格式化。选择好之后点击 create 按钮，等个十来分钟应该就会出现如下字样了。</p>
+<p><img src="http://images.rookiezhou.top/success.jpg" alt="制作成功"></p>
+<p>到这里 U 盘启动盘就已经制作好了，接下来就是插入你要安装系统的笔记本或者台式机上，设置好从 U 盘启动，进入系统后出现以下界面(有的版本不一样可能不会立马进入这个界面，会直接进入安装界面，可以点击旁边的 Try Ubuntu 按钮来进入这个界面，直接安装可能会出问题)</p>
+<p><img src="http://images.rookiezhou.top/install.png" alt="Ubuntu 系统安装"></p>
+<p>在从这里点击进入安装界面，接下来就是按照指示进行操作即可，实在不懂的可以百度找一下具体的安装步骤，中间分区的步骤尽量自己来进行分区，具体的分区方案以下供参考：</p>
+<p>一般来说一个 Ubuntu 的系统在安装之初应该有三个分区，他们分别是挂载于根目录： /, home 目录： /home 的两个分区以及 swap 分区。swap 分区是指虚拟内存的交换区，一般设置为实际内存容量的两倍大小即可。<br>假如有一台 8G 内存，1T 磁盘的笔记本电脑，swap: 15G  15360M，/:  100G  102400M<br>/boot:    20G     20480M，/home:   剩余空间都分给 home</p>
+<p><a href="https://blog.csdn.net/u012052268/article/details/77145427">安装 Ubuntu Linux 系统时硬盘分区最合理的方法</a><br><a href="https://blog.csdn.net/zzxian/article/details/25487951">win7 下制作 Ubuntu 系统安装启动盘和 U 盘安装 Ubuntu 全过程</a></p>
+<h3 id="Ubuntu-系统软件源配置"><a href="#Ubuntu-系统软件源配置" class="headerlink" title="Ubuntu 系统软件源配置"></a>Ubuntu 系统软件源配置</h3><p>到这里 Ubuntu 系统应该安装完成了，接下来就可以配置日常开发中需要的工具软件了<br>软件源配置：Ctrl + Alt + T 快捷键打开终端命令行，输入 update-manager 回车打开软件更新器，这时可能会提示检查更新，可以选择稍后提醒，</p>
+<h3 id="Ubuntu-系统软件后台启动"><a href="#Ubuntu-系统软件后台启动" class="headerlink" title="Ubuntu 系统软件后台启动"></a>Ubuntu 系统软件后台启动</h3><p>在 Ubuntu 系统的终端运行软件会将终端占据，这样你不得不重新启动一个终端来执行命令，这里有一个脚本配置软件从后台启动，不会占据终端。在 home 目录下创建 bin目录，然后在 bin 目录下新建一个文本文件，命名 x ，文件内容如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">#!&#x2F;bin&#x2F;sh</span><br><span class="line">&quot;$@&quot; 1&gt;&#x2F;dev&#x2F;null 2&gt;&amp;1 &amp;</span><br></pre></td></tr></table></figure>
+
+<p>并且给这个脚本文件添加可执行权限，这个脚本的大意是运行软件的时候，不输出任何标准信息和错误信息，并且在后台运行，这样就可以避免占据终端的行为。比如启动火狐浏览器：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">x Firefox</span><br></pre></td></tr></table></figure>
+
+<h3 id="Ubuntu-系统-vi-编辑器配置"><a href="#Ubuntu-系统-vi-编辑器配置" class="headerlink" title="Ubuntu 系统 vi 编辑器配置"></a>Ubuntu 系统 vi 编辑器配置</h3><p>在终端中输入：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ set -o vi</span><br></pre></td></tr></table></figure>
+
+<p>可以开启以兼容 vi 的快捷键操作 bash 命令，此时你可以在终端使用 Esc 切换到命令模式，在命令模式下，按 h，l 可以左右移动光标，按 j，k 可以切换前一条后一条命令。x可以修改字符，”$， ^”可以返回命令尾部或头部，i 可以返回编辑模式。Vi/Vim 本身不需要安装，但是如果你更乐衷于视觉效果更好，功能更丰富的 GUI 版本可以安装GVim:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get install vim-gnome</span><br></pre></td></tr></table></figure>
+<p>执行以下命令进入 vi 编辑器训练教程：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">vimtutor</span><br></pre></td></tr></table></figure>
+
+<h3 id="Ubuntu-系统终端分屏工具-Tmux"><a href="#Ubuntu-系统终端分屏工具-Tmux" class="headerlink" title="Ubuntu 系统终端分屏工具 Tmux"></a>Ubuntu 系统终端分屏工具 Tmux</h3><p> 运行安装：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get install tmux</span><br></pre></td></tr></table></figure>
+<p>安装过程中如果遇到由于包依赖问题导致安装失败的话，可以尝试下面命令进行修复</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo apt-get -f install</span><br></pre></td></tr></table></figure>
+
+<p>个性化配置：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cd ~</span><br><span class="line">rm -rf .tmux</span><br><span class="line">git clone https:&#x2F;&#x2F;github.com&#x2F;gpakosz&#x2F;.tmux.git</span><br><span class="line">ln -s .tmux&#x2F;.tmux.conf</span><br><span class="line">cp .tmux&#x2F;.tmux.conf.local .</span><br></pre></td></tr></table></figure>
+<p>相关链接：<br><a href="https://blog.csdn.net/u014015972/article/details/51611817">tmux 的使用</a><br><a href="http://blog.jobbole.com/87584/">Tmux 速成教程：技巧和调整</a><br><a href="http://www.cnblogs.com/chjbbs/p/5689011.html">tmux的使用方法和个性化配置</a></p>
+<h3 id="Ubuntu-系统安装-Chrome-浏览器"><a href="#Ubuntu-系统安装-Chrome-浏览器" class="headerlink" title="Ubuntu 系统安装 Chrome 浏览器"></a>Ubuntu 系统安装 Chrome 浏览器</h3><p>在终端中，执行以下四条命令：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo wget http:&#x2F;&#x2F;www.linuxidc.com&#x2F;files&#x2F;repo&#x2F;google-chrome.list -P &#x2F;etc&#x2F;apt&#x2F;sources.list.d&#x2F;</span><br><span class="line">wget -q -O - https:&#x2F;&#x2F;dl.google.com&#x2F;linux&#x2F;linux_signing_key.pub | sudo apt-key add -</span><br><span class="line">sudo apt-get update</span><br><span class="line">sudo apt-get install google-chrome-stable</span><br></pre></td></tr></table></figure>
+<h3 id="Ubuntu-系统安装-JDK"><a href="#Ubuntu-系统安装-JDK" class="headerlink" title="Ubuntu 系统安装 JDK"></a>Ubuntu 系统安装 JDK</h3><p>去官网下载 Ubuntu 系统的 JDK 开发工具压缩包，解压到某个文件夹中，然后配置环境变量，以下是我电脑上的一些环境变量配置，我这里是配置在 /etc/profile 文件中的，对所有用户有效：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo vi &#x2F;etc&#x2F;profile</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">export JAVA_HOME&#x3D;&#x2F;usr&#x2F;lib&#x2F;jvm&#x2F;jdk1.8.0_144</span><br><span class="line">export JRE_HOME&#x3D;$&#123;JAVA_HOME&#125;&#x2F;jre</span><br><span class="line">export CLASSPATH&#x3D;.:$&#123;JAVA_HOME&#125;&#x2F;lib:$&#123;JRE_HOME&#125;&#x2F;lib</span><br><span class="line">export ZOO_HOME&#x3D;&#x2F;home&#x2F;zhouxh&#x2F;software&#x2F;zookeeper-3.4.11</span><br><span class="line">export M2_HOME&#x3D;&#x2F;opt&#x2F;maven&#x2F;apache-maven-3.5.0</span><br><span class="line">export PATH&#x3D;$&#123;JAVA_HOME&#125;&#x2F;bin:$&#123;M2_HOME&#125;&#x2F;bin:$&#123;ZOO_HOME&#125;&#x2F;bin:&#x2F;usr&#x2F;local&#x2F;curl&#x2F;bin:$PATH</span><br></pre></td></tr></table></figure>
+<p>配置好后要想环境变量立即生效可以执行以下命令,或者重启生效</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">source &#x2F;etc&#x2F;profile</span><br></pre></td></tr></table></figure>
+<h3 id="Ubuntu-系统安装截图工具-deepin-scrot-并且配置快捷键"><a href="#Ubuntu-系统安装截图工具-deepin-scrot-并且配置快捷键" class="headerlink" title="Ubuntu 系统安装截图工具 deepin-scrot 并且配置快捷键###"></a>Ubuntu 系统安装截图工具 deepin-scrot 并且配置快捷键###</h3><p>执行以下命令下载截图工具：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">wget http:&#x2F;&#x2F;packages.linuxdeepin.com&#x2F;deepin&#x2F;pool&#x2F;main&#x2F;d&#x2F;deepin-scrot&#x2F;deepin-scrot_2.0-0deepin_all.deb</span><br></pre></td></tr></table></figure>
+<p>截图工具安装：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo apt-get install python-xlib</span><br><span class="line">sudo dpkg -i deepin-scrot_2.0-0deepin_all.deb</span><br></pre></td></tr></table></figure>
+<p>当安装失败时可能是由于依赖问题，执行下面命令进行修复之后继续安装：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo apt-get -f install</span><br><span class="line">sudo dpkg -i deepin-scrot_2.0-0deepin_all.deb</span><br></pre></td></tr></table></figure>
+<p>deepin-scrot 截图快捷键设置：<br><img src="http://images.rookiezhou.top/deepin-scrot-key.png" alt="截图快捷键设置"></p>
+<p>xkill 快捷键配置， 关闭无响应的程序：<br><img src="http://images.rookiezhou.top/xkill-key.png" alt="xkill 快捷键设置"></p>
+<p>返回桌面快键键配置，换回 window 系统下熟悉的 super + d 快捷键：<br><img src="http://images.rookiezhou.top/super-d.png" alt="返回桌面快捷键设置"></p>
+<p>可能有时返回桌面的快捷键配置后还是没用，super + d 无法返回到桌面，这时需要做以下设置：<br>首先安装 compizconfig-settings-manager：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo apt-get install compizconfig-settings-manager</span><br></pre></td></tr></table></figure>
+
+<p>然后在终端输入 compizconfig-settings-manager 命令打开该软件，找到 Ubuntu Unity plugin，General 里面有个 Show Desktop，设置一下相应快捷键就可以了。</p>
+<h3 id="Ubuntu-系统微信、QQ、Listen-安装"><a href="#Ubuntu-系统微信、QQ、Listen-安装" class="headerlink" title="Ubuntu 系统微信、QQ、Listen 安装###"></a>Ubuntu 系统微信、QQ、Listen 安装###</h3><p>微信安装参考 GitHub 上面的一个项目，里面有已经发布好了的，直接下载解压后即可使用，链接如下：</p>
+<p><a href="https://github.com/geeeeeeeeek/electronic-wechat/releases">GitHub 微信项目链接</a></p>
+<p>QQ 安装参考下面博主写的教程：</p>
+<p><a href="https://blog.csdn.net/ysy950803/article/details/80215101">Ubuntu 18.04安装最新版QQ（9.0）</a><br><a href="https://blog.csdn.net/qq_36428171/article/details/78244730">在ubuntu17.04下安装最新版QQ教程</a></p>
+<p>Listen 是一款听音乐的 App，集成了网易，虾米，QQ 音乐，你想听的里面基本上能够搜到，而且界面也很符合我们开发者的风格，可以说很良心了，网站链接：</p>
+<p><a href="http://listen1.github.io/listen1/">Listen 网站链接</a><br>打开该网站下载 Linux 版本即可，他还有浏览器插件版，不想安装的话也可以直接下载浏览器插件版。</p>
+<p>最后如果必须要用到 Windows 系统下面的软件的话，那就只能推荐一款软件给你了：Virtual Box 安装：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo apt-get install virtualbox</span><br><span class="line">sudo apt-get install virtualbox-guest-additions</span><br><span class="line">sudo apt-get install virtualbox-guest-additions-iso</span><br></pre></td></tr></table></figure>
+<p>使 Virtualbox 辨认出物理 USB 外设</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo apt-get install gnome-system-tools</span><br></pre></td></tr></table></figure>
 ]]></content>
       <categories>
         <category>Linux</category>
@@ -1148,86 +1228,6 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
       </categories>
   </entry>
   <entry>
-    <title>Ubuntu 系统安装以及一些开发中必要的安装配置</title>
-    <url>/Ubuntu-%E7%B3%BB%E7%BB%9F%E5%AE%89%E8%A3%85%E4%BB%A5%E5%8F%8A%E4%B8%80%E4%BA%9B%E5%BC%80%E5%8F%91%E4%B8%AD%E5%BF%85%E8%A6%81%E7%9A%84%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/</url>
-    <content><![CDATA[<p>对于开发人员来说，个人强烈推荐使用 Linux 系统进行开发，至于为什么，这里贴出自己刚开始尝试使用 Linux 系统时看的一个博主写的文章，可以说就是因为看了这位博主的文章才立即决定装上 Linux 系统，开始了我的 Linux 系统之旅，从此停不下来了。下面就是这位博主写的文章地址，里面详细阐述了为什么要使用 Linux 系统。</p>
-<a id="more"></a>
-
-<p><a href="http://ghosertblog.github.io/blog/2012/10/14/ubuntu-living-handbook/">http://ghosertblog.github.io/blog/2012/10/14/ubuntu-living-handbook/</a><br><a href="http://ghosertblog.github.io/blog/2012/10/14/ubuntu-living-handbook/">Ubuntu桌面生存指南 (1) — 选择 Linux</a></p>
-<p>这位博主写了 5 篇文章关于 Linux 系统的，建议从第一篇开始看，一直看下去，看完之后如果还是不想进入 Linux 系统的世界，那么可能 Linux 系统与你无缘，这里并无冒犯的意思，纯属个人喜好。</p>
-<p>博主从零开始全面的介绍了 Linux 系统，（当然还是要有点 Linux 系统的基础去看更好）一直到 Linux 系统的安装以及后面的维护和备份，值得去好好的看一遍，那么这里我主要是想记录下自己的安装过程以及开发中的一些必要软件安装和配置，以防以后重复去搜索资源。</p>
-<h3 id="Ubuntu-系统的安装"><a href="#Ubuntu-系统的安装" class="headerlink" title="Ubuntu 系统的安装"></a>Ubuntu 系统的安装</h3><p>U 盘启动盘制作<br>对于 Linux 系统的启动盘制作很简单，只需要下载一个制作工具即可，下载链接如下：</p>
-<p><a href="http://www.pendrivelinux.com/universal-usb-installer-easy-as-1-2-3/#button">U 盘启动盘制作软件</a></p>
-<p><img src="http://images.rookiezhou.top/download.png" alt="制作工具下载网页"></p>
-<p>下载完制作工具后，准备好 Linux 系统镜像文件，以 Ubuntu 镜像为例，最好去官网下载最新的，而且带有 LTS 结尾的 ISO 文件，下载好以后打开刚才下载的制作软件</p>
-<p><img src="http://images.rookiezhou.top/make-usb.jpg" alt="制作工具使用"></p>
-<p>图中三处标红的地方从上到下分别是制作的启动盘要安装的镜像类型，准备好的镜像文件位置，要制作的 U 盘。这里提醒记得备份 U 盘里面的重要资料，制作完成之后会全部格式化。选择好之后点击 create 按钮，等个十来分钟应该就会出现如下字样了。</p>
-<p><img src="http://images.rookiezhou.top/success.jpg" alt="制作成功"></p>
-<p>到这里 U 盘启动盘就已经制作好了，接下来就是插入你要安装系统的笔记本或者台式机上，设置好从 U 盘启动，进入系统后出现以下界面(有的版本不一样可能不会立马进入这个界面，会直接进入安装界面，可以点击旁边的 Try Ubuntu 按钮来进入这个界面，直接安装可能会出问题)</p>
-<p><img src="http://images.rookiezhou.top/install.png" alt="Ubuntu 系统安装"></p>
-<p>在从这里点击进入安装界面，接下来就是按照指示进行操作即可，实在不懂的可以百度找一下具体的安装步骤，中间分区的步骤尽量自己来进行分区，具体的分区方案以下供参考：</p>
-<p>一般来说一个 Ubuntu 的系统在安装之初应该有三个分区，他们分别是挂载于根目录： /, home 目录： /home 的两个分区以及 swap 分区。swap 分区是指虚拟内存的交换区，一般设置为实际内存容量的两倍大小即可。<br>假如有一台 8G 内存，1T 磁盘的笔记本电脑，swap: 15G  15360M，/:  100G  102400M<br>/boot:    20G     20480M，/home:   剩余空间都分给 home</p>
-<p><a href="https://blog.csdn.net/u012052268/article/details/77145427">安装 Ubuntu Linux 系统时硬盘分区最合理的方法</a><br><a href="https://blog.csdn.net/zzxian/article/details/25487951">win7 下制作 Ubuntu 系统安装启动盘和 U 盘安装 Ubuntu 全过程</a></p>
-<h3 id="Ubuntu-系统软件源配置"><a href="#Ubuntu-系统软件源配置" class="headerlink" title="Ubuntu 系统软件源配置"></a>Ubuntu 系统软件源配置</h3><p>到这里 Ubuntu 系统应该安装完成了，接下来就可以配置日常开发中需要的工具软件了<br>软件源配置：Ctrl + Alt + T 快捷键打开终端命令行，输入 update-manager 回车打开软件更新器，这时可能会提示检查更新，可以选择稍后提醒，</p>
-<h3 id="Ubuntu-系统软件后台启动"><a href="#Ubuntu-系统软件后台启动" class="headerlink" title="Ubuntu 系统软件后台启动"></a>Ubuntu 系统软件后台启动</h3><p>在 Ubuntu 系统的终端运行软件会将终端占据，这样你不得不重新启动一个终端来执行命令，这里有一个脚本配置软件从后台启动，不会占据终端。在 home 目录下创建 bin目录，然后在 bin 目录下新建一个文本文件，命名 x ，文件内容如下：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">#!&#x2F;bin&#x2F;sh</span><br><span class="line">&quot;$@&quot; 1&gt;&#x2F;dev&#x2F;null 2&gt;&amp;1 &amp;</span><br></pre></td></tr></table></figure>
-
-<p>并且给这个脚本文件添加可执行权限，这个脚本的大意是运行软件的时候，不输出任何标准信息和错误信息，并且在后台运行，这样就可以避免占据终端的行为。比如启动火狐浏览器：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">x Firefox</span><br></pre></td></tr></table></figure>
-
-<h3 id="Ubuntu-系统-vi-编辑器配置"><a href="#Ubuntu-系统-vi-编辑器配置" class="headerlink" title="Ubuntu 系统 vi 编辑器配置"></a>Ubuntu 系统 vi 编辑器配置</h3><p>在终端中输入：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ set -o vi</span><br></pre></td></tr></table></figure>
-
-<p>可以开启以兼容 vi 的快捷键操作 bash 命令，此时你可以在终端使用 Esc 切换到命令模式，在命令模式下，按 h，l 可以左右移动光标，按 j，k 可以切换前一条后一条命令。x可以修改字符，”$， ^”可以返回命令尾部或头部，i 可以返回编辑模式。Vi/Vim 本身不需要安装，但是如果你更乐衷于视觉效果更好，功能更丰富的 GUI 版本可以安装GVim:</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get install vim-gnome</span><br></pre></td></tr></table></figure>
-<p>执行以下命令进入 vi 编辑器训练教程：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">vimtutor</span><br></pre></td></tr></table></figure>
-
-<h3 id="Ubuntu-系统终端分屏工具-Tmux"><a href="#Ubuntu-系统终端分屏工具-Tmux" class="headerlink" title="Ubuntu 系统终端分屏工具 Tmux"></a>Ubuntu 系统终端分屏工具 Tmux</h3><p> 运行安装：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ sudo apt-get install tmux</span><br></pre></td></tr></table></figure>
-<p>安装过程中如果遇到由于包依赖问题导致安装失败的话，可以尝试下面命令进行修复</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo apt-get -f install</span><br></pre></td></tr></table></figure>
-
-<p>个性化配置：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cd ~</span><br><span class="line">rm -rf .tmux</span><br><span class="line">git clone https:&#x2F;&#x2F;github.com&#x2F;gpakosz&#x2F;.tmux.git</span><br><span class="line">ln -s .tmux&#x2F;.tmux.conf</span><br><span class="line">cp .tmux&#x2F;.tmux.conf.local .</span><br></pre></td></tr></table></figure>
-<p>相关链接：<br><a href="https://blog.csdn.net/u014015972/article/details/51611817">tmux 的使用</a><br><a href="http://blog.jobbole.com/87584/">Tmux 速成教程：技巧和调整</a><br><a href="http://www.cnblogs.com/chjbbs/p/5689011.html">tmux的使用方法和个性化配置</a></p>
-<h3 id="Ubuntu-系统安装-Chrome-浏览器"><a href="#Ubuntu-系统安装-Chrome-浏览器" class="headerlink" title="Ubuntu 系统安装 Chrome 浏览器"></a>Ubuntu 系统安装 Chrome 浏览器</h3><p>在终端中，执行以下四条命令：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo wget http:&#x2F;&#x2F;www.linuxidc.com&#x2F;files&#x2F;repo&#x2F;google-chrome.list -P &#x2F;etc&#x2F;apt&#x2F;sources.list.d&#x2F;</span><br><span class="line">wget -q -O - https:&#x2F;&#x2F;dl.google.com&#x2F;linux&#x2F;linux_signing_key.pub | sudo apt-key add -</span><br><span class="line">sudo apt-get update</span><br><span class="line">sudo apt-get install google-chrome-stable</span><br></pre></td></tr></table></figure>
-<h3 id="Ubuntu-系统安装-JDK"><a href="#Ubuntu-系统安装-JDK" class="headerlink" title="Ubuntu 系统安装 JDK"></a>Ubuntu 系统安装 JDK</h3><p>去官网下载 Ubuntu 系统的 JDK 开发工具压缩包，解压到某个文件夹中，然后配置环境变量，以下是我电脑上的一些环境变量配置，我这里是配置在 /etc/profile 文件中的，对所有用户有效：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo vi &#x2F;etc&#x2F;profile</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">export JAVA_HOME&#x3D;&#x2F;usr&#x2F;lib&#x2F;jvm&#x2F;jdk1.8.0_144</span><br><span class="line">export JRE_HOME&#x3D;$&#123;JAVA_HOME&#125;&#x2F;jre</span><br><span class="line">export CLASSPATH&#x3D;.:$&#123;JAVA_HOME&#125;&#x2F;lib:$&#123;JRE_HOME&#125;&#x2F;lib</span><br><span class="line">export ZOO_HOME&#x3D;&#x2F;home&#x2F;zhouxh&#x2F;software&#x2F;zookeeper-3.4.11</span><br><span class="line">export M2_HOME&#x3D;&#x2F;opt&#x2F;maven&#x2F;apache-maven-3.5.0</span><br><span class="line">export PATH&#x3D;$&#123;JAVA_HOME&#125;&#x2F;bin:$&#123;M2_HOME&#125;&#x2F;bin:$&#123;ZOO_HOME&#125;&#x2F;bin:&#x2F;usr&#x2F;local&#x2F;curl&#x2F;bin:$PATH</span><br></pre></td></tr></table></figure>
-<p>配置好后要想环境变量立即生效可以执行以下命令,或者重启生效</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">source &#x2F;etc&#x2F;profile</span><br></pre></td></tr></table></figure>
-<h3 id="Ubuntu-系统安装截图工具-deepin-scrot-并且配置快捷键"><a href="#Ubuntu-系统安装截图工具-deepin-scrot-并且配置快捷键" class="headerlink" title="Ubuntu 系统安装截图工具 deepin-scrot 并且配置快捷键###"></a>Ubuntu 系统安装截图工具 deepin-scrot 并且配置快捷键###</h3><p>执行以下命令下载截图工具：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">wget http:&#x2F;&#x2F;packages.linuxdeepin.com&#x2F;deepin&#x2F;pool&#x2F;main&#x2F;d&#x2F;deepin-scrot&#x2F;deepin-scrot_2.0-0deepin_all.deb</span><br></pre></td></tr></table></figure>
-<p>截图工具安装：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo apt-get install python-xlib</span><br><span class="line">sudo dpkg -i deepin-scrot_2.0-0deepin_all.deb</span><br></pre></td></tr></table></figure>
-<p>当安装失败时可能是由于依赖问题，执行下面命令进行修复之后继续安装：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo apt-get -f install</span><br><span class="line">sudo dpkg -i deepin-scrot_2.0-0deepin_all.deb</span><br></pre></td></tr></table></figure>
-<p>deepin-scrot 截图快捷键设置：<br><img src="http://images.rookiezhou.top/deepin-scrot-key.png" alt="截图快捷键设置"></p>
-<p>xkill 快捷键配置， 关闭无响应的程序：<br><img src="http://images.rookiezhou.top/xkill-key.png" alt="xkill 快捷键设置"></p>
-<p>返回桌面快键键配置，换回 window 系统下熟悉的 super + d 快捷键：<br><img src="http://images.rookiezhou.top/super-d.png" alt="返回桌面快捷键设置"></p>
-<p>可能有时返回桌面的快捷键配置后还是没用，super + d 无法返回到桌面，这时需要做以下设置：<br>首先安装 compizconfig-settings-manager：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo apt-get install compizconfig-settings-manager</span><br></pre></td></tr></table></figure>
-
-<p>然后在终端输入 compizconfig-settings-manager 命令打开该软件，找到 Ubuntu Unity plugin，General 里面有个 Show Desktop，设置一下相应快捷键就可以了。</p>
-<h3 id="Ubuntu-系统微信、QQ、Listen-安装"><a href="#Ubuntu-系统微信、QQ、Listen-安装" class="headerlink" title="Ubuntu 系统微信、QQ、Listen 安装###"></a>Ubuntu 系统微信、QQ、Listen 安装###</h3><p>微信安装参考 GitHub 上面的一个项目，里面有已经发布好了的，直接下载解压后即可使用，链接如下：</p>
-<p><a href="https://github.com/geeeeeeeeek/electronic-wechat/releases">GitHub 微信项目链接</a></p>
-<p>QQ 安装参考下面博主写的教程：</p>
-<p><a href="https://blog.csdn.net/ysy950803/article/details/80215101">Ubuntu 18.04安装最新版QQ（9.0）</a><br><a href="https://blog.csdn.net/qq_36428171/article/details/78244730">在ubuntu17.04下安装最新版QQ教程</a></p>
-<p>Listen 是一款听音乐的 App，集成了网易，虾米，QQ 音乐，你想听的里面基本上能够搜到，而且界面也很符合我们开发者的风格，可以说很良心了，网站链接：</p>
-<p><a href="http://listen1.github.io/listen1/">Listen 网站链接</a><br>打开该网站下载 Linux 版本即可，他还有浏览器插件版，不想安装的话也可以直接下载浏览器插件版。</p>
-<p>最后如果必须要用到 Windows 系统下面的软件的话，那就只能推荐一款软件给你了：Virtual Box 安装：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo apt-get install virtualbox</span><br><span class="line">sudo apt-get install virtualbox-guest-additions</span><br><span class="line">sudo apt-get install virtualbox-guest-additions-iso</span><br></pre></td></tr></table></figure>
-<p>使 Virtualbox 辨认出物理 USB 外设</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo apt-get install gnome-system-tools</span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>Linux</category>
-      </categories>
-  </entry>
-  <entry>
     <title>nginx location 路径匹配规则</title>
     <url>/nginx-location-%E8%B7%AF%E5%BE%84%E5%9F%BA%E6%9C%AC%E5%8C%B9%E9%85%8D%E8%A7%84%E5%88%99/</url>
     <content><![CDATA[<p>之前每次配置 nginx 中的 location 这个路径时都会很头疼，基本上每次都是靠碰运气，一个个去试，直到访问路径通了为止，这样一来到最后还是不知道怎么配置成功的，下次再配置时又需要一个个去试，既浪费时间又很没有效率，所以这次特意花了点时间去学习了一番，特此记录一下，也记录一下自己在测试的过程中踩过的一些坑。</p>
@@ -1304,6 +1304,22 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
       </categories>
   </entry>
   <entry>
+    <title>nginx 的正向代理和反向代理</title>
+    <url>/nginx-%E7%9A%84%E6%AD%A3%E5%90%91%E4%BB%A3%E7%90%86%E5%92%8C%E5%8F%8D%E5%90%91%E4%BB%A3%E7%90%86/</url>
+    <content><![CDATA[<p>nginx 服务器在我们平常的软件开发中可能还是用到的比较多的，那么有一个问题我们就应该明白，也许让你去实现轻而易举，但说到其中的原理就有点不是很清楚了。下面就谈谈我自己对正向代理和反向代理的理解：首先有一个用户 C，三台服务器 S1，S2 和 S3，S1，S2，S3 在同一局域网内互相可访问，但 S1 对外网开放，S2 和 S3 不对外网开放，还有一份数据资源 D，资源 D 放在服务器 S2 和 S3 上。</p>
+<a id="more"></a>
+
+<h2 id="nginx-正向代理"><a href="#nginx-正向代理" class="headerlink" title="nginx 正向代理"></a>nginx 正向代理</h2><p>这时用户 C 明确知道自己想访问的数据资源 D 在服务器 S2 上，用户 C 想要访问这份资源但是没办法直接访问服务器 S2，用户 C 想到服务器 S1 和 S2 在同一局域网并且互相可访问，而自己能够访问服务器 S1，所以用户 C 就通过服务器 S1 去访问服务器 S2 上的资源 D。那么正向代理就是对于用户 C 来说他是明确知道他要访问的数据资源 D 在哪个服务器上；对于服务器 S1 来说他只充当了用户 C 的中间代理角色；而对于服务器 S2 来说他只知道访问他的资源的是服务器 S1，根本不知道用户 C 的存在。</p>
+<p>正向代理的整个流程就是用户 C 访问服务器 S2 上的数据资源 D，但是是通过借助服务器 S1 来进行访问，服务器 S1 得到数据资源后再返回给用户 C。</p>
+<h2 id="nginx-反向代理"><a href="#nginx-反向代理" class="headerlink" title="nginx 反向代理"></a>nginx 反向代理</h2><p>还是刚开始上面说的这些：用户 C，服务器 S1，S2 和 S3，以及服务器 S2 和 S3 上的数据资源 D。这时用户 C 并不知道数据资源 D 在服务器 S2 和 S3 上面，他只知道访问服务器 S1 可以得到自己想要的内容，于是他每次都是直接访问服务器 S1，只不过提供给用户 C 数据资源的都是服务器 S2 或者 S3。那么反向代理就是对于用户 C 来说他是不知道数据资源 D 具体在哪里，是由谁提供的；对于服务器 S1 来说每次都接收用户的请求，然后再把请求交给真正能提供资源的服务器 S2 或 S3；对于服务器 S2 和 S3 来说同样也都不知道访问这份资源的真实用户是谁，只是和服务器 S1 进行交互。</p>
+<p>反向代理的整个流程就是用户 C 访问服务器 S1 获取数据资源 D，服务器 S1 将请求转交给服务器 S2 或 S3，然后得到相应的资源后再返回给用户 C。</p>
+<p>总之，正向代理就是客户端知道服务器端，带过代理连接服务器端。反向代理就是客户端不知道服务器端，通过代理连接服务器端，具体是由哪个服务器端提供服务取决于代理的调度方式，即 nginx 中的负载均衡策略。</p>
+]]></content>
+      <categories>
+        <category>Nginx</category>
+      </categories>
+  </entry>
+  <entry>
     <title>nginx 负载均衡策略之内置策略</title>
     <url>/nginx-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5%E4%B9%8B%E5%86%85%E7%BD%AE%E7%AD%96%E7%95%A5/</url>
     <content><![CDATA[<p>nginx 服务器在开发中我们用的比较多的有 nginx 的负载均衡，nginx 负载均衡主要是利用反向代理来实现，也就是表面上我们访问的是这个服务，其实访问的是该服务背后支撑的众多服务器中的其中一台。比如说全世界同一时间有这么多人同时在访问百度这个网站，它是怎么能够承受的住这么大的访问量呢，这时我们就应该知道其实百度这个网站的背后有很多的服务器在支撑着众多的用户的访问。</p>
@@ -1347,22 +1363,6 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">upstream loadserver &#123;</span><br><span class="line">    least_conn;</span><br><span class="line">    server 192.168.1.110:10080 weight&#x3D;5 ;</span><br><span class="line">    server 192.168.1.111:10080 weight&#x3D;1;</span><br><span class="line">    server 192.168.1.112:10080 weight&#x3D;1 max_fails&#x3D;3 fail_timeout&#x3D;30s;</span><br><span class="line">    server 192.168.1.113:10080 down;</span><br><span class="line">    server 192.168.1.114:10080 backup;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>配置说明：<br>1.weight 的值默认为1，weight 越大，服务器负载的权重就越大，访问的概率越高。<br>2.down 表示当前服务器暂时不参与负载。<br>3.backup 表示其它所有的非 backup 服务器 down 或者忙的时候才会请求 backup 服务器，所以这台服务器压力最轻，一般这台服务器当做是备用服务器。<br>3.max_fails 表示允许请求失败的次数，默认为 1，当超过最大次数时，返回proxy_next_upstream 模块定义错误。<br>4.fail_timeout 表示每次失败后暂停的时间。</p>
 <p>到这里就全部介绍完了 nginx 负载均衡内置的一些策略，还有第三方扩展的一些策略，未完待续………</p>
-]]></content>
-      <categories>
-        <category>Nginx</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>nginx 的正向代理和反向代理</title>
-    <url>/nginx-%E7%9A%84%E6%AD%A3%E5%90%91%E4%BB%A3%E7%90%86%E5%92%8C%E5%8F%8D%E5%90%91%E4%BB%A3%E7%90%86/</url>
-    <content><![CDATA[<p>nginx 服务器在我们平常的软件开发中可能还是用到的比较多的，那么有一个问题我们就应该明白，也许让你去实现轻而易举，但说到其中的原理就有点不是很清楚了。下面就谈谈我自己对正向代理和反向代理的理解：首先有一个用户 C，三台服务器 S1，S2 和 S3，S1，S2，S3 在同一局域网内互相可访问，但 S1 对外网开放，S2 和 S3 不对外网开放，还有一份数据资源 D，资源 D 放在服务器 S2 和 S3 上。</p>
-<a id="more"></a>
-
-<h2 id="nginx-正向代理"><a href="#nginx-正向代理" class="headerlink" title="nginx 正向代理"></a>nginx 正向代理</h2><p>这时用户 C 明确知道自己想访问的数据资源 D 在服务器 S2 上，用户 C 想要访问这份资源但是没办法直接访问服务器 S2，用户 C 想到服务器 S1 和 S2 在同一局域网并且互相可访问，而自己能够访问服务器 S1，所以用户 C 就通过服务器 S1 去访问服务器 S2 上的资源 D。那么正向代理就是对于用户 C 来说他是明确知道他要访问的数据资源 D 在哪个服务器上；对于服务器 S1 来说他只充当了用户 C 的中间代理角色；而对于服务器 S2 来说他只知道访问他的资源的是服务器 S1，根本不知道用户 C 的存在。</p>
-<p>正向代理的整个流程就是用户 C 访问服务器 S2 上的数据资源 D，但是是通过借助服务器 S1 来进行访问，服务器 S1 得到数据资源后再返回给用户 C。</p>
-<h2 id="nginx-反向代理"><a href="#nginx-反向代理" class="headerlink" title="nginx 反向代理"></a>nginx 反向代理</h2><p>还是刚开始上面说的这些：用户 C，服务器 S1，S2 和 S3，以及服务器 S2 和 S3 上的数据资源 D。这时用户 C 并不知道数据资源 D 在服务器 S2 和 S3 上面，他只知道访问服务器 S1 可以得到自己想要的内容，于是他每次都是直接访问服务器 S1，只不过提供给用户 C 数据资源的都是服务器 S2 或者 S3。那么反向代理就是对于用户 C 来说他是不知道数据资源 D 具体在哪里，是由谁提供的；对于服务器 S1 来说每次都接收用户的请求，然后再把请求交给真正能提供资源的服务器 S2 或 S3；对于服务器 S2 和 S3 来说同样也都不知道访问这份资源的真实用户是谁，只是和服务器 S1 进行交互。</p>
-<p>反向代理的整个流程就是用户 C 访问服务器 S1 获取数据资源 D，服务器 S1 将请求转交给服务器 S2 或 S3，然后得到相应的资源后再返回给用户 C。</p>
-<p>总之，正向代理就是客户端知道服务器端，带过代理连接服务器端。反向代理就是客户端不知道服务器端，通过代理连接服务器端，具体是由哪个服务器端提供服务取决于代理的调度方式，即 nginx 中的负载均衡策略。</p>
 ]]></content>
       <categories>
         <category>Nginx</category>
@@ -1486,63 +1486,6 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
       </categories>
   </entry>
   <entry>
-    <title>你还在习惯的使用 keys * 查看 redis 中的所有数据吗</title>
-    <url>/%E4%BD%A0%E8%BF%98%E5%9C%A8%E4%B9%A0%E6%83%AF%E7%9A%84%E4%BD%BF%E7%94%A8-keys-%E6%9F%A5%E7%9C%8B-redis-%E4%B8%AD%E7%9A%84%E6%89%80%E6%9C%89%E6%95%B0%E6%8D%AE%E5%90%97/</url>
-    <content><![CDATA[<p>redis 在我们的日常开发中其实还是用的比较多的，常用来做缓存或者存放一些热点数据，主要为了提高系统的响应速度。在我们平常使用中，我们可能都习惯的使用 keys * 命令来查询数据库中的数据存储情况。</p>
-<p>这时也许我们都是在开发环境执行，开发环境 redis 中的数据量不是很多，redis 也很快的能给我们响应。但是如果你要查询的 redis 中存储了非常大的数据量，这时候你还能愉快的使用这个命令吗？</p>
-<p>首先，我们来大概了解下 keys 命令是用来干嘛的，它是用来查找所有符合给定模式 pattern 的 key ，上面的 * 表示匹配所有数据，同时还有下面几种用法:</p>
-<a id="more"></a>
-<ul>
-<li>keys re?is 匹配 redis，recis</li>
-<li>keys re*is 匹配 redis, reddddis</li>
-<li>keys re[cd]is 匹配 redis，recis，不匹配 reais，reddis</li>
-</ul>
-<p>keys 命令的时间复杂度是 O(N)，N 是 redis 库中的数据量，也就是说这个命令的执行时间是随着库中的数据量增多呈正比的，数据量越大，执行时间越长。所以尽管这个命令的速度很快，但如果是一个数据量很大的库，还是会造成性能问题的。</p>
-<p>我之前就在一次项目上线演练时，当时在一个 redis 库中初始化一批数据，当时我为了验证数据库中是否已经初始化过了这些数据，我顺手就敲了一个 keys abc*，其中 abc 是我要初始化的这批数据的 key 前缀(当然不是真的就是 abc，这里是随便起的一个)。</p>
-<p>然后并没有像往常开发中一样很快给我响应，我立马就意识到不对了，这个 redis 库数据量很大，不能使用 keys 命令去查询，我随即立马按下 command + c 尝试终止，但其实已经没什么用了，因为 redis 已经在执行我刚才发送的命令，终端已经没响应，我记得我我当时还索性把终端都给关了，这纯属病急乱投医了。</p>
-<p>随后呢我另起一个终端，尝试连接 redis，看看刚才的命令是否执行完了，但不幸的是我连都连不上，连接命令敲完没反应，当时这会心里真的慌了。</p>
-<p>不过幸运的是这只是一次新系统正式上线前的演练，而且并没有用户在使用。至于为什么没有用户在用怎么有这么多数据在里面，那是因为在我初始化我这批数据之前，我同事已经将老系统中的数据迁移过来了。</p>
-<p>但我还是很慌的原因是我具体不知道老系统迁移过来有多少数据，只知道数据量很大，不知道要执行多久。然后虽然说那只是新系统正式上线前一次演练而已，但是我们这次上线是有很多流程，所以才有了这次演练。</p>
-<p>对于流程中的每个环节都要记录操作时间，下次正式上线时需要按之前演练上线的流程来执行，正式上线时如果某一环节出问题了，就要采取回滚流程进行回滚，下次上线要是因为我这个数据初始化环节出问题了，那这锅岂不背定了。</p>
-<p>所以说当时真的是慌的一匹，但最后还是过了两三分钟之后我重新连上了，此时应该是将我刚才的命令执行完了，随后我也不管里面是不是已经初始化了，直接初始化数据，大不了覆盖好了，反正 key 是相同的，因为这部分数据只有我的程序要用到，所以没什么问题。后面正式上线时有了演练的教训，也就没有出啥问题，也没有再作死去敲 keys 命令了。</p>
-<p>如果我们真的要在大数据量的 redis 库中查询匹配的数据怎么办呢？其实 redis 是有相应的替代命令的，就是 scan 命令，以及对应的数据类型的 sscan，hscan 和 zscan，他们都用于增量地迭代库中的元素。</p>
-<ul>
-<li>scan 命令用于迭代当前库中的所有 key</li>
-<li>sscan 命令用于迭代集合键中的元素</li>
-<li>hscan 命令用于哈希键中的键值对</li>
-<li>zscan 命令用于迭代有序集合中的元素(包括元素成员和元素分值)</li>
-</ul>
-<p>上面的命令都是支持增量式迭代，每次执行都只会返回少量元素，这些命令每次执行的时间复杂度是 O(1)，完整的一次迭代过程才是 O(N)，因此它是可以在生产环境中执行的，而不会像 keys 命令一样，如果正在处理的是一个大数据量的库，会阻塞 redis 服务很久。</p>
-<p>scan 命令它是一个基于游标的迭代器(cursor based iterator)，scan 命令每次被调用之后， 都会向用户返回一个新的游标， 用户在下次迭代时需要使用这个新游标作为 scan 命令的游标参数， 以此来延续之前的迭代过程。当 scan 命令的游标参数被设置为 0 时， 服务器将开始一次新的迭代， 而当服务器向用户返回值为 0 的游标时， 表示一次完整的迭代过程结束。</p>
-<p>scan 命令是迭代库中所有的 key，基本使用方式是: </p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">SCAN cursor [MATCH pattern] [COUNT count] </span><br></pre></td></tr></table></figure>
-
-<p>而 sscan 命令、 hscan 命令和 zscan 命令的第一个参数是一个数据库键:</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">SSCAN/HSCAN/ZSCAN key cursor [MATCH pattern] [COUNT count] </span><br></pre></td></tr></table></figure>
-
-<p>cursor 就是游标参数，初始我们可以设置 0，开始一次迭代过程，一次迭代后的返回值作为下次迭代的游标值，当我们看到 redis 的返回值是 0 时，意味着完整的迭代过程结束。</p>
-<p>看到这里你应该能发现，如果在迭代的中间过程中，redis 的数据发生了变化，那么我们得到的数据可能是不正确的，这是无法得到保证的。</p>
-<p>而 scan 命令只会给我们保证在整个遍历过程中，一直存在于数据集中的元素都会被遍历返回，也就是说，如果一个元素如果在遍历开始到结束都存在于要遍历的数据集中，那么这个元素肯定会在某一次迭代过程中得到返回。</p>
-<p>后面两个中括号中的参数是可选的，可通过 match 来指定只返回匹配对应模式的元素，而 count 可以指定每次迭代返回的元素最大数量，默认值是 10。</p>
-<p>但要注意虽然指定了返回的元素最大数量，这个 count 参数只是用户给 scan 迭代命令的一种提示，尽管这种提示在很多情况下是有效的，但也要注意不一定每次都是返回指定的数量，有可能会比指定的要多一些。</p>
-<p>对于 scan 以及其相关的 sscan，hscan，zscan 命令都会返回两个元素，第一个元素是下次迭代的初始游标，第二个元素是本次迭代返回的结果。</p>
-<ul>
-<li>scan 得到的结果是库中键元素 key</li>
-<li>sscan 得到的结果是集合中的成员</li>
-<li>hscan 得到的结果是键值对</li>
-<li>zscan 得到的结果是有序元素集合，集合中元素由一个成员和一个分值组成。</li>
-</ul>
-<p>上面就是 scan 命令的大体介绍，我是觉得这个命令其实很适合清理 redis 中无效数据，通过 scan 命令扫一遍 redis 库，很容易就做到数据清理的工作。</p>
-<p>后来想想那次小事故其实就是因为自己平时用 keys 命令用习惯了，也没多想不假思索随手就敲下去了。所以说我们在日常 redis 的使用中，不能只是简单的就想也不想的就直接 keys 命令敲下去，长期以往会出事故的，我还好不是在线上使用的系统中执行的这个命令，不然后果真的很严重。</p>
-<p>试想如果是在线上，在 redis 阻塞的那段时间，系统的访问请求继续打到 redis 服务器上，导致 redis 服务器 CPU 直接飙涨，很有可能服务器就直接宕机了，再进一步的话，程序无法从 redis 中获取数据，所有的请求都直接一下全到数据库去了，也有可能造成数据库直接挂了。</p>
-<p>所以说我们应该养成这样的习惯，在需要用 keys 查询 redis 中的数据时，脑海里先确认下当时的环境以及库中的数据量大小。</p>
-<p>当然 redis 不仅仅是只有 keys 这一个比较危险的命令，还有 hgetall，lrange，smembers，zrange 等命令，这些命令的时间复杂度都是 O(N)，使用这些命令都需要注意 N 的大小。当然其实线上对于 keys，flushdb，flushall 这几个命令最好是通过配置文件 redis.conf 来直接禁用它，以防万一。</p>
-]]></content>
-      <categories>
-        <category>redis</category>
-      </categories>
-  </entry>
-  <entry>
     <title>zookeeper 单机模式以及伪集群模式搭建</title>
     <url>/zookeeper-%E5%8D%95%E6%9C%BA%E6%A8%A1%E5%BC%8F%E4%BB%A5%E5%8F%8A%E4%BC%AA%E9%9B%86%E7%BE%A4%E6%A8%A1%E5%BC%8F%E6%90%AD%E5%BB%BA/</url>
     <content><![CDATA[<p>首先说一下我对 <code>zookeeper</code> 的学习，在刚开始听的时候觉得很高大上，但又觉得很陌生，也不知道是干嘛的，然后就网上查各种资料开始慢慢对 <code>zookeeper</code> 好像有点感觉了，又好像还是似懂非懂的样子，然后还看到网上都在告诉我们 <code>zookeeper</code> 的安装以及 <code>zookeeper</code> 集群的搭建，又尝试着去搭建了一遍。到最后还是有点晕乎乎的样子，总觉得好像不是很理解，包括网上说的 <code>zookeeper</code> 一些使用场景。</p>
@@ -1601,6 +1544,63 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 ]]></content>
       <categories>
         <category>Zookeeper</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>你还在习惯的使用 keys * 查看 redis 中的所有数据吗</title>
+    <url>/%E4%BD%A0%E8%BF%98%E5%9C%A8%E4%B9%A0%E6%83%AF%E7%9A%84%E4%BD%BF%E7%94%A8-keys-%E6%9F%A5%E7%9C%8B-redis-%E4%B8%AD%E7%9A%84%E6%89%80%E6%9C%89%E6%95%B0%E6%8D%AE%E5%90%97/</url>
+    <content><![CDATA[<p>redis 在我们的日常开发中其实还是用的比较多的，常用来做缓存或者存放一些热点数据，主要为了提高系统的响应速度。在我们平常使用中，我们可能都习惯的使用 keys * 命令来查询数据库中的数据存储情况。</p>
+<p>这时也许我们都是在开发环境执行，开发环境 redis 中的数据量不是很多，redis 也很快的能给我们响应。但是如果你要查询的 redis 中存储了非常大的数据量，这时候你还能愉快的使用这个命令吗？</p>
+<p>首先，我们来大概了解下 keys 命令是用来干嘛的，它是用来查找所有符合给定模式 pattern 的 key ，上面的 * 表示匹配所有数据，同时还有下面几种用法:</p>
+<a id="more"></a>
+<ul>
+<li>keys re?is 匹配 redis，recis</li>
+<li>keys re*is 匹配 redis, reddddis</li>
+<li>keys re[cd]is 匹配 redis，recis，不匹配 reais，reddis</li>
+</ul>
+<p>keys 命令的时间复杂度是 O(N)，N 是 redis 库中的数据量，也就是说这个命令的执行时间是随着库中的数据量增多呈正比的，数据量越大，执行时间越长。所以尽管这个命令的速度很快，但如果是一个数据量很大的库，还是会造成性能问题的。</p>
+<p>我之前就在一次项目上线演练时，当时在一个 redis 库中初始化一批数据，当时我为了验证数据库中是否已经初始化过了这些数据，我顺手就敲了一个 keys abc*，其中 abc 是我要初始化的这批数据的 key 前缀(当然不是真的就是 abc，这里是随便起的一个)。</p>
+<p>然后并没有像往常开发中一样很快给我响应，我立马就意识到不对了，这个 redis 库数据量很大，不能使用 keys 命令去查询，我随即立马按下 command + c 尝试终止，但其实已经没什么用了，因为 redis 已经在执行我刚才发送的命令，终端已经没响应，我记得我我当时还索性把终端都给关了，这纯属病急乱投医了。</p>
+<p>随后呢我另起一个终端，尝试连接 redis，看看刚才的命令是否执行完了，但不幸的是我连都连不上，连接命令敲完没反应，当时这会心里真的慌了。</p>
+<p>不过幸运的是这只是一次新系统正式上线前的演练，而且并没有用户在使用。至于为什么没有用户在用怎么有这么多数据在里面，那是因为在我初始化我这批数据之前，我同事已经将老系统中的数据迁移过来了。</p>
+<p>但我还是很慌的原因是我具体不知道老系统迁移过来有多少数据，只知道数据量很大，不知道要执行多久。然后虽然说那只是新系统正式上线前一次演练而已，但是我们这次上线是有很多流程，所以才有了这次演练。</p>
+<p>对于流程中的每个环节都要记录操作时间，下次正式上线时需要按之前演练上线的流程来执行，正式上线时如果某一环节出问题了，就要采取回滚流程进行回滚，下次上线要是因为我这个数据初始化环节出问题了，那这锅岂不背定了。</p>
+<p>所以说当时真的是慌的一匹，但最后还是过了两三分钟之后我重新连上了，此时应该是将我刚才的命令执行完了，随后我也不管里面是不是已经初始化了，直接初始化数据，大不了覆盖好了，反正 key 是相同的，因为这部分数据只有我的程序要用到，所以没什么问题。后面正式上线时有了演练的教训，也就没有出啥问题，也没有再作死去敲 keys 命令了。</p>
+<p>如果我们真的要在大数据量的 redis 库中查询匹配的数据怎么办呢？其实 redis 是有相应的替代命令的，就是 scan 命令，以及对应的数据类型的 sscan，hscan 和 zscan，他们都用于增量地迭代库中的元素。</p>
+<ul>
+<li>scan 命令用于迭代当前库中的所有 key</li>
+<li>sscan 命令用于迭代集合键中的元素</li>
+<li>hscan 命令用于哈希键中的键值对</li>
+<li>zscan 命令用于迭代有序集合中的元素(包括元素成员和元素分值)</li>
+</ul>
+<p>上面的命令都是支持增量式迭代，每次执行都只会返回少量元素，这些命令每次执行的时间复杂度是 O(1)，完整的一次迭代过程才是 O(N)，因此它是可以在生产环境中执行的，而不会像 keys 命令一样，如果正在处理的是一个大数据量的库，会阻塞 redis 服务很久。</p>
+<p>scan 命令它是一个基于游标的迭代器(cursor based iterator)，scan 命令每次被调用之后， 都会向用户返回一个新的游标， 用户在下次迭代时需要使用这个新游标作为 scan 命令的游标参数， 以此来延续之前的迭代过程。当 scan 命令的游标参数被设置为 0 时， 服务器将开始一次新的迭代， 而当服务器向用户返回值为 0 的游标时， 表示一次完整的迭代过程结束。</p>
+<p>scan 命令是迭代库中所有的 key，基本使用方式是: </p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">SCAN cursor [MATCH pattern] [COUNT count] </span><br></pre></td></tr></table></figure>
+
+<p>而 sscan 命令、 hscan 命令和 zscan 命令的第一个参数是一个数据库键:</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">SSCAN/HSCAN/ZSCAN key cursor [MATCH pattern] [COUNT count] </span><br></pre></td></tr></table></figure>
+
+<p>cursor 就是游标参数，初始我们可以设置 0，开始一次迭代过程，一次迭代后的返回值作为下次迭代的游标值，当我们看到 redis 的返回值是 0 时，意味着完整的迭代过程结束。</p>
+<p>看到这里你应该能发现，如果在迭代的中间过程中，redis 的数据发生了变化，那么我们得到的数据可能是不正确的，这是无法得到保证的。</p>
+<p>而 scan 命令只会给我们保证在整个遍历过程中，一直存在于数据集中的元素都会被遍历返回，也就是说，如果一个元素如果在遍历开始到结束都存在于要遍历的数据集中，那么这个元素肯定会在某一次迭代过程中得到返回。</p>
+<p>后面两个中括号中的参数是可选的，可通过 match 来指定只返回匹配对应模式的元素，而 count 可以指定每次迭代返回的元素最大数量，默认值是 10。</p>
+<p>但要注意虽然指定了返回的元素最大数量，这个 count 参数只是用户给 scan 迭代命令的一种提示，尽管这种提示在很多情况下是有效的，但也要注意不一定每次都是返回指定的数量，有可能会比指定的要多一些。</p>
+<p>对于 scan 以及其相关的 sscan，hscan，zscan 命令都会返回两个元素，第一个元素是下次迭代的初始游标，第二个元素是本次迭代返回的结果。</p>
+<ul>
+<li>scan 得到的结果是库中键元素 key</li>
+<li>sscan 得到的结果是集合中的成员</li>
+<li>hscan 得到的结果是键值对</li>
+<li>zscan 得到的结果是有序元素集合，集合中元素由一个成员和一个分值组成。</li>
+</ul>
+<p>上面就是 scan 命令的大体介绍，我是觉得这个命令其实很适合清理 redis 中无效数据，通过 scan 命令扫一遍 redis 库，很容易就做到数据清理的工作。</p>
+<p>后来想想那次小事故其实就是因为自己平时用 keys 命令用习惯了，也没多想不假思索随手就敲下去了。所以说我们在日常 redis 的使用中，不能只是简单的就想也不想的就直接 keys 命令敲下去，长期以往会出事故的，我还好不是在线上使用的系统中执行的这个命令，不然后果真的很严重。</p>
+<p>试想如果是在线上，在 redis 阻塞的那段时间，系统的访问请求继续打到 redis 服务器上，导致 redis 服务器 CPU 直接飙涨，很有可能服务器就直接宕机了，再进一步的话，程序无法从 redis 中获取数据，所有的请求都直接一下全到数据库去了，也有可能造成数据库直接挂了。</p>
+<p>所以说我们应该养成这样的习惯，在需要用 keys 查询 redis 中的数据时，脑海里先确认下当时的环境以及库中的数据量大小。</p>
+<p>当然 redis 不仅仅是只有 keys 这一个比较危险的命令，还有 hgetall，lrange，smembers，zrange 等命令，这些命令的时间复杂度都是 O(N)，使用这些命令都需要注意 N 的大小。当然其实线上对于 keys，flushdb，flushall 这几个命令最好是通过配置文件 redis.conf 来直接禁用它，以防万一。</p>
+]]></content>
+      <categories>
+        <category>redis</category>
       </categories>
   </entry>
   <entry>
@@ -1719,6 +1719,68 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
       </categories>
   </entry>
   <entry>
+    <title>关于批量插入的数据重复问题</title>
+    <url>/%E5%85%B3%E4%BA%8E%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5%E7%9A%84%E6%95%B0%E6%8D%AE%E9%87%8D%E5%A4%8D%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<p>在上一篇文章中我们谈到了数据库批量插入，如果你已经亲自实践过了的话你会发现有个问题，就是我们在第一次执行完测试之后，再次执行的话会报错，除非你删掉数据库中的数据再执行。</p>
+<p>那是因为 activity_stats 表中 activity_id 是表的主键，第二次执行的话就会因为主键重复而报错了，当然你也可以选择去掉这个主键的限制来进行测试。</p>
+<p>但真正在项目中可就不能这么做了，项目中我们可能就是想要 activity_id 字段作为主键，不允许插入重复数据。</p>
+<a id="more"></a>
+
+<p>虽然说一般情况下不会有重复的，但毕竟是一般情况下，对于特殊情况我们也是需要考虑的。比如说 excel 中就是因为运营人员粗心弄了多条相同的数据，或者再次将同样的 excel 文件拿来上传，这时候就会有问题了。</p>
+<p>所以对于这种情况我们需要做到兼容，尽量给用户好的体验，不然说因为几条重复的数据就让用户去修改再次上传。对于这种普通的数据，可能就需要系统自动去重了，当然如果是涉及到金钱方面的数据那还是需要人工再次确认过的。</p>
+<p>下面我们就讨论下 key 重复的几种不同处理方式:<br>1.忽略重复 key 的数据，由于主键或者唯一键重复的记录，数据库自动忽略，在 insert 后面加上 ignore 关键字。</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">ignore</span> <span class="keyword">into</span> activity_stats (activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>);</span><br></pre></td></tr></table></figure>
+<p>上面的 SQL 执行时，如果主键重复或者唯一键重复，会忽略掉新插入的数据，受影响行数为0，表数据不变，这是比较简单暴力的方式，但对于大部分情况下都是适用的，具体看业务情况而定。</p>
+<p>2.使用最新数据，<br>对于 key 重复的数据，我们希望插入最新的数据到数据库中。要做到这个有两种方式: 一种是对重复数据进行更新，另一种是先删掉旧数据，然后再插入新数据。</p>
+<p>先看第一种: ON DUPLICATE KEY UPDATE</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> activity_stats (activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>)</span><br><span class="line"><span class="keyword">ON</span> <span class="keyword">DUPLICATE</span> <span class="keyword">KEY</span> </span><br><span class="line"><span class="keyword">UPDATE</span> times_viewed = <span class="keyword">values</span>(times_viewed), works_count = <span class="keyword">values</span>(works_count), user_count = <span class="keyword">values</span>(user_count);</span><br></pre></td></tr></table></figure>
+<p>这种方式就是对于有重复的数据采取更新操作，要更新的字段跟在 UPDATE 关键字后面。</p>
+<p>这里要注意一个受影响的行数的问题:</p>
+<ul>
+<li>没有重复 key 数据，直接插入新数据，受影响的行数为 1。</li>
+<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据不一样，受影响的行数为 2(???)，这里可能有点不好理解为什么是 2，这里我们先暂时记下是 2，待会我会详细说明。</li>
+<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据一致，受影响的行数为 1(???)，这个可能也不是很好理解，同样暂时先记下，马上为你娓娓道来。</li>
+</ul>
+<p>好了，现在看上面有两个地方打上了问号，这两个地方都是和我们正常所想的有点不一样。先看第一个打了问号的地方，也就是上面的第二点，按我们所想，key 重复，然后进行数据更新，这里只是进行了更新操作，受影响的行数应该是 1 才对，刚开始我对这个也是不太理解，后来通过查资料发现在 MySQL 的文档中关于 ON DUPLICATE KEY UPDATE 的使用中有下面这样一句话:<br>文档链接:<br><a href="https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html">https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html</a></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">With ON DUPLICATE KEY UPDATE, the affected-rows value per row is 1 if the row is inserted as a new row, 2 if an existing row is updated, and 0 if an existing row is set to its current values.If you specify the CLIENT_FOUND_ROWS flag to the mysql_real_connect() C API function when connecting to mysqld, the affected-rows value is 1 (not 0) if an existing row is set to its current values.</span><br></pre></td></tr></table></figure>
+
+<p>上面这句话前半句就能为我解答为什么我们在第二点中提到的疑惑，前半句的大概意思就是:<br>对于 ON DUPLICATE KEY UPDATE 的使用，如果没有 key 重复的新数据插入，每行受影响的行数是 1，如果有 key 重复的新数据更新，返回受影响的行数是 2，如果有 key 重复的数据并且存在的旧数据和要更新的数据一致，受影响的行数是 0。</p>
+<p>看到这里我们应该就能明白为什么受影响的行数是 2 了，我们可以理解为是 MySQL 为了在 ON DUPLICATE KEY UPDATE 的使用中区分插入和更新，所以对于插入返回 1，更新返回 2。</p>
+<p>但是不是说 “如果是有 key 重复的数据并且存在的旧数据和要更新的数据一致，受影响的行数是 0” 吗？可是我们在上面第三点中 MySQL 返回的受影响的行数是 1，而这也正是我们第三点所疑惑的地方，我们再去看上面那句话的后半句，大概意思是:<br>在连接 mysqld 的时候如果你为 mysql_real_connect() API 函数指定了 CLIENT_FOUND_ROWS 标志，那么对于已经存在的旧数据和要更新的数据一致时，受影响的数值为 1 而不是 0。</p>
+<p>对于第二个疑问，我们也大概明白为什么受影响的行数是 1 了，是因为我们使用的 MySQL 指定了 CLIENT_FOUND_ROWS 标志，而 mysql_real_connect 函数指定 CLIENT_FOUND_ROWS 标志的意思就是:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">CLIENT_FOUND_ROWS: Return the number of found (matched) rows, not the number of changed rows.</span><br></pre></td></tr></table></figure>
+<p>这段文字在上面文档链接中可以点击 mysql_real_connect 跳转到对 mysql_real_connect 函数的描述页面，里面有 CLIENT_FOUND_ROWS 相应介绍。感兴趣的可以去研究研究。</p>
+<hr>
+<p>再回到使用最新数据方式上，上面已经描述了对 key 重复的数据进行更新的方式，接下来我们看第二种:<br>对于 key 重复，先删掉旧数据，然后再插入新数据:  REPLACE INTO </p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">REPLACE</span> <span class="keyword">INTO</span> activity_stats (activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>);</span><br></pre></td></tr></table></figure>
+
+<p>这种方式就是如果没有重复 key，直接插入，效果和 insert into 一样，但如果有重复 key，它会先删除旧数据，再插入新数据。同样这种方式受影响的行数也有以下几种情况:</p>
+<ul>
+<li>没有重复 key 数据，直接插入新数据，受影响的行数为 1。</li>
+<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据不一样，受影响的行数为 2。这个很好理解，先删除旧数据，然后再插入新数据，所以受影响的行数为 2。</li>
+<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据一致，受影响的行数为 1。这里应该是数据没有发生变化，至于返回 1，我的理解是和上面一样的，返回匹配到的行数，并不是发生改变的行数(暂时没找到有关文档描述)。</li>
+</ul>
+<p>关于重复 key 数据的处理方式主要有上面提到的三种，忽略重复数据的 INSERT IGNORE，使用更新的方式插入最新数据的 ON DUPLICATE KEY UPDATE，还有先删除再插入最新数据的 REPLACE INTO。</p>
+<p>在我们使用这三种方式来避免插入重复数据的过程中，我们还需要注意下面几个问题:<br>首先，使用这三种方式的前提都是表中需要存在主键冲突或唯一键冲突，不然这三种都跟直接 INSERT INTO 没什么区别。</p>
+<p>第二，要注意存在多个键冲突(插入的数据既可能存在主键冲突，也可能存在其他唯一键冲突或者存在多个唯一键冲突)的情况，在这种情况下使用可能会出现其他结果(可以自己测试看看)，所以这种情况下不太建议使用。</p>
+<p>第三，这点比较重要，上面我的 activity_stats 表是有一个 activity_id 字段作为主键，这是存在主键冲突的情况。但如果我把 activity_id 字段改成唯一键并且新增一个字段 id 作为主键自增长，插入语句不变，这里因为 id 是自增长的，不存在冲突，所以这里是满足单一键冲突的情况，但是这里有个坑要注意，这种情况下使用上面三种方式都会产生主键 id 自增长不连续的问题。</p>
+<p>目前的 SQL 语句是这样的: </p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">ignore</span> <span class="keyword">into</span> activity_stat (<span class="keyword">id</span>, activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="literal">null</span>, <span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>);</span><br><span class="line">或者</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p>对于 INSERT IGNORE 和 ON DUPLICATE KEY UPDATE，在存在 unique key 重复时，前者虽然重复的记录被忽略了没有执行插入操作，但是 id 还是会 +1。而后者是在 key 重复时执行更新操作，但 id 同样也会 +1，也就是说在存在 unique key 重复的情况下这两种方式不管有没有插入数据，自增长 id 都会增加。</p>
+<p>这样的话在主从库的场景下就会出现主从的 auto_increment 不一致，因为 slave 并不会同步 master 的 auto_increment，一旦当前 master 挂了，任意一个 slave 被选举为 master，再次执行 insert 语句就可能导致主键冲突。</p>
+<p>至于这里为什么会出现没有插入记录 auto_increment 却依然 +1 的情况，和 innodb_autoinc_lock_mode 的值有关。可以通过下面的 SQL 语句查看:</p>
+<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> @@innodb_autoinc_lock_mode;</span><br></pre></td></tr></table></figure>
+
+<p>它的值可能是 0，1，2 其中一种，默认是 1，具体各个值的特征可以参看官方文档中的描述，下面是文档地址:<br><a href="https://dev.mysql.com/doc/refman/5.7/en/innodb-auto-increment-handling.html#innodb-auto-increment-lock-modes">https://dev.mysql.com/doc/refman/5.7/en/innodb-auto-increment-handling.html#innodb-auto-increment-lock-modes</a></p>
+<p>而对于 REPLACE INTO，那是因为在存在 unique key 重复时，会先删除再插入，执行了插入操作，id 肯定会增加。问题就在于重新插入了一条数据 id 发生了变化。如果别的表关联了这个表的主键 id 的话就会出现数据查找不到的情况。</p>
+<p>总之就是对于这三种避免插入重复数据的方式，如果是由于主键冲突的情况，基本上没什么问题，但如果是唯一键冲突的情况，都会导致 master 和 slave 的 auto_increment 不一致的问题，一旦主从的 auto_increment 不一致(这里是 master 的 auto_increment 要大于 slave)，只要 master 出现问题，任意一个 slave 升级成 master，由于当前新的 master 的 auto_increment 是小于数据中的 id 的值，所以再进行插入时就可能发生主键冲突。</p>
+]]></content>
+      <categories>
+        <category>JdbcTemplate</category>
+      </categories>
+  </entry>
+  <entry>
     <title>如何通过 Redis 来实现消息延迟队列</title>
     <url>/%E5%A6%82%E4%BD%95%E9%80%9A%E8%BF%87-Redis-%E6%9D%A5%E5%AE%9E%E7%8E%B0%E6%B6%88%E6%81%AF%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97/</url>
     <content><![CDATA[<p>延迟队列或许大家都听过，可能也用过，一种比较常见的应用场景就是用户下单后，超过 10 分钟未支付将用户订单取消，这种其实就可以通过延迟队列来实现，这里先不考虑订单数量特别大的情况。大概流程就是用户下单后，订单服务创建订单保存后同时将这笔订单信息放入延迟队列中，设置延迟时间为 10 分钟，10 分钟后从队列中取出来判断支付状态，未支付则将这笔订单取消。</p>
@@ -1790,68 +1852,6 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 ]]></content>
       <categories>
         <category>消息队列</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>关于批量插入的数据重复问题</title>
-    <url>/%E5%85%B3%E4%BA%8E%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5%E7%9A%84%E6%95%B0%E6%8D%AE%E9%87%8D%E5%A4%8D%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<p>在上一篇文章中我们谈到了数据库批量插入，如果你已经亲自实践过了的话你会发现有个问题，就是我们在第一次执行完测试之后，再次执行的话会报错，除非你删掉数据库中的数据再执行。</p>
-<p>那是因为 activity_stats 表中 activity_id 是表的主键，第二次执行的话就会因为主键重复而报错了，当然你也可以选择去掉这个主键的限制来进行测试。</p>
-<p>但真正在项目中可就不能这么做了，项目中我们可能就是想要 activity_id 字段作为主键，不允许插入重复数据。</p>
-<a id="more"></a>
-
-<p>虽然说一般情况下不会有重复的，但毕竟是一般情况下，对于特殊情况我们也是需要考虑的。比如说 excel 中就是因为运营人员粗心弄了多条相同的数据，或者再次将同样的 excel 文件拿来上传，这时候就会有问题了。</p>
-<p>所以对于这种情况我们需要做到兼容，尽量给用户好的体验，不然说因为几条重复的数据就让用户去修改再次上传。对于这种普通的数据，可能就需要系统自动去重了，当然如果是涉及到金钱方面的数据那还是需要人工再次确认过的。</p>
-<p>下面我们就讨论下 key 重复的几种不同处理方式:<br>1.忽略重复 key 的数据，由于主键或者唯一键重复的记录，数据库自动忽略，在 insert 后面加上 ignore 关键字。</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">ignore</span> <span class="keyword">into</span> activity_stats (activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>);</span><br></pre></td></tr></table></figure>
-<p>上面的 SQL 执行时，如果主键重复或者唯一键重复，会忽略掉新插入的数据，受影响行数为0，表数据不变，这是比较简单暴力的方式，但对于大部分情况下都是适用的，具体看业务情况而定。</p>
-<p>2.使用最新数据，<br>对于 key 重复的数据，我们希望插入最新的数据到数据库中。要做到这个有两种方式: 一种是对重复数据进行更新，另一种是先删掉旧数据，然后再插入新数据。</p>
-<p>先看第一种: ON DUPLICATE KEY UPDATE</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> activity_stats (activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>)</span><br><span class="line"><span class="keyword">ON</span> <span class="keyword">DUPLICATE</span> <span class="keyword">KEY</span> </span><br><span class="line"><span class="keyword">UPDATE</span> times_viewed = <span class="keyword">values</span>(times_viewed), works_count = <span class="keyword">values</span>(works_count), user_count = <span class="keyword">values</span>(user_count);</span><br></pre></td></tr></table></figure>
-<p>这种方式就是对于有重复的数据采取更新操作，要更新的字段跟在 UPDATE 关键字后面。</p>
-<p>这里要注意一个受影响的行数的问题:</p>
-<ul>
-<li>没有重复 key 数据，直接插入新数据，受影响的行数为 1。</li>
-<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据不一样，受影响的行数为 2(???)，这里可能有点不好理解为什么是 2，这里我们先暂时记下是 2，待会我会详细说明。</li>
-<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据一致，受影响的行数为 1(???)，这个可能也不是很好理解，同样暂时先记下，马上为你娓娓道来。</li>
-</ul>
-<p>好了，现在看上面有两个地方打上了问号，这两个地方都是和我们正常所想的有点不一样。先看第一个打了问号的地方，也就是上面的第二点，按我们所想，key 重复，然后进行数据更新，这里只是进行了更新操作，受影响的行数应该是 1 才对，刚开始我对这个也是不太理解，后来通过查资料发现在 MySQL 的文档中关于 ON DUPLICATE KEY UPDATE 的使用中有下面这样一句话:<br>文档链接:<br><a href="https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html">https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html</a></p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">With ON DUPLICATE KEY UPDATE, the affected-rows value per row is 1 if the row is inserted as a new row, 2 if an existing row is updated, and 0 if an existing row is set to its current values.If you specify the CLIENT_FOUND_ROWS flag to the mysql_real_connect() C API function when connecting to mysqld, the affected-rows value is 1 (not 0) if an existing row is set to its current values.</span><br></pre></td></tr></table></figure>
-
-<p>上面这句话前半句就能为我解答为什么我们在第二点中提到的疑惑，前半句的大概意思就是:<br>对于 ON DUPLICATE KEY UPDATE 的使用，如果没有 key 重复的新数据插入，每行受影响的行数是 1，如果有 key 重复的新数据更新，返回受影响的行数是 2，如果有 key 重复的数据并且存在的旧数据和要更新的数据一致，受影响的行数是 0。</p>
-<p>看到这里我们应该就能明白为什么受影响的行数是 2 了，我们可以理解为是 MySQL 为了在 ON DUPLICATE KEY UPDATE 的使用中区分插入和更新，所以对于插入返回 1，更新返回 2。</p>
-<p>但是不是说 “如果是有 key 重复的数据并且存在的旧数据和要更新的数据一致，受影响的行数是 0” 吗？可是我们在上面第三点中 MySQL 返回的受影响的行数是 1，而这也正是我们第三点所疑惑的地方，我们再去看上面那句话的后半句，大概意思是:<br>在连接 mysqld 的时候如果你为 mysql_real_connect() API 函数指定了 CLIENT_FOUND_ROWS 标志，那么对于已经存在的旧数据和要更新的数据一致时，受影响的数值为 1 而不是 0。</p>
-<p>对于第二个疑问，我们也大概明白为什么受影响的行数是 1 了，是因为我们使用的 MySQL 指定了 CLIENT_FOUND_ROWS 标志，而 mysql_real_connect 函数指定 CLIENT_FOUND_ROWS 标志的意思就是:</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">CLIENT_FOUND_ROWS: Return the number of found (matched) rows, not the number of changed rows.</span><br></pre></td></tr></table></figure>
-<p>这段文字在上面文档链接中可以点击 mysql_real_connect 跳转到对 mysql_real_connect 函数的描述页面，里面有 CLIENT_FOUND_ROWS 相应介绍。感兴趣的可以去研究研究。</p>
-<hr>
-<p>再回到使用最新数据方式上，上面已经描述了对 key 重复的数据进行更新的方式，接下来我们看第二种:<br>对于 key 重复，先删掉旧数据，然后再插入新数据:  REPLACE INTO </p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">REPLACE</span> <span class="keyword">INTO</span> activity_stats (activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>);</span><br></pre></td></tr></table></figure>
-
-<p>这种方式就是如果没有重复 key，直接插入，效果和 insert into 一样，但如果有重复 key，它会先删除旧数据，再插入新数据。同样这种方式受影响的行数也有以下几种情况:</p>
-<ul>
-<li>没有重复 key 数据，直接插入新数据，受影响的行数为 1。</li>
-<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据不一样，受影响的行数为 2。这个很好理解，先删除旧数据，然后再插入新数据，所以受影响的行数为 2。</li>
-<li>有重复 key 数据并且要更新的新数据和已经存在的旧数据一致，受影响的行数为 1。这里应该是数据没有发生变化，至于返回 1，我的理解是和上面一样的，返回匹配到的行数，并不是发生改变的行数(暂时没找到有关文档描述)。</li>
-</ul>
-<p>关于重复 key 数据的处理方式主要有上面提到的三种，忽略重复数据的 INSERT IGNORE，使用更新的方式插入最新数据的 ON DUPLICATE KEY UPDATE，还有先删除再插入最新数据的 REPLACE INTO。</p>
-<p>在我们使用这三种方式来避免插入重复数据的过程中，我们还需要注意下面几个问题:<br>首先，使用这三种方式的前提都是表中需要存在主键冲突或唯一键冲突，不然这三种都跟直接 INSERT INTO 没什么区别。</p>
-<p>第二，要注意存在多个键冲突(插入的数据既可能存在主键冲突，也可能存在其他唯一键冲突或者存在多个唯一键冲突)的情况，在这种情况下使用可能会出现其他结果(可以自己测试看看)，所以这种情况下不太建议使用。</p>
-<p>第三，这点比较重要，上面我的 activity_stats 表是有一个 activity_id 字段作为主键，这是存在主键冲突的情况。但如果我把 activity_id 字段改成唯一键并且新增一个字段 id 作为主键自增长，插入语句不变，这里因为 id 是自增长的，不存在冲突，所以这里是满足单一键冲突的情况，但是这里有个坑要注意，这种情况下使用上面三种方式都会产生主键 id 自增长不连续的问题。</p>
-<p>目前的 SQL 语句是这样的: </p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">ignore</span> <span class="keyword">into</span> activity_stat (<span class="keyword">id</span>, activity_id, times_viewed, works_count, user_count)</span><br><span class="line"><span class="keyword">values</span>(<span class="literal">null</span>, <span class="number">1</span>, <span class="number">100</span>, <span class="number">50</span>, <span class="number">10</span>);</span><br><span class="line">或者</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<p>对于 INSERT IGNORE 和 ON DUPLICATE KEY UPDATE，在存在 unique key 重复时，前者虽然重复的记录被忽略了没有执行插入操作，但是 id 还是会 +1。而后者是在 key 重复时执行更新操作，但 id 同样也会 +1，也就是说在存在 unique key 重复的情况下这两种方式不管有没有插入数据，自增长 id 都会增加。</p>
-<p>这样的话在主从库的场景下就会出现主从的 auto_increment 不一致，因为 slave 并不会同步 master 的 auto_increment，一旦当前 master 挂了，任意一个 slave 被选举为 master，再次执行 insert 语句就可能导致主键冲突。</p>
-<p>至于这里为什么会出现没有插入记录 auto_increment 却依然 +1 的情况，和 innodb_autoinc_lock_mode 的值有关。可以通过下面的 SQL 语句查看:</p>
-<figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">select</span> @@innodb_autoinc_lock_mode;</span><br></pre></td></tr></table></figure>
-
-<p>它的值可能是 0，1，2 其中一种，默认是 1，具体各个值的特征可以参看官方文档中的描述，下面是文档地址:<br><a href="https://dev.mysql.com/doc/refman/5.7/en/innodb-auto-increment-handling.html#innodb-auto-increment-lock-modes">https://dev.mysql.com/doc/refman/5.7/en/innodb-auto-increment-handling.html#innodb-auto-increment-lock-modes</a></p>
-<p>而对于 REPLACE INTO，那是因为在存在 unique key 重复时，会先删除再插入，执行了插入操作，id 肯定会增加。问题就在于重新插入了一条数据 id 发生了变化。如果别的表关联了这个表的主键 id 的话就会出现数据查找不到的情况。</p>
-<p>总之就是对于这三种避免插入重复数据的方式，如果是由于主键冲突的情况，基本上没什么问题，但如果是唯一键冲突的情况，都会导致 master 和 slave 的 auto_increment 不一致的问题，一旦主从的 auto_increment 不一致(这里是 master 的 auto_increment 要大于 slave)，只要 master 出现问题，任意一个 slave 升级成 master，由于当前新的 master 的 auto_increment 是小于数据中的 id 的值，所以再进行插入时就可能发生主键冲突。</p>
-]]></content>
-      <categories>
-        <category>JdbcTemplate</category>
       </categories>
   </entry>
   <entry>
@@ -1970,96 +1970,6 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <p>上面例子的代码我也已经提交到 GitHub 了，感兴趣的可以去下载查看。地址是：<a href="https://github.com/rookiedev-z/sample">blog sample code</a></p>
 <p>这里面也包含了之前的 JdbcTemplate 操作的样例代码，之后我也会把文章中的样例代码上传到这个工程中，建议 star。</p>
 <p>同时，没有看过前面两篇异步解析的文章也强烈建议去看下，这样有助于理解。</p>
-]]></content>
-      <categories>
-        <category>Java</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>接口采用异步的方式执行</title>
-    <url>/%E6%8E%A5%E5%8F%A3%E9%87%87%E7%94%A8%E5%BC%82%E6%AD%A5%E7%9A%84%E6%96%B9%E5%BC%8F%E6%89%A7%E8%A1%8C/</url>
-    <content><![CDATA[<h3 id="不需要返回结果的接口"><a href="#不需要返回结果的接口" class="headerlink" title="不需要返回结果的接口"></a>不需要返回结果的接口</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;asyncEndpoint&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">asyncEndpoint</span><span class="params">()</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received async endpoint request&quot;</span>);</span><br><span class="line">    <span class="keyword">this</span>.taskService.asyncExecute();</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<a id="more"></a>
-
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@SneakyThrows</span></span><br><span class="line"><span class="meta">@Async</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">asyncExecute</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== task async execute start&quot;</span>);</span><br><span class="line">    TimeUnit.SECONDS.sleep(<span class="number">5</span>);</span><br><span class="line">    log.info(<span class="string">&quot;========== task async execute end&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>上面 asyncEndpoint 是一个不需要返回结果的接口，主要是通过 @Async 注解来实现的，请求到了后台，从 Tomcat 服务器处理请求的线程池中获取一个线程 A 处理该请求，在该线程中执行到调用 asyncExecute 方法的时候，由于 asyncExecute 方法的上面由 @Async 注解所标注，这样的话该方法会以异步的方式来执行，也就是说在 asyncEndpoint 方法中调用 asyncExecute 方法以异步的方式执行，asyncExecute 方法中的代码在另一个线程 B 中执行，线程 A 继续往下执行，打印完最后一行日志之后，整个请求就结束了，线程 A 也就释放了，可以继续处理其他的请求了。 而比较耗时的方法 asyncExecute 继续在线程 B 中执行。</p>
-<p>请求 asyncEndpoint 接口，通过以下日志可以看出来：</p>
-<p><img src="http://images.rookiezhou.top/blog/images/asyncEndpoint_log.png" alt="asyncEndpoint_log"></p>
-<h3 id="有返回值的接口之-Callable-作为返回值"><a href="#有返回值的接口之-Callable-作为返回值" class="headerlink" title="有返回值的接口之 Callable 作为返回值"></a>有返回值的接口之 Callable 作为返回值</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;callableEndpoint&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Callable&lt;String&gt; <span class="title">callableEndpoint</span><span class="params">()</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received callable endpoint request&quot;</span>);</span><br><span class="line">    Callable&lt;String&gt; callable = <span class="keyword">this</span>.taskService ::execute;</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> callable;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@SneakyThrows</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">execute</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== task execute start&quot;</span>);</span><br><span class="line">    TimeUnit.SECONDS.sleep(<span class="number">5</span>);</span><br><span class="line">    log.info(<span class="string">&quot;========== task execute end&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;task execute success&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>上面 callableEndpoint 接口，它的返回值是 Callable<String>，这里就需要注意了，他在这里同样也会以异步的方式将结果返回给客户端请求，但这里和上面的这种方式又有所不同，这种方式稍微复杂一点。上面的方式更多的是由于我们不关心方法执行的返回值，我们自己在业务逻辑层面来控制方法以异步的方式执行，然后处理请求的线程执行结束，应用程序线程继续异步执行。</p>
-<p>而在这里，主要是利用了 Servlet 3.0 中引入了对于异步的支持，至于 Servlet 3.0 中引入的对异步的支持，下次再用一篇文章详细介绍下，我们先大概了解以 Callable 作为返回值的接口为什么会以异步的方式执行。</p>
-<p>这里首先后台收到 asyncEndpoint 请求后，同样从 Tomcat 容器处理请求的线程池中获取一个线程处理该请求。这里大概说下，我们是使用的 SpringMVC 的那一套请求执行流程，SpringMVC 中有一个 DispatcherServlet 类里面的 doDispatch 方法是请求的统一入口，通过它来协调其它组件来处理前端请求。</p>
-<p>比如说通过处理器映射器 HandlerMapping 查找对应的 Handler 处理器 Controller，然后再通过请求适配器 HandlerAdapter 对处理器进行执行，在处理器执行之后得到一个返回值结果，SpringMVC 里面有一些处理返回值的 Handler 来对结果进行解析，根据返回值类型选取合适的 returnValueHandler 来处理。下面是直接到了处理器执行获取执行结果的代码。</p>
-<p><img src="http://images.rookiezhou.top/blog/images/handler_return_value.png" alt="handler_return_value"></p>
-<p>至于选择处理范湖结果的 handler 的过程通过下面代码可以看出，是根据返回值的类型来从已经注册的 returnValueHandler 选择能处理当前返回值类型的 handler，</p>
-<p><img src="http://images.rookiezhou.top/blog/images/handler_select_handler.png" alt="handler_select_handler"></p>
-<p><img src="http://images.rookiezhou.top/blog/images/select_handler.png" alt="select_handler"></p>
-<p><img src="http://images.rookiezhou.top/blog/images/support_return_value.png" alt="support_return_value"></p>
-<p>从上面第三段代码中可以看到由于返回值类型 Callable，最终会匹配到 CallableMethodReturnValueHandler 这个返回值处理器，在这个类中还有一个方法 handleReturnValue，也就是在选择好匹配的 returnValueHandler 之后调用的那个方法，异步的处理也就是在这个方法的最后一行代码中，</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">WebAsyncUtils.getAsyncManager(webRequest).startCallableProcessing(callable, mavContainer);</span><br></pre></td></tr></table></figure>
-
-<p>这行代码先是调用 getAsyncManager 获取到 WebAsyncManager，然后调用 startCallableProcessing 开始 Callable 结果的处理流程，而在 startCallableProcessing 方法里面又是调用了一个内部重载的方法，通过 WebAsyncTask 包装了以下 Callable 作为参数</p>
-<p><img src="http://images.rookiezhou.top/blog/images/startCallableProcessing.png" alt="startCallableProcessing"></p>
-<p><img src="http://images.rookiezhou.top/blog/images/set_concurrent_result_dispatch.png" alt="set_concurrent_result_dispatch"></p>
-<p>在 startCallableProcessing 方法中可以清楚的看到将 callable 交给 taskExecutor 来执行，然后设置并发执行得到的结果并且调用 dispatch 方法将请求再次分派到容器，以便应用程序线程中并发执行之后的恢复处理，其实也就是将并发执行的结果再次交给容器线程来恢复刚才的请求，将刚才的流程再执行一次。</p>
-<p>只不过在处理器执行的时候调用的不再是 Contrller 里面的方法，而是直接调用 Callable 的 call 方法拿刚才执行的结果，等到再执行到 handleReturnValue 方法的时候，这时由于 return value 是一个字符串，所以匹配到的 returnValueHandler 是 RequestResponseBodyMethodProcessor,这时会将 callable 的执行结果返回给客户端，本次请求结束。</p>
-<p>需要注意的是，应用程序的异步任务的执行时间过长会导致超时的问题，还记得上面的 startCallableProcessing 方法里面有 addTimeoutHandler，addErrorHandler，addCompletionHandler 三个回调，分别是超时，发生错误以及异步执行完成的回调处理。里面其实会去读 WebAsyncTask 中设置的超时时间，但里面没有设置，但我测试是有一个默认的超时时间 30s(我通过测试，发现 30s 没执行完就会 timeout)。</p>
-<p>还有一个就是需要注意的是在整个的处理过程中，服务端和客户端的连接是一直保持着的，所以需要注意连接超时的问题，虽然默认没有设置的话是无限的，但如果设置了就需要注意了，这个的超时时间必然要比异步执行里面的超时时间要大一些。</p>
-<p>上面的 taskExecutor 是 SpringBoot 中 TaskExecutionAutoConfiguration 自动配置的 ThreadPoolTaskExecutor，对于这个类的配置也可以在配置文件中进行配置，线程数，queue capacity 等。</p>
-<p>最终的执行打印日志如下：<br><img src="http://images.rookiezhou.top/blog/images/callableEndpoint_log.png" alt="callableEndpoint_log"></p>
-<h3 id="有返回值的接口之-WebAsyncTask-作为返回值"><a href="#有返回值的接口之-WebAsyncTask-作为返回值" class="headerlink" title="有返回值的接口之 WebAsyncTask 作为返回值"></a>有返回值的接口之 WebAsyncTask 作为返回值</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;webAsyncTaskEndpoint&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> WebAsyncTask&lt;String&gt; <span class="title">webAsyncTaskEndpoint</span><span class="params">()</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received web async task endpoint request&quot;</span>);</span><br><span class="line">    Callable&lt;String&gt; callable = () -&gt; <span class="keyword">this</span>.taskService.execute();</span><br><span class="line">    WebAsyncTask&lt;String&gt; webAsyncTask = <span class="keyword">new</span> WebAsyncTask&lt;&gt;(<span class="number">3000</span>, callable);</span><br><span class="line">    webAsyncTask.onCompletion(() -&gt; log.info(<span class="string">&quot;========== execute finish&quot;</span>));</span><br><span class="line"></span><br><span class="line">    webAsyncTask.onTimeout(() -&gt; <span class="string">&quot;execute timeout&quot;</span>);</span><br><span class="line"></span><br><span class="line">    webAsyncTask.onError(() -&gt; <span class="string">&quot;execute error&quot;</span>);</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> webAsyncTask;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>在理解了 Callable 作为接口返回值之后，就能够很好地理解这个流程了，大体的流程是一样的，只不过就是返回值的 Handler 处理器不一样，这里用到的处理器是 AsyncTaskMethodReturnValueHandler，在这个类中 handleReturnValue 方法调用的 startCallableProcessing 传的参数就是 Controller 里面返回的这个 webAsyncTask，这个 webAsyncTask 定义了三个回调函数，方便做特殊的处理。</p>
-<p>这里需要注意的是 onError 的回调并不是说异步任务里面执行出错了的回调，其实异步任务里面的出错的话已经 try catch 了，并且将异常信息作为结果返回，所以说如果异步任务里面抛异常了，并不会回调到这里，而且这里回调的是 onCompletion，只不过得到的结果是抛出的异常。至于这里的 onError 是哪里出现异常的回调呢，看 WebAsyncTask 类的 onError 方法上面的 doc 描述有一段这样的话：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">This method is called from a container thread when an error occurred while processing an async request before the &#123;@code Callable&#125; has completed</span><br></pre></td></tr></table></figure>
-<p>看意思是在异步任务执行完成之前，处理异步请求的过程中发生的异常会回调，具体有待测试。</p>
-<p>所以说 WebAsyncTask 作为接口返回值的话，扩展性更强一些，提供了更完善的超时，异常，异步执行完成的回调处理。</p>
-<p>最终的执行打印日志如下:</p>
-<p><img src="http://images.rookiezhou.top/blog/images/webAsyncTaskEndpoint_log.png" alt="webAsyncTaskEndpoint_log"></p>
-<h3 id="有返回值的接口之-DeferredResult-作为返回值"><a href="#有返回值的接口之-DeferredResult-作为返回值" class="headerlink" title="有返回值的接口之 DeferredResult 作为返回值"></a>有返回值的接口之 DeferredResult 作为返回值</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;deferredResultEndpoint&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> DeferredResult&lt;String&gt; <span class="title">deferredResultEndpoint</span><span class="params">()</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received deferred result endpoint request&quot;</span>);</span><br><span class="line">    DeferredResult&lt;String&gt; deferredResult = <span class="keyword">new</span> DeferredResult&lt;&gt;();</span><br><span class="line">    CompletableFuture.supplyAsync(<span class="keyword">this</span>.taskService ::execute)</span><br><span class="line">            .whenCompleteAsync((result, throwable) -&gt; deferredResult.setResult(result));</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> deferredResult;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>上面这个接口的返回值是 DeferredResult，那么请求的处理流程和 Callable 是一样的，不同的地方也是在于<br>返回值的 Handler 处理器不一样，这里用到的处理器是 DeferredResultMethodReturnValueHandler，而且这个类里面的 handleReturnValue 方法和上面的 CallableMethodReturnValueHandler 以及 AsyncTaskMethodReturnValueHandler 方法又不一样，这里调用的是 WebAsyncManager 类中 startDeferredResultProcessing 方法</p>
-<p><img src="http://images.rookiezhou.top/blog/images/startDeferredResultProcessing.png" alt="startDeferredResultProcessing"></p>
-<p>startDeferredResultProcessing 方法和 startCallableProcessing 差不多，前面都是设置超时时间，设置超时，错误，完成的回调，最后有点不同，在 startCallableProcessing 方法里面是开始通过 taskExecutor 来执行异步任务。</p>
-<p>而在这里是为 deferredResult 设置了一个 resultHandler，然后在 resultHandler 里面调用 setConcurrentResultAndDispatch，来设置结果并且将请求再次分派到容器恢复请求过程返回结果给客户端。至于这里的 resultHandler 的用处是 Controller 里面异步任务执行完成后为 deferredResult 设置结果的时候调用 setResult 方法里面会用到。</p>
-<p><img src="http://images.rookiezhou.top/blog/images/setResult.png" alt="setResult"></p>
-<p>从上面可以看出在设置结果之后，会调用在 startDeferredResultProcessing 设置好的 resultHandler ，也就是执行 setConcurrentResultAndDispatch，到这里就又和上面的流程一样了，调用 dispatch 方法将请求再次分派到容器，执行之后的恢复过程返回结果给客户端。</p>
-<p>对于 DeferredResult 作为接口返回值还有个不同的地方就是异步任务的执行完全是由开发人员自己控制了，而不是像之前的那样交给应用程序默认的 ThreadPoolTaskExecutor 来执行，这其实就给开发人员很大的灵活性了。</p>
-<p>采用这种异步方式的好处：<br>一般来说，我们写的更多的是阻塞同步式的接口，但有时候如果我们碰到比较耗时任务的接口，这时候我们如果还采用阻塞同步式的写法的话，那么前端请求到后台，首先 Tomcat 服务器从处理请求的线程池中获取一个线程 A 来处理该请求，</p>
-<p>然后由于这个接口要执行的任务耗时比较长，耗时任务一直在线程 A 中执行，直到任务执行完成才得到释放，对于并发量比较小的程序来说那还好，线程占着也就占着了，但如果是并发量比较大的程序，容器中大量的处理请求的线程将一直被占用，如果突然请求的高峰到来，那么容器中处理请求的线程有可能被耗尽，就不能再处理更多请求了，也就是说这严重影响了系统的并发吞吐量。</p>
-<p>而如果我们采取的是异步的方式来处理的话，这时就像我们前面所介绍的一样，请求到了后台，由于是异步的方式，处理请求的线程在处理完请求之后就被释放了，可以继续处理其他请求，等到异步任务执行完之后再移交给容器线程返回结果给客户端，这样的话就很大的提高了系统的并发量。</p>
-<p>最终的执行打印日志如下：<br><img src="http://images.rookiezhou.top/blog/images/deferredResultEndpoint_log.png" alt="deferredResultEndpoint_log"></p>
-<h3 id="各自的适用场景，"><a href="#各自的适用场景，" class="headerlink" title="各自的适用场景，"></a>各自的适用场景，</h3><p>首先一个前提就是要执行的任务是耗时的任务，或者需要等第三方的通知的任务</p>
-<ol>
-<li>通过 @Async 注解的方式</li>
-</ol>
-<ul>
-<li>不需要关注任务执行的结果</li>
-</ul>
-<ol start="2">
-<li>以 Callable 作为接口的返回值</li>
-</ol>
-<ul>
-<li>需要知道任务执行的结果，并且将该结果返回给前端</li>
-</ul>
-<ol start="3">
-<li>以 WebAsyncTask 作为接口的返回值</li>
-</ol>
-<ul>
-<li>需要知道任务执行的结果，并且将该结果返回给前端，同时希望控制异步任务的超时时间，任务执行结束时要做特殊处理，以及捕获处理请求的过程中发生了异常的回调。</li>
-</ul>
-<ol start="4">
-<li>以 DeferredResult 作为接口的返回值</li>
-</ol>
-<ul>
-<li><p>需要知道任务执行的结果，并且将该结果返回给前端，同时希望控制异步任务的超时时间，任务执行结束时要做特殊处理，以及捕获处理请求的过程中发生了异常的回调。</p>
-</li>
-<li><p>需要控制异步任务的执行，自己维护处理返回结果的线程。</p>
-</li>
-</ul>
-<p>比如说，接口需要等第三方服务的处理结果才能设置返回给前端的结果。Client 请求服务 A，服务 A 通过消息队列发送任务给服务 B，同时监听服务 B 的处理结果队列，服务 B 处理完成之后将结果塞回给服务 A 的结果队列，服务 A 收到结果后再返回给 Client，这个流程就很适合用采用 DeferredResult 作为接口的返回值。</p>
 ]]></content>
       <categories>
         <category>Java</category>
@@ -2198,6 +2108,96 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
       </categories>
   </entry>
   <entry>
+    <title>接口采用异步的方式执行</title>
+    <url>/%E6%8E%A5%E5%8F%A3%E9%87%87%E7%94%A8%E5%BC%82%E6%AD%A5%E7%9A%84%E6%96%B9%E5%BC%8F%E6%89%A7%E8%A1%8C/</url>
+    <content><![CDATA[<h3 id="不需要返回结果的接口"><a href="#不需要返回结果的接口" class="headerlink" title="不需要返回结果的接口"></a>不需要返回结果的接口</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;asyncEndpoint&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">asyncEndpoint</span><span class="params">()</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received async endpoint request&quot;</span>);</span><br><span class="line">    <span class="keyword">this</span>.taskService.asyncExecute();</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<a id="more"></a>
+
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@SneakyThrows</span></span><br><span class="line"><span class="meta">@Async</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">asyncExecute</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== task async execute start&quot;</span>);</span><br><span class="line">    TimeUnit.SECONDS.sleep(<span class="number">5</span>);</span><br><span class="line">    log.info(<span class="string">&quot;========== task async execute end&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面 asyncEndpoint 是一个不需要返回结果的接口，主要是通过 @Async 注解来实现的，请求到了后台，从 Tomcat 服务器处理请求的线程池中获取一个线程 A 处理该请求，在该线程中执行到调用 asyncExecute 方法的时候，由于 asyncExecute 方法的上面由 @Async 注解所标注，这样的话该方法会以异步的方式来执行，也就是说在 asyncEndpoint 方法中调用 asyncExecute 方法以异步的方式执行，asyncExecute 方法中的代码在另一个线程 B 中执行，线程 A 继续往下执行，打印完最后一行日志之后，整个请求就结束了，线程 A 也就释放了，可以继续处理其他的请求了。 而比较耗时的方法 asyncExecute 继续在线程 B 中执行。</p>
+<p>请求 asyncEndpoint 接口，通过以下日志可以看出来：</p>
+<p><img src="http://images.rookiezhou.top/blog/images/asyncEndpoint_log.png" alt="asyncEndpoint_log"></p>
+<h3 id="有返回值的接口之-Callable-作为返回值"><a href="#有返回值的接口之-Callable-作为返回值" class="headerlink" title="有返回值的接口之 Callable 作为返回值"></a>有返回值的接口之 Callable 作为返回值</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;callableEndpoint&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Callable&lt;String&gt; <span class="title">callableEndpoint</span><span class="params">()</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received callable endpoint request&quot;</span>);</span><br><span class="line">    Callable&lt;String&gt; callable = <span class="keyword">this</span>.taskService ::execute;</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> callable;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@SneakyThrows</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">execute</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== task execute start&quot;</span>);</span><br><span class="line">    TimeUnit.SECONDS.sleep(<span class="number">5</span>);</span><br><span class="line">    log.info(<span class="string">&quot;========== task execute end&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;task execute success&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面 callableEndpoint 接口，它的返回值是 Callable<String>，这里就需要注意了，他在这里同样也会以异步的方式将结果返回给客户端请求，但这里和上面的这种方式又有所不同，这种方式稍微复杂一点。上面的方式更多的是由于我们不关心方法执行的返回值，我们自己在业务逻辑层面来控制方法以异步的方式执行，然后处理请求的线程执行结束，应用程序线程继续异步执行。</p>
+<p>而在这里，主要是利用了 Servlet 3.0 中引入了对于异步的支持，至于 Servlet 3.0 中引入的对异步的支持，下次再用一篇文章详细介绍下，我们先大概了解以 Callable 作为返回值的接口为什么会以异步的方式执行。</p>
+<p>这里首先后台收到 asyncEndpoint 请求后，同样从 Tomcat 容器处理请求的线程池中获取一个线程处理该请求。这里大概说下，我们是使用的 SpringMVC 的那一套请求执行流程，SpringMVC 中有一个 DispatcherServlet 类里面的 doDispatch 方法是请求的统一入口，通过它来协调其它组件来处理前端请求。</p>
+<p>比如说通过处理器映射器 HandlerMapping 查找对应的 Handler 处理器 Controller，然后再通过请求适配器 HandlerAdapter 对处理器进行执行，在处理器执行之后得到一个返回值结果，SpringMVC 里面有一些处理返回值的 Handler 来对结果进行解析，根据返回值类型选取合适的 returnValueHandler 来处理。下面是直接到了处理器执行获取执行结果的代码。</p>
+<p><img src="http://images.rookiezhou.top/blog/images/handler_return_value.png" alt="handler_return_value"></p>
+<p>至于选择处理范湖结果的 handler 的过程通过下面代码可以看出，是根据返回值的类型来从已经注册的 returnValueHandler 选择能处理当前返回值类型的 handler，</p>
+<p><img src="http://images.rookiezhou.top/blog/images/handler_select_handler.png" alt="handler_select_handler"></p>
+<p><img src="http://images.rookiezhou.top/blog/images/select_handler.png" alt="select_handler"></p>
+<p><img src="http://images.rookiezhou.top/blog/images/support_return_value.png" alt="support_return_value"></p>
+<p>从上面第三段代码中可以看到由于返回值类型 Callable，最终会匹配到 CallableMethodReturnValueHandler 这个返回值处理器，在这个类中还有一个方法 handleReturnValue，也就是在选择好匹配的 returnValueHandler 之后调用的那个方法，异步的处理也就是在这个方法的最后一行代码中，</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">WebAsyncUtils.getAsyncManager(webRequest).startCallableProcessing(callable, mavContainer);</span><br></pre></td></tr></table></figure>
+
+<p>这行代码先是调用 getAsyncManager 获取到 WebAsyncManager，然后调用 startCallableProcessing 开始 Callable 结果的处理流程，而在 startCallableProcessing 方法里面又是调用了一个内部重载的方法，通过 WebAsyncTask 包装了以下 Callable 作为参数</p>
+<p><img src="http://images.rookiezhou.top/blog/images/startCallableProcessing.png" alt="startCallableProcessing"></p>
+<p><img src="http://images.rookiezhou.top/blog/images/set_concurrent_result_dispatch.png" alt="set_concurrent_result_dispatch"></p>
+<p>在 startCallableProcessing 方法中可以清楚的看到将 callable 交给 taskExecutor 来执行，然后设置并发执行得到的结果并且调用 dispatch 方法将请求再次分派到容器，以便应用程序线程中并发执行之后的恢复处理，其实也就是将并发执行的结果再次交给容器线程来恢复刚才的请求，将刚才的流程再执行一次。</p>
+<p>只不过在处理器执行的时候调用的不再是 Contrller 里面的方法，而是直接调用 Callable 的 call 方法拿刚才执行的结果，等到再执行到 handleReturnValue 方法的时候，这时由于 return value 是一个字符串，所以匹配到的 returnValueHandler 是 RequestResponseBodyMethodProcessor,这时会将 callable 的执行结果返回给客户端，本次请求结束。</p>
+<p>需要注意的是，应用程序的异步任务的执行时间过长会导致超时的问题，还记得上面的 startCallableProcessing 方法里面有 addTimeoutHandler，addErrorHandler，addCompletionHandler 三个回调，分别是超时，发生错误以及异步执行完成的回调处理。里面其实会去读 WebAsyncTask 中设置的超时时间，但里面没有设置，但我测试是有一个默认的超时时间 30s(我通过测试，发现 30s 没执行完就会 timeout)。</p>
+<p>还有一个就是需要注意的是在整个的处理过程中，服务端和客户端的连接是一直保持着的，所以需要注意连接超时的问题，虽然默认没有设置的话是无限的，但如果设置了就需要注意了，这个的超时时间必然要比异步执行里面的超时时间要大一些。</p>
+<p>上面的 taskExecutor 是 SpringBoot 中 TaskExecutionAutoConfiguration 自动配置的 ThreadPoolTaskExecutor，对于这个类的配置也可以在配置文件中进行配置，线程数，queue capacity 等。</p>
+<p>最终的执行打印日志如下：<br><img src="http://images.rookiezhou.top/blog/images/callableEndpoint_log.png" alt="callableEndpoint_log"></p>
+<h3 id="有返回值的接口之-WebAsyncTask-作为返回值"><a href="#有返回值的接口之-WebAsyncTask-作为返回值" class="headerlink" title="有返回值的接口之 WebAsyncTask 作为返回值"></a>有返回值的接口之 WebAsyncTask 作为返回值</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;webAsyncTaskEndpoint&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> WebAsyncTask&lt;String&gt; <span class="title">webAsyncTaskEndpoint</span><span class="params">()</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received web async task endpoint request&quot;</span>);</span><br><span class="line">    Callable&lt;String&gt; callable = () -&gt; <span class="keyword">this</span>.taskService.execute();</span><br><span class="line">    WebAsyncTask&lt;String&gt; webAsyncTask = <span class="keyword">new</span> WebAsyncTask&lt;&gt;(<span class="number">3000</span>, callable);</span><br><span class="line">    webAsyncTask.onCompletion(() -&gt; log.info(<span class="string">&quot;========== execute finish&quot;</span>));</span><br><span class="line"></span><br><span class="line">    webAsyncTask.onTimeout(() -&gt; <span class="string">&quot;execute timeout&quot;</span>);</span><br><span class="line"></span><br><span class="line">    webAsyncTask.onError(() -&gt; <span class="string">&quot;execute error&quot;</span>);</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> webAsyncTask;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在理解了 Callable 作为接口返回值之后，就能够很好地理解这个流程了，大体的流程是一样的，只不过就是返回值的 Handler 处理器不一样，这里用到的处理器是 AsyncTaskMethodReturnValueHandler，在这个类中 handleReturnValue 方法调用的 startCallableProcessing 传的参数就是 Controller 里面返回的这个 webAsyncTask，这个 webAsyncTask 定义了三个回调函数，方便做特殊的处理。</p>
+<p>这里需要注意的是 onError 的回调并不是说异步任务里面执行出错了的回调，其实异步任务里面的出错的话已经 try catch 了，并且将异常信息作为结果返回，所以说如果异步任务里面抛异常了，并不会回调到这里，而且这里回调的是 onCompletion，只不过得到的结果是抛出的异常。至于这里的 onError 是哪里出现异常的回调呢，看 WebAsyncTask 类的 onError 方法上面的 doc 描述有一段这样的话：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">This method is called from a container thread when an error occurred while processing an async request before the &#123;@code Callable&#125; has completed</span><br></pre></td></tr></table></figure>
+<p>看意思是在异步任务执行完成之前，处理异步请求的过程中发生的异常会回调，具体有待测试。</p>
+<p>所以说 WebAsyncTask 作为接口返回值的话，扩展性更强一些，提供了更完善的超时，异常，异步执行完成的回调处理。</p>
+<p>最终的执行打印日志如下:</p>
+<p><img src="http://images.rookiezhou.top/blog/images/webAsyncTaskEndpoint_log.png" alt="webAsyncTaskEndpoint_log"></p>
+<h3 id="有返回值的接口之-DeferredResult-作为返回值"><a href="#有返回值的接口之-DeferredResult-作为返回值" class="headerlink" title="有返回值的接口之 DeferredResult 作为返回值"></a>有返回值的接口之 DeferredResult 作为返回值</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;deferredResultEndpoint&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> DeferredResult&lt;String&gt; <span class="title">deferredResultEndpoint</span><span class="params">()</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received deferred result endpoint request&quot;</span>);</span><br><span class="line">    DeferredResult&lt;String&gt; deferredResult = <span class="keyword">new</span> DeferredResult&lt;&gt;();</span><br><span class="line">    CompletableFuture.supplyAsync(<span class="keyword">this</span>.taskService ::execute)</span><br><span class="line">            .whenCompleteAsync((result, throwable) -&gt; deferredResult.setResult(result));</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> deferredResult;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面这个接口的返回值是 DeferredResult，那么请求的处理流程和 Callable 是一样的，不同的地方也是在于<br>返回值的 Handler 处理器不一样，这里用到的处理器是 DeferredResultMethodReturnValueHandler，而且这个类里面的 handleReturnValue 方法和上面的 CallableMethodReturnValueHandler 以及 AsyncTaskMethodReturnValueHandler 方法又不一样，这里调用的是 WebAsyncManager 类中 startDeferredResultProcessing 方法</p>
+<p><img src="http://images.rookiezhou.top/blog/images/startDeferredResultProcessing.png" alt="startDeferredResultProcessing"></p>
+<p>startDeferredResultProcessing 方法和 startCallableProcessing 差不多，前面都是设置超时时间，设置超时，错误，完成的回调，最后有点不同，在 startCallableProcessing 方法里面是开始通过 taskExecutor 来执行异步任务。</p>
+<p>而在这里是为 deferredResult 设置了一个 resultHandler，然后在 resultHandler 里面调用 setConcurrentResultAndDispatch，来设置结果并且将请求再次分派到容器恢复请求过程返回结果给客户端。至于这里的 resultHandler 的用处是 Controller 里面异步任务执行完成后为 deferredResult 设置结果的时候调用 setResult 方法里面会用到。</p>
+<p><img src="http://images.rookiezhou.top/blog/images/setResult.png" alt="setResult"></p>
+<p>从上面可以看出在设置结果之后，会调用在 startDeferredResultProcessing 设置好的 resultHandler ，也就是执行 setConcurrentResultAndDispatch，到这里就又和上面的流程一样了，调用 dispatch 方法将请求再次分派到容器，执行之后的恢复过程返回结果给客户端。</p>
+<p>对于 DeferredResult 作为接口返回值还有个不同的地方就是异步任务的执行完全是由开发人员自己控制了，而不是像之前的那样交给应用程序默认的 ThreadPoolTaskExecutor 来执行，这其实就给开发人员很大的灵活性了。</p>
+<p>采用这种异步方式的好处：<br>一般来说，我们写的更多的是阻塞同步式的接口，但有时候如果我们碰到比较耗时任务的接口，这时候我们如果还采用阻塞同步式的写法的话，那么前端请求到后台，首先 Tomcat 服务器从处理请求的线程池中获取一个线程 A 来处理该请求，</p>
+<p>然后由于这个接口要执行的任务耗时比较长，耗时任务一直在线程 A 中执行，直到任务执行完成才得到释放，对于并发量比较小的程序来说那还好，线程占着也就占着了，但如果是并发量比较大的程序，容器中大量的处理请求的线程将一直被占用，如果突然请求的高峰到来，那么容器中处理请求的线程有可能被耗尽，就不能再处理更多请求了，也就是说这严重影响了系统的并发吞吐量。</p>
+<p>而如果我们采取的是异步的方式来处理的话，这时就像我们前面所介绍的一样，请求到了后台，由于是异步的方式，处理请求的线程在处理完请求之后就被释放了，可以继续处理其他请求，等到异步任务执行完之后再移交给容器线程返回结果给客户端，这样的话就很大的提高了系统的并发量。</p>
+<p>最终的执行打印日志如下：<br><img src="http://images.rookiezhou.top/blog/images/deferredResultEndpoint_log.png" alt="deferredResultEndpoint_log"></p>
+<h3 id="各自的适用场景，"><a href="#各自的适用场景，" class="headerlink" title="各自的适用场景，"></a>各自的适用场景，</h3><p>首先一个前提就是要执行的任务是耗时的任务，或者需要等第三方的通知的任务</p>
+<ol>
+<li>通过 @Async 注解的方式</li>
+</ol>
+<ul>
+<li>不需要关注任务执行的结果</li>
+</ul>
+<ol start="2">
+<li>以 Callable 作为接口的返回值</li>
+</ol>
+<ul>
+<li>需要知道任务执行的结果，并且将该结果返回给前端</li>
+</ul>
+<ol start="3">
+<li>以 WebAsyncTask 作为接口的返回值</li>
+</ol>
+<ul>
+<li>需要知道任务执行的结果，并且将该结果返回给前端，同时希望控制异步任务的超时时间，任务执行结束时要做特殊处理，以及捕获处理请求的过程中发生了异常的回调。</li>
+</ul>
+<ol start="4">
+<li>以 DeferredResult 作为接口的返回值</li>
+</ol>
+<ul>
+<li><p>需要知道任务执行的结果，并且将该结果返回给前端，同时希望控制异步任务的超时时间，任务执行结束时要做特殊处理，以及捕获处理请求的过程中发生了异常的回调。</p>
+</li>
+<li><p>需要控制异步任务的执行，自己维护处理返回结果的线程。</p>
+</li>
+</ul>
+<p>比如说，接口需要等第三方服务的处理结果才能设置返回给前端的结果。Client 请求服务 A，服务 A 通过消息队列发送任务给服务 B，同时监听服务 B 的处理结果队列，服务 B 处理完成之后将结果塞回给服务 A 的结果队列，服务 A 收到结果后再返回给 Client，这个流程就很适合用采用 DeferredResult 作为接口的返回值。</p>
+]]></content>
+      <categories>
+        <category>Java</category>
+      </categories>
+  </entry>
+  <entry>
     <title>日常开发中常用命令之 nohup 命令</title>
     <url>/%E6%97%A5%E5%B8%B8%E5%BC%80%E5%8F%91%E4%B8%AD%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E4%B9%8B-nohup-%E5%91%BD%E4%BB%A4/</url>
     <content><![CDATA[<p>之前几篇文章分享了异步接口的实现和原理，基本上都是需要查看源码来辅助理解，说实话，看懂之后可能觉得还好，但是在一开始不太清楚的时候阅读源码确实有点枯燥，尤其是在你不是很想去了解这个的时候。只有当我们真正想去了解这个东西的时候可能才会愿意花精力去研究，这时候就不会那么无聊了，反而会觉得在探索的过程中很有趣。</p>
@@ -2280,6 +2280,44 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
       </categories>
   </entry>
   <entry>
+    <title>极力推荐的博文排版指南</title>
+    <url>/%E6%9E%81%E5%8A%9B%E6%8E%A8%E8%8D%90%E7%9A%84%E5%8D%9A%E6%96%87%E6%8E%92%E7%89%88%E6%8C%87%E5%8D%97/</url>
+    <content><![CDATA[<p>作为程序员来说，养成写博客的习惯真的是一件值得去做的事，尽管刚开始可能没有那么高质量的知识输出，但是不是有这样一句话吗？「知识的输入应转化为输出」，也就是说你应该把你所学到的都转化为输出，只有这样你才能更好的掌握你所学的知识，并且在这个过程中你也会对你所学的知识点进行很好的补充。既然要写博文，是不是刚开始就随便写写呢？当然不是，一篇排版好内容不是很好的博文相比于内容好排版很乱的博文能够让人更乐于看下去，尤其是那些对代码有洁癖的程序员我相信你更看不下去，那么以下便是我极力推荐的博客排版指南：</p>
+<a id="more"></a>
+
+<h3 id="空格的使用"><a href="#空格的使用" class="headerlink" title="空格的使用"></a>空格的使用</h3><p>「有研究显示，打字的时候不喜欢在中文和英文之间加空格的人，感情路都走得很辛苦，有七成的比例会在 34 岁的时候跟自己不爱的人结婚，而其余三成的人最后只能把遗产留给自己的猫。毕竟爱情跟书写都需要适时地留白。」</p>
+<ol>
+<li><p>中英文之间加空格<br>eg. 相信每个程序员都会去全球最大的同性交友网站 GitHub 上逛逛。</p>
+</li>
+<li><p>中文和数字之间加空格<br>eg. 那些排版很乱的博文估计你连 1 分钟都看不下去。</p>
+</li>
+<li><p>数字和单位之间不加空格<br>eg. 现在的安卓手机运行内存没有 6G 都装不了几个应用了。<br>eg. 今天的气温又超过了 40°。<br>eg. 之前买的基金昨天一天跌了 5%。</p>
+</li>
+<li><p>推荐在链接前后加一个空格<br>eg.  我的公众号和博客名称都是 rookiezhou，搜索 rookiezhou 关注我，点击这里 <a href="http://www.rookiezhou.top/">rookiezhou</a> 访问个人博客。</p>
+</li>
+</ol>
+<h3 id="标点符号的细节"><a href="#标点符号的细节" class="headerlink" title="标点符号的细节"></a>标点符号的细节</h3><ol>
+<li><p>不用为了夸张重复使用标点符号<br>eg. 今年法国夺冠了，华帝刚开始打的一手好牌到最后却变成了一副烂牌，你敢信吗？</p>
+</li>
+<li><p>中文段落中尽量使用中文标点符号<br>eg. 一篇好的博文绝对离不开好的排版，所以这篇博文应该算是好文了吧。</p>
+</li>
+<li><p>推荐将引号换成直角引号<br>eg. 你竟然没看过「Java 编程思想」这本书。</p>
+</li>
+<li><p>推荐引号中还有引号替换成直角双引号<br>eg. 经常有人带着疑惑的目光对我说「你竟然没看过『Java 编程思想』这本书？」</p>
+</li>
+<li><p>完整的英文整句使用英文标点符号<br>eg. 引用乔布斯说的那句话：「Stay hungry, stay foolish.」</p>
+</li>
+</ol>
+<h3 id="专有名词大小写尽量规范"><a href="#专有名词大小写尽量规范" class="headerlink" title="专有名词大小写尽量规范"></a>专有名词大小写尽量规范</h3><p>eg. Java、MySQL 都是后端开发人员必须要会的，当然也要会一些前端的技术，比如说：HTML5、CSS、JavaScript、jQuery。</p>
+<p>还有就是对于一些博文可能存在一篇博文下来就只有一段，看起来很紧凑，如果说在每写完一个知识点隔开一行看起来是不是会更好看些呢，这样一来对于我们从小养成的每一段首行空两格的习惯是不是也可以改了呢，其实你去注意一下那些排版比较好的博文，应该大部分都是这么做的，当然这取决于个人，不喜勿喷。</p>
+<p>参考：</p>
+<p><a href="https://www.jianshu.com/p/538faa30b17d">https://www.jianshu.com/p/538faa30b17d</a><br><a href="https://github.com/mzlogin/chinese-copywriting-guidelines">https://github.com/mzlogin/chinese-copywriting-guidelines</a></p>
+]]></content>
+      <categories>
+        <category>写作</category>
+      </categories>
+  </entry>
+  <entry>
     <title>检测端口是否存活除了 telnet 还有 nc 命令</title>
     <url>/%E6%A3%80%E6%B5%8B%E7%AB%AF%E5%8F%A3%E6%98%AF%E5%90%A6%E5%AD%98%E6%B4%BB%E9%99%A4%E4%BA%86-telnet-%E8%BF%98%E6%9C%89-nc-%E5%91%BD%E4%BB%A4/</url>
     <content><![CDATA[<p>在之前使用 Windows 系统的时候，我感觉我使用最频繁的两个命令就是 ping 和 telnet。其中 ping 是用来检测是否与主机连通，telnet 用来检测对方主机的端口是否畅通。这两个命令通用的使用场景可能是下面这样的：</p>
@@ -2343,44 +2381,6 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 ]]></content>
       <categories>
         <category>Linux</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>极力推荐的博文排版指南</title>
-    <url>/%E6%9E%81%E5%8A%9B%E6%8E%A8%E8%8D%90%E7%9A%84%E5%8D%9A%E6%96%87%E6%8E%92%E7%89%88%E6%8C%87%E5%8D%97/</url>
-    <content><![CDATA[<p>作为程序员来说，养成写博客的习惯真的是一件值得去做的事，尽管刚开始可能没有那么高质量的知识输出，但是不是有这样一句话吗？「知识的输入应转化为输出」，也就是说你应该把你所学到的都转化为输出，只有这样你才能更好的掌握你所学的知识，并且在这个过程中你也会对你所学的知识点进行很好的补充。既然要写博文，是不是刚开始就随便写写呢？当然不是，一篇排版好内容不是很好的博文相比于内容好排版很乱的博文能够让人更乐于看下去，尤其是那些对代码有洁癖的程序员我相信你更看不下去，那么以下便是我极力推荐的博客排版指南：</p>
-<a id="more"></a>
-
-<h3 id="空格的使用"><a href="#空格的使用" class="headerlink" title="空格的使用"></a>空格的使用</h3><p>「有研究显示，打字的时候不喜欢在中文和英文之间加空格的人，感情路都走得很辛苦，有七成的比例会在 34 岁的时候跟自己不爱的人结婚，而其余三成的人最后只能把遗产留给自己的猫。毕竟爱情跟书写都需要适时地留白。」</p>
-<ol>
-<li><p>中英文之间加空格<br>eg. 相信每个程序员都会去全球最大的同性交友网站 GitHub 上逛逛。</p>
-</li>
-<li><p>中文和数字之间加空格<br>eg. 那些排版很乱的博文估计你连 1 分钟都看不下去。</p>
-</li>
-<li><p>数字和单位之间不加空格<br>eg. 现在的安卓手机运行内存没有 6G 都装不了几个应用了。<br>eg. 今天的气温又超过了 40°。<br>eg. 之前买的基金昨天一天跌了 5%。</p>
-</li>
-<li><p>推荐在链接前后加一个空格<br>eg.  我的公众号和博客名称都是 rookiezhou，搜索 rookiezhou 关注我，点击这里 <a href="http://www.rookiezhou.top/">rookiezhou</a> 访问个人博客。</p>
-</li>
-</ol>
-<h3 id="标点符号的细节"><a href="#标点符号的细节" class="headerlink" title="标点符号的细节"></a>标点符号的细节</h3><ol>
-<li><p>不用为了夸张重复使用标点符号<br>eg. 今年法国夺冠了，华帝刚开始打的一手好牌到最后却变成了一副烂牌，你敢信吗？</p>
-</li>
-<li><p>中文段落中尽量使用中文标点符号<br>eg. 一篇好的博文绝对离不开好的排版，所以这篇博文应该算是好文了吧。</p>
-</li>
-<li><p>推荐将引号换成直角引号<br>eg. 你竟然没看过「Java 编程思想」这本书。</p>
-</li>
-<li><p>推荐引号中还有引号替换成直角双引号<br>eg. 经常有人带着疑惑的目光对我说「你竟然没看过『Java 编程思想』这本书？」</p>
-</li>
-<li><p>完整的英文整句使用英文标点符号<br>eg. 引用乔布斯说的那句话：「Stay hungry, stay foolish.」</p>
-</li>
-</ol>
-<h3 id="专有名词大小写尽量规范"><a href="#专有名词大小写尽量规范" class="headerlink" title="专有名词大小写尽量规范"></a>专有名词大小写尽量规范</h3><p>eg. Java、MySQL 都是后端开发人员必须要会的，当然也要会一些前端的技术，比如说：HTML5、CSS、JavaScript、jQuery。</p>
-<p>还有就是对于一些博文可能存在一篇博文下来就只有一段，看起来很紧凑，如果说在每写完一个知识点隔开一行看起来是不是会更好看些呢，这样一来对于我们从小养成的每一段首行空两格的习惯是不是也可以改了呢，其实你去注意一下那些排版比较好的博文，应该大部分都是这么做的，当然这取决于个人，不喜勿喷。</p>
-<p>参考：</p>
-<p><a href="https://www.jianshu.com/p/538faa30b17d">https://www.jianshu.com/p/538faa30b17d</a><br><a href="https://github.com/mzlogin/chinese-copywriting-guidelines">https://github.com/mzlogin/chinese-copywriting-guidelines</a></p>
-]]></content>
-      <categories>
-        <category>写作</category>
       </categories>
   </entry>
   <entry>

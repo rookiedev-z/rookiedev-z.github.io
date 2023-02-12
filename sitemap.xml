@@ -461,6 +461,13 @@
   </url>
   
   <url>
+    <loc>http://rookiedev.top/categories/JdbcTemplate/</loc>
+    <lastmod>2023-02-12</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <url>
     <loc>http://rookiedev.top/categories/Linux/</loc>
     <lastmod>2023-02-12</lastmod>
     <changefreq>daily</changefreq>
@@ -475,13 +482,6 @@
   </url>
   
   <url>
-    <loc>http://rookiedev.top/categories/JdbcTemplate/</loc>
-    <lastmod>2023-02-12</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.6</priority>
-  </url>
-  
-  <url>
     <loc>http://rookiedev.top/categories/Nginx/</loc>
     <lastmod>2023-02-12</lastmod>
     <changefreq>daily</changefreq>
@@ -489,14 +489,14 @@
   </url>
   
   <url>
-    <loc>http://rookiedev.top/categories/redis/</loc>
+    <loc>http://rookiedev.top/categories/Zookeeper/</loc>
     <lastmod>2023-02-12</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   
   <url>
-    <loc>http://rookiedev.top/categories/Zookeeper/</loc>
+    <loc>http://rookiedev.top/categories/redis/</loc>
     <lastmod>2023-02-12</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
