@@ -27,24 +27,24 @@
 <meta property="og:site_name" content="rookiedev">
 <meta property="og:description" content="不需要返回结果的接口123456@GetMapping(&quot;asyncEndpoint&quot;)public void asyncEndpoint()&amp;#123;    log.info(&quot;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D;&#x3D; received async endpoint request&quot;);    this.taskService.asyncExecute();    log.">
 <meta property="og:locale">
-<meta property="og:image" content="http://images.rookiezhou.top/blog/images/asyncEndpoint_log.png">
-<meta property="og:image" content="http://images.rookiezhou.top/blog/images/handler_return_value.png">
-<meta property="og:image" content="http://images.rookiezhou.top/blog/images/handler_select_handler.png">
-<meta property="og:image" content="http://images.rookiezhou.top/blog/images/select_handler.png">
-<meta property="og:image" content="http://images.rookiezhou.top/blog/images/support_return_value.png">
-<meta property="og:image" content="http://images.rookiezhou.top/blog/images/startCallableProcessing.png">
-<meta property="og:image" content="http://images.rookiezhou.top/blog/images/set_concurrent_result_dispatch.png">
-<meta property="og:image" content="http://images.rookiezhou.top/blog/images/callableEndpoint_log.png">
-<meta property="og:image" content="http://images.rookiezhou.top/blog/images/webAsyncTaskEndpoint_log.png">
-<meta property="og:image" content="http://images.rookiezhou.top/blog/images/startDeferredResultProcessing.png">
-<meta property="og:image" content="http://images.rookiezhou.top/blog/images/setResult.png">
-<meta property="og:image" content="http://images.rookiezhou.top/blog/images/deferredResultEndpoint_log.png">
+<meta property="og:image" content="http://rookiedev.top/images/asyncEndpoint_log.png">
+<meta property="og:image" content="http://rookiedev.top/images/handler_return_value.png">
+<meta property="og:image" content="http://rookiedev.top/images/handler_select_handler.png">
+<meta property="og:image" content="http://rookiedev.top/images/select_handler.png">
+<meta property="og:image" content="http://rookiedev.top/images/support_return_value.png">
+<meta property="og:image" content="http://rookiedev.top/images/startCallableProcessing.png">
+<meta property="og:image" content="http://rookiedev.top/images/set_concurrent_result_dispatch.png">
+<meta property="og:image" content="http://rookiedev.top/images/callableEndpoint_log.png">
+<meta property="og:image" content="http://rookiedev.top/images/webAsyncTaskEndpoint_log.png">
+<meta property="og:image" content="http://rookiedev.top/images/startDeferredResultProcessing.png">
+<meta property="og:image" content="http://rookiedev.top/images/setResult.png">
+<meta property="og:image" content="http://rookiedev.top/images/deferredResultEndpoint_log.png">
 <meta property="article:published_time" content="2021-02-23T13:23:25.000Z">
-<meta property="article:modified_time" content="2023-02-12T08:57:54.718Z">
+<meta property="article:modified_time" content="2023-02-13T08:10:25.085Z">
 <meta property="article:author" content="rookiedev">
 <meta property="article:tag" content="Java MySQL Life">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://images.rookiezhou.top/blog/images/asyncEndpoint_log.png">
+<meta name="twitter:image" content="http://rookiedev.top/images/asyncEndpoint_log.png">
 
 <link rel="canonical" href="http://rookiedev.top/%E6%8E%A5%E5%8F%A3%E9%87%87%E7%94%A8%E5%BC%82%E6%AD%A5%E7%9A%84%E6%96%B9%E5%BC%8F%E6%89%A7%E8%A1%8C/">
 
@@ -240,7 +240,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2023-02-12 16:57:54" itemprop="dateModified" datetime="2023-02-12T16:57:54+08:00">2023-02-12</time>
+                <time title="Modified: 2023-02-13 16:10:25" itemprop="dateModified" datetime="2023-02-13T16:10:25+08:00">2023-02-13</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -278,7 +278,7 @@
 
 <p>上面 asyncEndpoint 是一个不需要返回结果的接口，主要是通过 @Async 注解来实现的，请求到了后台，从 Tomcat 服务器处理请求的线程池中获取一个线程 A 处理该请求，在该线程中执行到调用 asyncExecute 方法的时候，由于 asyncExecute 方法的上面由 @Async 注解所标注，这样的话该方法会以异步的方式来执行，也就是说在 asyncEndpoint 方法中调用 asyncExecute 方法以异步的方式执行，asyncExecute 方法中的代码在另一个线程 B 中执行，线程 A 继续往下执行，打印完最后一行日志之后，整个请求就结束了，线程 A 也就释放了，可以继续处理其他的请求了。 而比较耗时的方法 asyncExecute 继续在线程 B 中执行。</p>
 <p>请求 asyncEndpoint 接口，通过以下日志可以看出来：</p>
-<p><img src="http://images.rookiezhou.top/blog/images/asyncEndpoint_log.png" alt="asyncEndpoint_log"></p>
+<p><img src="/images/asyncEndpoint_log.png" alt="asyncEndpoint_log"></p>
 <h3 id="有返回值的接口之-Callable-作为返回值"><a href="#有返回值的接口之-Callable-作为返回值" class="headerlink" title="有返回值的接口之 Callable 作为返回值"></a>有返回值的接口之 Callable 作为返回值</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;callableEndpoint&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Callable&lt;String&gt; <span class="title">callableEndpoint</span><span class="params">()</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received callable endpoint request&quot;</span>);</span><br><span class="line">    Callable&lt;String&gt; callable = <span class="keyword">this</span>.taskService ::execute;</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> callable;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@SneakyThrows</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">execute</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== task execute start&quot;</span>);</span><br><span class="line">    TimeUnit.SECONDS.sleep(<span class="number">5</span>);</span><br><span class="line">    log.info(<span class="string">&quot;========== task execute end&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;task execute success&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -286,23 +286,23 @@
 <p>而在这里，主要是利用了 Servlet 3.0 中引入了对于异步的支持，至于 Servlet 3.0 中引入的对异步的支持，下次再用一篇文章详细介绍下，我们先大概了解以 Callable 作为返回值的接口为什么会以异步的方式执行。</p>
 <p>这里首先后台收到 asyncEndpoint 请求后，同样从 Tomcat 容器处理请求的线程池中获取一个线程处理该请求。这里大概说下，我们是使用的 SpringMVC 的那一套请求执行流程，SpringMVC 中有一个 DispatcherServlet 类里面的 doDispatch 方法是请求的统一入口，通过它来协调其它组件来处理前端请求。</p>
 <p>比如说通过处理器映射器 HandlerMapping 查找对应的 Handler 处理器 Controller，然后再通过请求适配器 HandlerAdapter 对处理器进行执行，在处理器执行之后得到一个返回值结果，SpringMVC 里面有一些处理返回值的 Handler 来对结果进行解析，根据返回值类型选取合适的 returnValueHandler 来处理。下面是直接到了处理器执行获取执行结果的代码。</p>
-<p><img src="http://images.rookiezhou.top/blog/images/handler_return_value.png" alt="handler_return_value"></p>
+<p><img src="/images/handler_return_value.png" alt="handler_return_value"></p>
 <p>至于选择处理范湖结果的 handler 的过程通过下面代码可以看出，是根据返回值的类型来从已经注册的 returnValueHandler 选择能处理当前返回值类型的 handler，</p>
-<p><img src="http://images.rookiezhou.top/blog/images/handler_select_handler.png" alt="handler_select_handler"></p>
-<p><img src="http://images.rookiezhou.top/blog/images/select_handler.png" alt="select_handler"></p>
-<p><img src="http://images.rookiezhou.top/blog/images/support_return_value.png" alt="support_return_value"></p>
+<p><img src="/images/handler_select_handler.png" alt="handler_select_handler"></p>
+<p><img src="/images/select_handler.png" alt="select_handler"></p>
+<p><img src="/images/support_return_value.png" alt="support_return_value"></p>
 <p>从上面第三段代码中可以看到由于返回值类型 Callable，最终会匹配到 CallableMethodReturnValueHandler 这个返回值处理器，在这个类中还有一个方法 handleReturnValue，也就是在选择好匹配的 returnValueHandler 之后调用的那个方法，异步的处理也就是在这个方法的最后一行代码中，</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">WebAsyncUtils.getAsyncManager(webRequest).startCallableProcessing(callable, mavContainer);</span><br></pre></td></tr></table></figure>
 
 <p>这行代码先是调用 getAsyncManager 获取到 WebAsyncManager，然后调用 startCallableProcessing 开始 Callable 结果的处理流程，而在 startCallableProcessing 方法里面又是调用了一个内部重载的方法，通过 WebAsyncTask 包装了以下 Callable 作为参数</p>
-<p><img src="http://images.rookiezhou.top/blog/images/startCallableProcessing.png" alt="startCallableProcessing"></p>
-<p><img src="http://images.rookiezhou.top/blog/images/set_concurrent_result_dispatch.png" alt="set_concurrent_result_dispatch"></p>
+<p><img src="/images/startCallableProcessing.png" alt="startCallableProcessing"></p>
+<p><img src="/images/set_concurrent_result_dispatch.png" alt="set_concurrent_result_dispatch"></p>
 <p>在 startCallableProcessing 方法中可以清楚的看到将 callable 交给 taskExecutor 来执行，然后设置并发执行得到的结果并且调用 dispatch 方法将请求再次分派到容器，以便应用程序线程中并发执行之后的恢复处理，其实也就是将并发执行的结果再次交给容器线程来恢复刚才的请求，将刚才的流程再执行一次。</p>
 <p>只不过在处理器执行的时候调用的不再是 Contrller 里面的方法，而是直接调用 Callable 的 call 方法拿刚才执行的结果，等到再执行到 handleReturnValue 方法的时候，这时由于 return value 是一个字符串，所以匹配到的 returnValueHandler 是 RequestResponseBodyMethodProcessor,这时会将 callable 的执行结果返回给客户端，本次请求结束。</p>
 <p>需要注意的是，应用程序的异步任务的执行时间过长会导致超时的问题，还记得上面的 startCallableProcessing 方法里面有 addTimeoutHandler，addErrorHandler，addCompletionHandler 三个回调，分别是超时，发生错误以及异步执行完成的回调处理。里面其实会去读 WebAsyncTask 中设置的超时时间，但里面没有设置，但我测试是有一个默认的超时时间 30s(我通过测试，发现 30s 没执行完就会 timeout)。</p>
 <p>还有一个就是需要注意的是在整个的处理过程中，服务端和客户端的连接是一直保持着的，所以需要注意连接超时的问题，虽然默认没有设置的话是无限的，但如果设置了就需要注意了，这个的超时时间必然要比异步执行里面的超时时间要大一些。</p>
 <p>上面的 taskExecutor 是 SpringBoot 中 TaskExecutionAutoConfiguration 自动配置的 ThreadPoolTaskExecutor，对于这个类的配置也可以在配置文件中进行配置，线程数，queue capacity 等。</p>
-<p>最终的执行打印日志如下：<br><img src="http://images.rookiezhou.top/blog/images/callableEndpoint_log.png" alt="callableEndpoint_log"></p>
+<p>最终的执行打印日志如下：<br><img src="/images/callableEndpoint_log.png" alt="callableEndpoint_log"></p>
 <h3 id="有返回值的接口之-WebAsyncTask-作为返回值"><a href="#有返回值的接口之-WebAsyncTask-作为返回值" class="headerlink" title="有返回值的接口之 WebAsyncTask 作为返回值"></a>有返回值的接口之 WebAsyncTask 作为返回值</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;webAsyncTaskEndpoint&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> WebAsyncTask&lt;String&gt; <span class="title">webAsyncTaskEndpoint</span><span class="params">()</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received web async task endpoint request&quot;</span>);</span><br><span class="line">    Callable&lt;String&gt; callable = () -&gt; <span class="keyword">this</span>.taskService.execute();</span><br><span class="line">    WebAsyncTask&lt;String&gt; webAsyncTask = <span class="keyword">new</span> WebAsyncTask&lt;&gt;(<span class="number">3000</span>, callable);</span><br><span class="line">    webAsyncTask.onCompletion(() -&gt; log.info(<span class="string">&quot;========== execute finish&quot;</span>));</span><br><span class="line"></span><br><span class="line">    webAsyncTask.onTimeout(() -&gt; <span class="string">&quot;execute timeout&quot;</span>);</span><br><span class="line"></span><br><span class="line">    webAsyncTask.onError(() -&gt; <span class="string">&quot;execute error&quot;</span>);</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> webAsyncTask;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>在理解了 Callable 作为接口返回值之后，就能够很好地理解这个流程了，大体的流程是一样的，只不过就是返回值的 Handler 处理器不一样，这里用到的处理器是 AsyncTaskMethodReturnValueHandler，在这个类中 handleReturnValue 方法调用的 startCallableProcessing 传的参数就是 Controller 里面返回的这个 webAsyncTask，这个 webAsyncTask 定义了三个回调函数，方便做特殊的处理。</p>
 <p>这里需要注意的是 onError 的回调并不是说异步任务里面执行出错了的回调，其实异步任务里面的出错的话已经 try catch 了，并且将异常信息作为结果返回，所以说如果异步任务里面抛异常了，并不会回调到这里，而且这里回调的是 onCompletion，只不过得到的结果是抛出的异常。至于这里的 onError 是哪里出现异常的回调呢，看 WebAsyncTask 类的 onError 方法上面的 doc 描述有一段这样的话：</p>
@@ -310,19 +310,19 @@
 <p>看意思是在异步任务执行完成之前，处理异步请求的过程中发生的异常会回调，具体有待测试。</p>
 <p>所以说 WebAsyncTask 作为接口返回值的话，扩展性更强一些，提供了更完善的超时，异常，异步执行完成的回调处理。</p>
 <p>最终的执行打印日志如下:</p>
-<p><img src="http://images.rookiezhou.top/blog/images/webAsyncTaskEndpoint_log.png" alt="webAsyncTaskEndpoint_log"></p>
+<p><img src="/images/webAsyncTaskEndpoint_log.png" alt="webAsyncTaskEndpoint_log"></p>
 <h3 id="有返回值的接口之-DeferredResult-作为返回值"><a href="#有返回值的接口之-DeferredResult-作为返回值" class="headerlink" title="有返回值的接口之 DeferredResult 作为返回值"></a>有返回值的接口之 DeferredResult 作为返回值</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;deferredResultEndpoint&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> DeferredResult&lt;String&gt; <span class="title">deferredResultEndpoint</span><span class="params">()</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received deferred result endpoint request&quot;</span>);</span><br><span class="line">    DeferredResult&lt;String&gt; deferredResult = <span class="keyword">new</span> DeferredResult&lt;&gt;();</span><br><span class="line">    CompletableFuture.supplyAsync(<span class="keyword">this</span>.taskService ::execute)</span><br><span class="line">            .whenCompleteAsync((result, throwable) -&gt; deferredResult.setResult(result));</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> deferredResult;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>上面这个接口的返回值是 DeferredResult，那么请求的处理流程和 Callable 是一样的，不同的地方也是在于<br>返回值的 Handler 处理器不一样，这里用到的处理器是 DeferredResultMethodReturnValueHandler，而且这个类里面的 handleReturnValue 方法和上面的 CallableMethodReturnValueHandler 以及 AsyncTaskMethodReturnValueHandler 方法又不一样，这里调用的是 WebAsyncManager 类中 startDeferredResultProcessing 方法</p>
-<p><img src="http://images.rookiezhou.top/blog/images/startDeferredResultProcessing.png" alt="startDeferredResultProcessing"></p>
+<p><img src="/images/startDeferredResultProcessing.png" alt="startDeferredResultProcessing"></p>
 <p>startDeferredResultProcessing 方法和 startCallableProcessing 差不多，前面都是设置超时时间，设置超时，错误，完成的回调，最后有点不同，在 startCallableProcessing 方法里面是开始通过 taskExecutor 来执行异步任务。</p>
 <p>而在这里是为 deferredResult 设置了一个 resultHandler，然后在 resultHandler 里面调用 setConcurrentResultAndDispatch，来设置结果并且将请求再次分派到容器恢复请求过程返回结果给客户端。至于这里的 resultHandler 的用处是 Controller 里面异步任务执行完成后为 deferredResult 设置结果的时候调用 setResult 方法里面会用到。</p>
-<p><img src="http://images.rookiezhou.top/blog/images/setResult.png" alt="setResult"></p>
+<p><img src="/images/setResult.png" alt="setResult"></p>
 <p>从上面可以看出在设置结果之后，会调用在 startDeferredResultProcessing 设置好的 resultHandler ，也就是执行 setConcurrentResultAndDispatch，到这里就又和上面的流程一样了，调用 dispatch 方法将请求再次分派到容器，执行之后的恢复过程返回结果给客户端。</p>
 <p>对于 DeferredResult 作为接口返回值还有个不同的地方就是异步任务的执行完全是由开发人员自己控制了，而不是像之前的那样交给应用程序默认的 ThreadPoolTaskExecutor 来执行，这其实就给开发人员很大的灵活性了。</p>
 <p>采用这种异步方式的好处：<br>一般来说，我们写的更多的是阻塞同步式的接口，但有时候如果我们碰到比较耗时任务的接口，这时候我们如果还采用阻塞同步式的写法的话，那么前端请求到后台，首先 Tomcat 服务器从处理请求的线程池中获取一个线程 A 来处理该请求，</p>
 <p>然后由于这个接口要执行的任务耗时比较长，耗时任务一直在线程 A 中执行，直到任务执行完成才得到释放，对于并发量比较小的程序来说那还好，线程占着也就占着了，但如果是并发量比较大的程序，容器中大量的处理请求的线程将一直被占用，如果突然请求的高峰到来，那么容器中处理请求的线程有可能被耗尽，就不能再处理更多请求了，也就是说这严重影响了系统的并发吞吐量。</p>
 <p>而如果我们采取的是异步的方式来处理的话，这时就像我们前面所介绍的一样，请求到了后台，由于是异步的方式，处理请求的线程在处理完请求之后就被释放了，可以继续处理其他请求，等到异步任务执行完之后再移交给容器线程返回结果给客户端，这样的话就很大的提高了系统的并发量。</p>
-<p>最终的执行打印日志如下：<br><img src="http://images.rookiezhou.top/blog/images/deferredResultEndpoint_log.png" alt="deferredResultEndpoint_log"></p>
+<p>最终的执行打印日志如下：<br><img src="/images/deferredResultEndpoint_log.png" alt="deferredResultEndpoint_log"></p>
 <h3 id="各自的适用场景，"><a href="#各自的适用场景，" class="headerlink" title="各自的适用场景，"></a>各自的适用场景，</h3><p>首先一个前提就是要执行的任务是耗时的任务，或者需要等第三方的通知的任务</p>
 <ol>
 <li>通过 @Async 注解的方式</li>
@@ -360,7 +360,7 @@
     
         
   <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
-    <img id="wechat_subscriber_qcode" src="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
+    <img id="wechat_subscriber_qcode" src="/images/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
     <div>扫描上面图中二维码关注微信公众号</div>
   </div>
 <!-- 
@@ -370,7 +370,7 @@
     <div class="social-list">
 
         <div class="social-item">
-          <a target="_blank" class="social-link" href="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg">
+          <a target="_blank" class="social-link" href="/images/qrcode_for_rookiedev_258.jpg">
             <span class="icon">
               <i class="wechat"></i>
             </span>

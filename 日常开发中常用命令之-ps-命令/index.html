@@ -27,16 +27,16 @@
 <meta property="og:site_name" content="rookiedev">
 <meta property="og:description" content="在上一篇文章中我分享了关于 nohup 命令的使用，通过 nohup 命令在后台运行我们的程序，就算我们退出了终端程序也会继续在后台运行。 现在假如我们通过 nohup 命令在服务器上已经启动好了我们的后台程序，然后前端通过我们给的接口地址进行调试，这时前端跟你说接口调不通，于是我们去服务器上看下我们的日志文件以确认程序是否真的起来了，如果我们在日志文件中看到类似于下面这种日志：">
 <meta property="og:locale">
-<meta property="og:image" content="http://images.rookiezhou.top/blog/images/ps_output_no_head.png">
-<meta property="og:image" content="http://images.rookiezhou.top/blog/images/ps_output_with_head.png">
-<meta property="og:image" content="http://images.rookiezhou.top/blog/images/ps_awk_xargs.png">
-<meta property="og:image" content="http://images.rookiezhou.top/blog/images/lsof.png">
+<meta property="og:image" content="http://rookiedev.top/images/ps_output_no_head.png">
+<meta property="og:image" content="http://rookiedev.top/images/ps_output_with_head.png">
+<meta property="og:image" content="http://rookiedev.top/images/ps_awk_xargs.png">
+<meta property="og:image" content="http://rookiedev.top/images/lsof.png">
 <meta property="article:published_time" content="2021-06-09T14:08:50.000Z">
-<meta property="article:modified_time" content="2023-02-12T08:50:47.924Z">
+<meta property="article:modified_time" content="2023-02-13T08:10:25.083Z">
 <meta property="article:author" content="rookiedev">
 <meta property="article:tag" content="Java MySQL Life">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://images.rookiezhou.top/blog/images/ps_output_no_head.png">
+<meta name="twitter:image" content="http://rookiedev.top/images/ps_output_no_head.png">
 
 <link rel="canonical" href="http://rookiedev.top/%E6%97%A5%E5%B8%B8%E5%BC%80%E5%8F%91%E4%B8%AD%E5%B8%B8%E7%94%A8%E5%91%BD%E4%BB%A4%E4%B9%8B-ps-%E5%91%BD%E4%BB%A4/">
 
@@ -232,7 +232,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2023-02-12 16:50:47" itemprop="dateModified" datetime="2023-02-12T16:50:47+08:00">2023-02-12</time>
+                <time title="Modified: 2023-02-13 16:10:25" itemprop="dateModified" datetime="2023-02-13T16:10:25+08:00">2023-02-13</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -273,8 +273,8 @@
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">ps -ef|grep java|grep JdbctemplateSampleApplication</span><br></pre></td></tr></table></figure>
 <p>然后看看是否存在我们刚才启动的那个程序的进程，如果有的话说明程序确实在运行着，如果没有的话有可能是因为内存不足或者其他原因导致我们的程序启动成功后又停止了。这时可以再次通过 nohup 命令来启动程序，不出意外的话，前端应该可以调通了。</p>
 <p>接下来我们可以继续开发接口，过了两天加了几个接口然后需要再次部署到服务器上，这时我们需要先停掉之前正在运行的程序然后再启动新的程序，毕竟程序使用的端口是一样的，如果不停掉正在运行的程序而直接启动将会因为端口被占用而导致程序启动失败。</p>
-<p>好了，那我们就还是先找到上次运行的程序进程 id，再通过 kill 命令杀掉那个进程然后就可以启动了。同样的我们还是用 ps 命令来找到程序的进程：<br><img src="http://images.rookiezhou.top/blog/images/ps_output_no_head.png" alt="output_no_head"><br>从上面截图中可以看到我们确实找到了我们所运行的程序所在的那个进程，但是却不知道标记的那几个数字哪个是进程的 id，当然熟悉 ps 命令的可能都知道第二列是进程 id，但如果这时恰好我们忘了哪一列是进程 id 咋办呢？</p>
-<p>其实如果我们不带筛选条件的话，打印到终端的结果中第一行为每一列的列表标题，表示每一列的字段含义，有点类似 MySQL 中查询得到的结果中第一行代表的是每一列字段的含义。<br><img src="http://images.rookiezhou.top/blog/images/ps_output_with_head.png" alt="output_with_head"><br>但是由于我们带上了筛选条件，所以将第一行标题也过滤掉了，那我们能不能想办法在每次输出的结果中都带上第一行的标题行呢？其实是可以的，下面就是两种每次输出都带上标题行的方法:</p>
+<p>好了，那我们就还是先找到上次运行的程序进程 id，再通过 kill 命令杀掉那个进程然后就可以启动了。同样的我们还是用 ps 命令来找到程序的进程：<br><img src="/images/ps_output_no_head.png" alt="output_no_head"><br>从上面截图中可以看到我们确实找到了我们所运行的程序所在的那个进程，但是却不知道标记的那几个数字哪个是进程的 id，当然熟悉 ps 命令的可能都知道第二列是进程 id，但如果这时恰好我们忘了哪一列是进程 id 咋办呢？</p>
+<p>其实如果我们不带筛选条件的话，打印到终端的结果中第一行为每一列的列表标题，表示每一列的字段含义，有点类似 MySQL 中查询得到的结果中第一行代表的是每一列字段的含义。<br><img src="/images/ps_output_with_head.png" alt="output_with_head"><br>但是由于我们带上了筛选条件，所以将第一行标题也过滤掉了，那我们能不能想办法在每次输出的结果中都带上第一行的标题行呢？其实是可以的，下面就是两种每次输出都带上标题行的方法:</p>
 <ol>
 <li>使用 ‘grep’ 的扩展 ‘egrep’</li>
 </ol>
@@ -296,12 +296,12 @@
 <p>上面的整个命令就是通过管道符 | 传递上一个命令的执行结果，然后利用 awk 命令 以空格为默认分隔符将每行进行切片，然后只打印出每行第二列的内容，也就是进程 PID，之后再交给 xargs 命令 将所有行数据转为单行以空格分开，然后再将结果作为 kill 命令的参数，这样就做到了一步到位，查找进程杀死进程，这在我们需要批量杀死进程的时候还是非常便利的，省去了一个一个去找到进程 id，再一个一个去杀死进程。</p>
 <p>当然里面的 xargs 命令还是非常强大的，其实是由于很多命令不支持管道符 | 来传递参数，所以就用到了它的将管道或标准输入数据转换成命令行参数，上面的 Kill -9 就不支持管道符来传递参数，所以就通过 xargs 命令将上一个命令的执行结果作为 kill -9 的参数，当然这里还用到了 xargs 命令的多行变单行的作用。</p>
 <p>我放一张上面这个命令分开执行的效果图，有利于我们更好地理解上面完整的命令。</p>
-<p><img src="http://images.rookiezhou.top/blog/images/ps_awk_xargs.png" alt="ps_awk_xargs"></p>
+<p><img src="/images/ps_awk_xargs.png" alt="ps_awk_xargs"></p>
 <p>注意这里为了方便看出整体的效果，我筛选的是系统进程，所以我就没有执行最后加上 kill -9 的完整命令，不然系统的进程都被我杀死了，我系统都要错乱了。理解了上面的命令执行过程之后你可以换一个筛选条件，筛选出可以关掉的进程拿来测试看看效果。</p>
 <p>上面说的都是通过 ps 命令，然后加上对应的筛选条件来查找我们在这台服务器上运行的程序进程，那如果这台服务器运行的 Java 程序很多，筛选之后还需要人工来确认才知道是哪一个，又或者如果服务器上的程序是你前同事部署的，这时你可能都不知道怎么去筛选，但是呢通过前端请求的地址你能知道程序运行占用的端口号。那么我们就能根据端口号来找到对应的进程。</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">lsof -i:8081</span><br></pre></td></tr></table></figure>
 <p>上面的 lsof 命令就是列出谁在使用某个端口，其实这个命令还有很多功能，而我用的最多的就是上面这个，当然感兴趣的话可以自己去研究下这个命令的其他功能。</p>
-<p><img src="http://images.rookiezhou.top/blog/images/lsof.png" alt="lsof"></p>
+<p><img src="/images/lsof.png" alt="lsof"></p>
 <p>是不是觉得很方便，反正我是经常使用这个命令来查找后台运行的程序的，因为很简单，敲得的字符也少，还能精确定位到相关的进程，真的是爱了爱了。</p>
 <p>然后呢到这里 ps 命令就分享完了，当然我只是列举了它的一小部分常用的，更多功能还是需要我们在平常使用中去探索。同时我还提到了 lsof 命令，说实话，这个命令在我知道之后使用频率真的是非常非常高了，可以说很有用的一个命令，希望同样对你也很有帮助。</p>
 
@@ -312,7 +312,7 @@
     
         
   <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
-    <img id="wechat_subscriber_qcode" src="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
+    <img id="wechat_subscriber_qcode" src="/images/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
     <div>扫描上面图中二维码关注微信公众号</div>
   </div>
 <!-- 
@@ -322,7 +322,7 @@
     <div class="social-list">
 
         <div class="social-item">
-          <a target="_blank" class="social-link" href="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg">
+          <a target="_blank" class="social-link" href="/images/qrcode_for_rookiedev_258.jpg">
             <span class="icon">
               <i class="wechat"></i>
             </span>

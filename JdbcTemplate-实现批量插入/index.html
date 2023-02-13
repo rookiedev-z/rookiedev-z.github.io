@@ -27,19 +27,19 @@
 <meta property="og:site_name" content="rookiedev">
 <meta property="og:description" content="项目中有时候我们会遇到 excel 导入的需求, excle 文件的每一行记录对应的可能都是数据库中的一条记录，一个 excel 中可能有很多行，所以导入一个 excel 就意味着 excel 里面有多少行，我们就要插入多少条记录。如果我们采用一条一条记录插入的方式，毫无疑问，这可能要执行很久。 如果是采用同步的方式的话，页面就会需要等好长一段时间才能有响应。就算采用异步的方式，先给前端一个响应，">
 <meta property="og:locale">
-<meta property="og:image" content="http://images.rookiezhou.top/inser_stats_result.png">
-<meta property="og:image" content="http://images.rookiezhou.top/batch_insert_stats_result.png">
-<meta property="og:image" content="http://images.rookiezhou.top/download_source.png">
-<meta property="og:image" content="http://images.rookiezhou.top/batch_insert_condition.png">
-<meta property="og:image" content="http://images.rookiezhou.top/batch_insert_for_loop.png">
-<meta property="og:image" content="http://images.rookiezhou.top/jdbc_url_property.png">
-<meta property="og:image" content="http://images.rookiezhou.top/real_batch_insert_stats_result.png">
+<meta property="og:image" content="http://rookiedev.top/images/inser_stats_result.png">
+<meta property="og:image" content="http://rookiedev.top/images/batch_insert_stats_result.png">
+<meta property="og:image" content="http://rookiedev.top/images/download_source.png">
+<meta property="og:image" content="http://rookiedev.top/images/batch_insert_condition.png">
+<meta property="og:image" content="http://rookiedev.top/images/batch_insert_for_loop.png">
+<meta property="og:image" content="http://rookiedev.top/images/jdbc_url_property.png">
+<meta property="og:image" content="http://rookiedev.top/images/real_batch_insert_stats_result.png">
 <meta property="article:published_time" content="2020-08-11T08:34:33.000Z">
-<meta property="article:modified_time" content="2020-08-11T08:39:21.195Z">
+<meta property="article:modified_time" content="2023-02-13T14:52:30.085Z">
 <meta property="article:author" content="rookiedev">
 <meta property="article:tag" content="Java MySQL Life">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://images.rookiezhou.top/inser_stats_result.png">
+<meta name="twitter:image" content="http://rookiedev.top/images/inser_stats_result.png">
 
 <link rel="canonical" href="http://rookiedev.top/JdbcTemplate-%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5/">
 
@@ -227,10 +227,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2020-08-11 16:34:33 / Modified: 16:39:21" itemprop="dateCreated datePublished" datetime="2020-08-11T16:34:33+08:00">2020-08-11</time>
+              <time title="Created: 2020-08-11 16:34:33" itemprop="dateCreated datePublished" datetime="2020-08-11T16:34:33+08:00">2020-08-11</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-02-13 22:52:30" itemprop="dateModified" datetime="2023-02-13T22:52:30+08:00">2023-02-13</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -279,20 +285,20 @@
 
 <p>其中 mockStatsData() 方法是一个 for 循环构建了 10000 个 ActivityStat，返回 activityStatList:</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> List&lt;ActivityStat&gt; <span class="title">mockStatsData</span><span class="params">()</span></span>&#123;</span><br><span class="line">        List&lt;ActivityStat&gt; activityStatList = <span class="keyword">new</span> ArrayList&lt;&gt;(<span class="number">10000</span>);</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000</span>; i++)&#123;</span><br><span class="line">            ActivityStat activityStat = <span class="keyword">new</span> ActivityStat();</span><br><span class="line">            activityStat.setActivityId((<span class="keyword">long</span>)i)</span><br><span class="line">                    .setTimesViewed((<span class="keyword">long</span>)(i + <span class="number">100</span>))</span><br><span class="line">                    .setWorksCount((<span class="keyword">long</span>) i + <span class="number">50</span>)</span><br><span class="line">                    .setUserCount((<span class="keyword">long</span>) i + <span class="number">10</span>);</span><br><span class="line">            activityStatList.add(activityStat);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> activityStatList;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-<p>运行测试的结果是下面这样的:<br><img src="http://images.rookiezhou.top/inser_stats_result.png" alt="insert stats result"></p>
-<p><img src="http://images.rookiezhou.top/batch_insert_stats_result.png" alt="batch insert stats result"></p>
+<p>运行测试的结果是下面这样的:<br><img src="/images/inser_stats_result.png" alt="insert stats result"></p>
+<p><img src="/images/batch_insert_stats_result.png" alt="batch insert stats result"></p>
 <p>往数据库中插入 10000 条记录，采用 for 循环的方式和采用批量的方式插入竟然时间量级是一样的，是不是有点懵，说实话刚开始我也有点懵，就觉得不应该啊，如果这样的话那还要 batchUpdate 方法有什么意义呢。</p>
-<p>懵归懵，但还是要找出其中的原因来，正常来说肯定不会是这种结果，应该是哪个环节没弄好，从我们写的代码来看应该是没有问题的，那就通过 debug 的方式看看 batchUpdate 方法里面到底是怎么执行的。这里建议如果要 debug 的源码是稍微比较复杂的，建议不要直接看 class 文件，calss 文件毕竟是编译之后的，代码看起来不是那么的直观，可以在打开 class 文件之后点击右上角提示的下载源码按钮。<br><img src="http://images.rookiezhou.top/download_source.png" alt="download_source"></p>
-<p>通过 debug 的方式我在 ClientPreparedStatement 类中找到下面这样一段代码:<br><img src="http://images.rookiezhou.top/batch_insert_condition.png" alt="batch insert condition"></p>
+<p>懵归懵，但还是要找出其中的原因来，正常来说肯定不会是这种结果，应该是哪个环节没弄好，从我们写的代码来看应该是没有问题的，那就通过 debug 的方式看看 batchUpdate 方法里面到底是怎么执行的。这里建议如果要 debug 的源码是稍微比较复杂的，建议不要直接看 class 文件，calss 文件毕竟是编译之后的，代码看起来不是那么的直观，可以在打开 class 文件之后点击右上角提示的下载源码按钮。<br><img src="/images/download_source.png" alt="download_source"></p>
+<p>通过 debug 的方式我在 ClientPreparedStatement 类中找到下面这样一段代码:<br><img src="/images/batch_insert_condition.png" alt="batch insert condition"></p>
 <p>这里有个判断 !this.batchHasPlainStatements &amp;&amp; this.rewriteBatchedStatements.getValue()<br>只有这两个条件同时都满足的情况下才会执行下面的 executeBatchedInserts 或 executePreparedBatchAsMultiStatement 方法，这两个都是批量的方法，第一个是针对 Insert 语句的，下面那个是 Update 和 Delete 语句的批量方法。</p>
-<p>当上面这两个条件只要有一个不满足，就会执行最下面的 executeBatchSerially 方法，而在这个方法的内部可以看到有一个 for 循环，然后在 for 循环里面一个一个执行 SQL。<br><img src="http://images.rookiezhou.top/batch_insert_for_loop.png" alt="batch insert for loop"></p>
+<p>当上面这两个条件只要有一个不满足，就会执行最下面的 executeBatchSerially 方法，而在这个方法的内部可以看到有一个 for 循环，然后在 for 循环里面一个一个执行 SQL。<br><img src="/images/batch_insert_for_loop.png" alt="batch insert for loop"></p>
 <p>看到这里再仔细看上面两个条件，对于    !this.batchHasPlainStatements 是类的一个属性，默认值是 false:</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Does the batch (if any) contain &quot;plain&quot; statements added by</span></span><br><span class="line"><span class="comment">     * Statement.addBatch(String)?</span></span><br><span class="line"><span class="comment">     * </span></span><br><span class="line"><span class="comment">     * If so, we can&#x27;t re-write it to use multi-value or multi-queries.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">boolean</span> batchHasPlainStatements = <span class="keyword">false</span>;</span><br></pre></td></tr></table></figure>
 <p>只有在 addBatch 方法中才会置为 true，所以第一个条件满足的。再看第二个条件 thi.rewriteBatchedStatements,是父类的一个属性:</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> RuntimeProperty&lt;Boolean&gt; rewriteBatchedStatements;</span><br></pre></td></tr></table></figure>
-<p><img src="http://images.rookiezhou.top/jdbc_url_property.png" alt="jdbc_url_property"><br>再看这个属性的初始化值的地方应该能猜到是这个是数据库地址 url 后面接的配置信息。</p>
+<p><img src="/images/jdbc_url_property.png" alt="jdbc_url_property"><br>再看这个属性的初始化值的地方应该能猜到是这个是数据库地址 url 后面接的配置信息。</p>
 <p>到这里我们应该知道为什么批量执行的方式和 for 循环一个一个插入时间量级是一样的了，是由于我们的少了rewriteBatchedStatements=true 的配置，导致 batchUpdate 代码内部其实还是通过 for 循环的方式来执行的，所以量级才会是一样的，接下来我们加上这项配置再执行就可以看到速度明显上来了，下面是加上改配置执行之后的结果:</p>
-<p><img src="http://images.rookiezhou.top/real_batch_insert_stats_result.png" alt="real batch update result"></p>
+<p><img src="/images/real_batch_insert_stats_result.png" alt="real batch update result"></p>
 <p>插入 10000 条记录用时才 2s，而加上配置之前是 30s。其实 rewriteBatchedStatements=true 配置对于批量的 insert 语句来说，是实现了下面的效果:</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> activity_stats(activity_id, times_viewed, works_count, user_count) <span class="keyword">values</span>(?, ?, ?, ?);</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> activity_stats(activity_id, times_viewed, works_count, user_count) <span class="keyword">values</span>(?, ?, ?, ?);</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> activity_stats(activity_id, times_viewed, works_count, user_count) <span class="keyword">values</span>(?, ?, ?, ?)</span><br><span class="line"><span class="comment"># 重写之后</span></span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> activity_stats(activity_id, times_viewed, works_count, user_count) <span class="keyword">values</span>(?, ?, ?, ?),(?, ?, ?, ?),(?, ?, ?, ?);</span><br></pre></td></tr></table></figure>
 <p>也就是是否将多条重写成一条，然后在发给 MySQL 执行，这样不用一条一条发过去执行，大大提高了执行效率。</p>
@@ -305,7 +311,7 @@
     
         
   <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
-    <img id="wechat_subscriber_qcode" src="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
+    <img id="wechat_subscriber_qcode" src="/images/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
     <div>扫描上面图中二维码关注微信公众号</div>
   </div>
 <!-- 
@@ -315,7 +321,7 @@
     <div class="social-list">
 
         <div class="social-item">
-          <a target="_blank" class="social-link" href="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg">
+          <a target="_blank" class="social-link" href="/images/qrcode_for_rookiedev_258.jpg">
             <span class="icon">
               <i class="wechat"></i>
             </span>

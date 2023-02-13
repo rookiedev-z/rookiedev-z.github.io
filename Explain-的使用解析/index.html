@@ -27,36 +27,36 @@
 <meta property="og:site_name" content="rookiedev">
 <meta property="og:description" content="SQL 执行速度评估假如现在有一张活动表，表结构如下: 1234567891011121314create table activities(    id bigint unsigned auto_increment comment &#39;主键&#39; primary key,    name varchar(255) default &#39;&#39; not null comment">
 <meta property="og:locale">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_intro.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_table_sequence.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_id_sequence.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_type_const.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_type_eq_ref.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_type_ref.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_type_ref_or_null.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_type_index_merge.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_type_range.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_type_index.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_type_all.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_extra_no_matching.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_extra_using_index.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_extra_using_index_for_group_by.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_extra_using_index_for_group_by1.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_extra_using_index_condition.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_extra_using_index_condition1.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_extra_using_where.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_extra_using_where1.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_extra_using_join_buffer_bnl.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_extra_using_join_buffer_hash.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_extra_using_join_buffer_bka.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_extra_using_temporary.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_extra_using_filesort.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_intro.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_table_sequence.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_id_sequence.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_type_const.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_type_eq_ref.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_type_ref.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_type_ref_or_null.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_type_index_merge.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_type_range.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_type_index.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_type_all.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_extra_no_matching.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_extra_using_index.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_extra_using_index_for_group_by.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_extra_using_index_for_group_by1.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_extra_using_index_condition.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_extra_using_index_condition1.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_extra_using_where.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_extra_using_where1.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_extra_using_join_buffer_bnl.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_extra_using_join_buffer_hash.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_extra_using_join_buffer_bka.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_extra_using_temporary.png">
+<meta property="og:image" content="http://rookiedev.top/images/explain_extra_using_filesort.png">
 <meta property="article:published_time" content="2022-11-01T15:37:22.000Z">
-<meta property="article:modified_time" content="2023-02-12T09:11:09.761Z">
+<meta property="article:modified_time" content="2023-02-13T07:34:54.818Z">
 <meta property="article:author" content="rookiedev">
 <meta property="article:tag" content="Java MySQL Life">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/explain_intro.png">
+<meta name="twitter:image" content="http://rookiedev.top/images/explain_intro.png">
 
 <link rel="canonical" href="http://rookiedev.top/Explain-%E7%9A%84%E4%BD%BF%E7%94%A8%E8%A7%A3%E6%9E%90/">
 
@@ -252,7 +252,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2023-02-12 17:11:09" itemprop="dateModified" datetime="2023-02-12T17:11:09+08:00">2023-02-12</time>
+                <time title="Modified: 2023-02-13 15:34:54" itemprop="dateModified" datetime="2023-02-13T15:34:54+08:00">2023-02-13</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -302,8 +302,7 @@
 <h4 id="EXPLAIN-语法介绍"><a href="#EXPLAIN-语法介绍" class="headerlink" title="EXPLAIN 语法介绍"></a>EXPLAIN 语法介绍</h4><p>对于 explain 的使用，其实很简单，只要在要执行的 SQL 语句前面加上 explain 关键字就可以，以上面的 SQL 为例:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from activities where start_time &lt; now() and now() &lt; end_time;</span><br></pre></td></tr></table></figure>
 
-<p>执行结果如下:</p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_intro.png" alt="image-20220423230701278"></p>
+<p>执行结果如下:<br><img src="/images/explain_intro.png" alt="image-20220423230701278"></p>
 <p>从执行结果来看，有点类似于在查询一张包含上面输出结果中的这些字段的表一样，这些字段包括 id，select_type, table,partitions, type, possible_keys, key, key_len, ref, rows, filtered, Extra，这些字段当中有些我们稍微了解一下就可以，有些字段对于我们优化 SQL 有很大的帮助，需要重点关注</p>
 <p>针对下面的示例，这里先准备一些表作为测试使用:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">create table cities</span><br><span class="line">(</span><br><span class="line">    id bigint unsigned auto_increment comment &#39;主键&#39; primary key,</span><br><span class="line">    name varchar(255) default &#39;&#39; comment &#39;城市名称&#39;,</span><br><span class="line">    code varchar(64) default &#39;&#39; not null comment &#39;城市编码&#39;</span><br><span class="line">) comment &#39;城市编码表&#39;;</span><br><span class="line">create index idx_name on cities(name);</span><br><span class="line">create unique index uk_code on cities (code);</span><br></pre></td></tr></table></figure>
@@ -312,10 +311,10 @@
 <p>id，table: id 和 table 两个字段可以放在一起来看，id 的值代表了 SQL 语句中表的读取顺序，值越大读取顺序越靠前，当 id 值相同时，table 列按照从上往下的读取顺序。</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from activities where city_code &#x3D; (select code from cities limit 1);</span><br></pre></td></tr></table></figure>
 
-<p><img src="/Users/rookiedev/wechat/article_images/explain_table_sequence.png" alt="image-20220425204607073"></p>
+<p><img src="/images/explain_table_sequence.png" alt="image-20220425204607073"></p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from activities t1 join cities t2 on t1.city_code &#x3D; t2.code;</span><br></pre></td></tr></table></figure>
 
-<p><img src="/Users/rookiedev/wechat/article_images/explain_id_sequence.png" alt="image-20220425204446829"></p>
+<p><img src="/images/explain_id_sequence.png" alt="image-20220425204446829"></p>
 <p>select_type: 表示 SQL 语句的查询类型，常见的值有：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">SIMPLE：简单查询，不包含 UNION 或者子查询</span><br><span class="line">PRIMARY：查询中如果包含子查询或其他部分，外层的 SELECT 将被标记为 PRIMARY</span><br><span class="line">SUBQUERY：子查询中的第一个 SELECT 查询</span><br><span class="line">UNION：在 UNION 语句中，UNION 之后出现的 SELECT</span><br><span class="line">DERIVED：在 FROM 中出现的子查询将被标记为 DERIVED</span><br><span class="line">UNION RESULT：UNION 查询的结果</span><br></pre></td></tr></table></figure>
 
@@ -337,60 +336,60 @@
 <p>const: 主要是在通过主键或者唯一键等值查询的时候，type 字段的值是 const</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from cities where code &#x3D; &#39;330100&#39;;</span><br></pre></td></tr></table></figure>
 
-<p><img src="/Users/rookiedev/wechat/article_images/explain_type_const.png" alt="image-20220426192431443"></p>
+<p><img src="/images/explain_type_const.png" alt="image-20220426192431443"></p>
 <p>eq_ref: 在联表查询查询时，A 表 join B 表，B 表是通过主键或者唯一键进行关联时，也就是在 A 表中只有唯一一条记录和 B 表中数据相匹配，那 B 表的 type 字段值就是 eq_ref 类型</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from activities t1 join cities t2 on t1.city_code &#x3D; t2.code;</span><br></pre></td></tr></table></figure>
 
-<p><img src="/Users/rookiedev/wechat/article_images/explain_type_eq_ref.png" alt="image-20220426193145085"></p>
+<p><img src="/images/explain_type_eq_ref.png" alt="image-20220426193145085"></p>
 <p>ref: 通过普通索引进行等值查询，也就是表中可能有多条数据记录匹配，那 type 字段值就是 ref 类型</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from cities where name &#x3D; &#39;杭州&#39;;</span><br></pre></td></tr></table></figure>
 
-<p><img src="/Users/rookiedev/wechat/article_images/explain_type_ref.png" alt="image-20220426195602499"></p>
+<p><img src="/images/explain_type_ref.png" alt="image-20220426195602499"></p>
 <p>ref_or_null: 通过普通索引进行等值查询，或者该字段为 null 的情况，注意该字段不能设置为 not null，那 type 字段值就是 ref_or_null 类型</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from cities where name &#x3D; &#39;杭州&#39; or name is null;</span><br></pre></td></tr></table></figure>
 
-<p><img src="/Users/rookiedev/wechat/article_images/explain_type_ref_or_null.png" alt="image-20220426200127808"></p>
+<p><img src="/images/explain_type_ref_or_null.png" alt="image-20220426200127808"></p>
 <p>index_merge: 在 where 条件中的字段需要利用多个索引进行查询，这时 type 字段值就是 index_merge 类型，常见于多个索引字段进行 or 查询</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from cities where code &#x3D; &#39;330100&#39; or name &#x3D; &#39;杭州&#39;;</span><br></pre></td></tr></table></figure>
 
-<p><img src="/Users/rookiedev/wechat/article_images/explain_type_index_merge.png" alt="image-20220426201022049"></p>
+<p><img src="/images/explain_type_index_merge.png" alt="image-20220426201022049"></p>
 <p>range: 索引范围查询，这个可能见的相对比较多一点，常见于带 &lt;&gt;，&gt;，&gt;=，&lt;，&lt;=，between，in，like 等这些查询条件语句中</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from activities where start_time &gt;&#x3D; now();</span><br></pre></td></tr></table></figure>
 
-<p><img src="/Users/rookiedev/wechat/article_images/explain_type_range.png" alt="image-20220426234344870"></p>
+<p><img src="/images/explain_type_range.png" alt="image-20220426234344870"></p>
 <p>index: 通过遍历索引树就能够得到相应的数据，相比下面的 All 类型来说要好一些，索引文件大小肯定要比数据文件大小要小，而且索引的根节点和第二层节点大概率处于内存当中，相对来说会更快一些，但注意这是索引树扫描，相比其他索引定位查询还是要慢很多的，所以不要看到使用上了索引就以为查询不慢</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select id, name from cities;</span><br></pre></td></tr></table></figure>
 
-<p><img src="/Users/rookiedev/wechat/article_images/explain_type_index.png" alt="image-20220427000036479"></p>
+<p><img src="/images/explain_type_index.png" alt="image-20220427000036479"></p>
 <p>All: 这个就是通常我们所说的没有可用的索引可以利用，直接全表扫描，相对来说性能是最差的，最直接的方法就是通过加索引来避免全表扫描</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from activities where name &#x3D; &#39;活动一&#39;;</span><br></pre></td></tr></table></figure>
 
-<p><img src="/Users/rookiedev/wechat/article_images/explain_type_all.png" alt="image-20220426235124506"></p>
+<p><img src="/images/explain_type_all.png" alt="image-20220426235124506"></p>
 <h4 id="Extra-列解析"><a href="#Extra-列解析" class="headerlink" title="Extra 列解析"></a>Extra 列解析</h4><p>上面已经介绍了 Type 字段常见的一些值的含义，但有时还需要配合 Extra 一起来看才能更好的进行优化，接下来我们一起来看 Extra 字段常见值含义:</p>
 <p>no matching row in const table: 通常根据主键查询的数据在表中不存在，Extra 列的值是这个</p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_no_matching.png" alt="image-20220430181005220"></p>
+<p><img src="/images/explain_extra_no_matching.png" alt="image-20220430181005220"></p>
 <p>Using index: 表示利用到了我们在之前文章里面提到的索引覆盖优化功能，通常是要查询的字段以及条件字段都已经在索引中存在，也就是说通过索引树就可以满足查询条件以及结果，不需要再到主键索引树中查询该记录完整的数据，减少回表的过程</p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_index.png" alt="image-20220430182906088"></p>
+<p><img src="/images/explain_extra_using_index.png" alt="image-20220430182906088"></p>
 <p>Using index for group-by: 和 Using index 意思差不多，不过就是查询语句中如果包含了 distinct 和 group by 关键字的时候 Extra 里面的内容就是 Using index for group-by 了</p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_index_for_group_by.png" alt="image-20220430204616024"></p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_index_for_group_by1.png" alt="image-20220430204709766"></p>
+<p><img src="/images/explain_extra_using_index_for_group_by.png" alt="image-20220430204616024"></p>
+<p><img src="/images/explain_extra_using_index_for_group_by1.png" alt="image-20220430204709766"></p>
 <p>Using index condition: 表示利用到了在我们在之前文章里面同样提到过的索引下推优化功能，在 “仅能利用最左前缀索引的场景” 下(无法能利用全部联合索引)，对不在最左前缀索引中的其他联合索引字段加以利用，在遍历索引时，由只传入可以利用到的字段值，改成了多传入下推字段值进行过滤，过滤会减少遍历索引查出的主键条数，从而减少回表次数，提升整体性能，对于 Using index 和 Using index condition 不是很熟悉的话建议去看之前的文章 &lt;&lt;深入索引二&gt;&gt;</p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_index_condition.png" alt="image-20220430183309242"></p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_index_condition1.png" alt="image-20220502110908831"></p>
+<p><img src="/images/explain_extra_using_index_condition.png" alt="image-20220430183309242"></p>
+<p><img src="/images/explain_extra_using_index_condition1.png" alt="image-20220502110908831"></p>
 <p>Using where: 表示该查询需要在 Server 层得到存储引擎返回的结果之后需要再次进行过滤，这种情况可能使用了索引，只不过存在其他条件不在索引字段中，也有可能就完全没有使用索引</p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_where.png" alt="image-20220430202912973"></p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_where1.png" alt="image-20220430203040134"></p>
+<p><img src="/images/explain_extra_using_where.png" alt="image-20220430202912973"></p>
+<p><img src="/images/explain_extra_using_where1.png" alt="image-20220430203040134"></p>
 <p>Using join buffer (Block Nested Loop): 表示在 join 联表查询的时候，当被驱动表的联表字段上没有索引的时候，Extra 里面就会出现这个值，但注意的是在 MySQL 8.0 版本之后 Extra 里面的值是 Using join buffer (hash join)，当出现不管是 Using join buffer (Block Nested Loop) 还是 Using join buffer (hash join) 我们都应该想办法进行优化，简单的做法就是在被驱动表的关联字段上建索引</p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_join_buffer_bnl.png" alt="image-20220502132957893"></p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_join_buffer_hash.png" alt="image-20220502122513317"></p>
+<p><img src="/images/explain_extra_using_join_buffer_bnl.png" alt="image-20220502132957893"></p>
+<p><img src="/images/explain_extra_using_join_buffer_hash.png" alt="image-20220502122513317"></p>
 <p>Using join buffer (Batched Key Access): 表示在 join 联表查询的时，当被驱动表的联表字段上有索引，Extra 里面就会出现这个值，但注意的是需要将下面的优化开关设置如下</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set optimizer_switch&#x3D;&#39;mrr&#x3D;on,mrr_cost_based&#x3D;off,batched_key_access&#x3D;on&#39;;</span><br></pre></td></tr></table></figure>
 
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_join_buffer_bka.png" alt="image-20220502121822919"></p>
+<p><img src="/images/explain_extra_using_join_buffer_bka.png" alt="image-20220502121822919"></p>
 <p>Using temporary: 表示该查询需要借助临时表来存储中间查询结果才能进一步得到最终的查询结果，通常存在于 group by 的查询语句，同时又没有使用到索引的情况，这种 SQL 一般都需要优化</p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_temporary.png" alt="image-20220430210911712"></p>
+<p><img src="/images/explain_extra_using_temporary.png" alt="image-20220430210911712"></p>
 <p>Using filesort: 表示该查询没办法利用现有的索引对结果进行排序，而需要借助第三方存储空间来进行排序才能得到最终的排序结果，通常存在于包含 order by 的查询语句中，同时又没有使用到索引的情况，这种 SQL 一般都需要优化</p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_filesort.png" alt="image-20220430211338265"></p>
+<p><img src="/images/explain_extra_using_filesort.png" alt="image-20220430211338265"></p>
 <p>好了，上面主要介绍了 explain 执行结果中的一些字段含义，type 字段和 Extra 字段里面常见的一些值以及这些值的含义，通过熟悉这些我们可以大概知道 SQL 是怎么执行的，执行的速度怎么样，是否还有优化空间，下篇文章就来看两个常见的 SQL 优化案例。</p>
 
     </div>
@@ -400,7 +399,7 @@
     
         
   <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
-    <img id="wechat_subscriber_qcode" src="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
+    <img id="wechat_subscriber_qcode" src="/images/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
     <div>扫描上面图中二维码关注微信公众号</div>
   </div>
 <!-- 
@@ -410,7 +409,7 @@
     <div class="social-list">
 
         <div class="social-item">
-          <a target="_blank" class="social-link" href="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg">
+          <a target="_blank" class="social-link" href="/images/qrcode_for_rookiedev_258.jpg">
             <span class="icon">
               <i class="wechat"></i>
             </span>

@@ -27,19 +27,19 @@
 <meta property="og:site_name" content="rookiedev">
 <meta property="og:description" content="对于 MySQL 事务，可能我们大家都不陌生，事务是对数据库中数据操作保证数据逻辑一致的最小操作单位，一个事务中可能包含多条语句，但这些语句作为一个整体，由事务来保证这个整体的操作要么都成功，要么都失败，不存在部分成功部分失败的情况。 同时事务还具备 ACID 的特性，分别是原子性(Atomicity)，一致性(Consistency)，隔离性(Isolation)，持久性(Durability)">
 <meta property="og:locale">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/undo_log.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/undo_log_trx_id.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/high_low_bit.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/high_low_sql_execute.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/update_current_read.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/lock_share_current_read.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/read_commited.png">
+<meta property="og:image" content="http://rookiedev.top/images/undo_log.png">
+<meta property="og:image" content="http://rookiedev.top/images/undo_log_trx_id.png">
+<meta property="og:image" content="http://rookiedev.top/images/high_low_bit.png">
+<meta property="og:image" content="http://rookiedev.top/images/high_low_sql_execute.png">
+<meta property="og:image" content="http://rookiedev.top/images/update_current_read.png">
+<meta property="og:image" content="http://rookiedev.top/images/lock_share_current_read.png">
+<meta property="og:image" content="http://rookiedev.top/images/read_commited.png">
 <meta property="article:published_time" content="2022-08-24T14:54:44.000Z">
-<meta property="article:modified_time" content="2023-02-12T09:08:56.664Z">
+<meta property="article:modified_time" content="2023-02-13T07:34:54.816Z">
 <meta property="article:author" content="rookiedev">
 <meta property="article:tag" content="Java MySQL Life">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/undo_log.png">
+<meta name="twitter:image" content="http://rookiedev.top/images/undo_log.png">
 
 <link rel="canonical" href="http://rookiedev.top/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E4%BA%8B%E5%8A%A1%E5%8E%9F%E7%90%86/">
 
@@ -235,7 +235,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2023-02-12 17:08:56" itemprop="dateModified" datetime="2023-02-12T17:08:56+08:00">2023-02-12</time>
+                <time title="Modified: 2023-02-13 15:34:54" itemprop="dateModified" datetime="2023-02-13T15:34:54+08:00">2023-02-13</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -336,7 +336,7 @@
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">update users set age &#x3D; 28 where name &#x3D; &#39;张三&#39;; #① 事务一</span><br><span class="line"></span><br><span class="line">update users set age &#x3D; 29 where name &#x3D; &#39;张三&#39;; #② 事务二</span><br><span class="line"></span><br><span class="line">update users set age &#x3D; 30 where name &#x3D; &#39;张三&#39;; #③ 事务三</span><br></pre></td></tr></table></figure>
 
 <p>上面这三个更新事务分别对应着数据库中三个数据版本，下面图中详细展示了三个事务更新后记录的 undo log。</p>
-<p><img src="/Users/rookiedev/wechat/article_images/undo_log.png" alt="undo log"></p>
+<p><img src="/images/undo_log.png" alt="undo log"></p>
 <p>从上面图中可以看出，三个事务更新后都会记录相应的 undo log 用来回滚到上一个版本，那么在查询张三的年龄的时候，不同时刻启动的事务查询得到的年龄是不一样的，但数据库中数据肯定已经是最新值了，只不过根据事务的隔离级别不同，需要通过 undo log 回滚到对应的可见版本，这里举几个例子:</p>
 <p>从图中可以看到刚开始张三的那条数据年龄是 27，对应的更新事务是 X，目前最新的数据年龄值是 30，对应的更新事务是事务三：</p>
 <p>如果是在事务一启动之前开启事务 A 来查询，在事务 A 启动的时刻创建了一个一致性读视图，后面的更改对我都不可见，我只认我创建的视图中能看到的数据，后面在事务中查询看到的数据都依赖于视图中能看到的数据，虽然读到最新的值是 age=30，但是不可见，通过 undo log 回滚到上一个版本 age=29，同样不可见，直到回滚到 age = 27，可见。</p>
@@ -345,7 +345,7 @@
 <p>从上面例子可以看出，一条记录在数据库中看起来就存在多个版本一样，也就是我们经常听到的多版本并发控制(MVCC)，不同时刻启动的事务看到的是不同版本的数据，但要注意，并不是说这多个版本的数据是物理结构上存在的，它们都是需要拿到当前的最新值再通过 undo log 进行回滚到相应的版本，那么就会引出一个问题了，对于那种长事务，往往数据已经更新了很多个版本了，但在这个事务里面依然需要通过 undo log 一步一步回滚到可见的那个版本，也就是说在事务提交前这些 undo log 就没办法进行删除，需要一直保留，直到没有对应的事务再需要这些日志的时候才能够删除，如果存在很多的长事务，就可能导致这些 undo log 越来越大，因此在我们日常的开发中，我们需要尽量的去避免使用长事务，长事务不仅会造成回滚日志会越来越大，还会导致锁资源的占用问题，这个后面在分析锁的时候再说。</p>
 <p>上面也说了事务的很多东西了，事务的基本定义，ACID 特性，以及隔离性是如何实现的，然后引出了 undo log 这个新的日志，但 undo log 只是我们实现隔离性的一个辅助工具，能够让我们回滚到之前的数据版本，那 MySQL 是怎么去判定具体要回滚到哪个版本呢？</p>
 <p>接下来我们再引出一个事务 id 的概念，实际上数据库在每个事务启动时都会向服务申请一个唯一的事务 id，而且这个事务 id 是顺序递增的，每次事务更新数据的时候会生成一个新的数据版本，并且把当前事务 id 赋值给这个数据版本，记为 trx_id，同时旧的数据版本要保留，并且在新的数据版本中，能够有信息可以直接拿到它，因此在新的数据版本中除了包含本次数据的值和当前更新的事务 id 外，还有一个引用(指向上一个数据版本)，通过 undo log 进行回滚时需要用到。上面的几个事务更新在加上事务 id 之后，更新流程图如下:</p>
-<p><img src="/Users/rookiedev/wechat/article_images/undo_log_trx_id.png" alt="undo log"></p>
+<p><img src="/images/undo_log_trx_id.png" alt="undo log"></p>
 <p>从图中可以看到最开始更新之前张三这条数据是由事务 id=100 的事务 X 所更新的，接下来依次被事务一事务二事务三所更新，对应的事务 id 分别是 105，110，115，而<strong>在不同时刻启动的事务会创建不同的一致性读视图，这个一致性读视图其实也就是给整个库打了个快照</strong>，注意并不是说事务启动的时候将整个库的数据拷贝一份出来，要是这样做的话就太费内存，太费时间了。</p>
 <p>它的实现上是<strong>将目前还处于活跃事务的事务 id 放到一个数组里面，活跃事务是指事务开启了但还没提交的事务，数组中最小值记为低水位，当前系统中已经创建的事务 id 的最大值 +1 记为高水位，然后依据高低水位来判断数据版本可不可见</strong>，注意理解这句话，说明数组中包含的是活跃事务 id，中间已经提交了的事务是不在里面的，也就是说数组中的值不一定是连续的。</p>
 <p>有了这个数组之后，就可以利用这个数组来判断数据可不可见了，判断规则如下:</p>
@@ -357,11 +357,11 @@
 <li><strong>数组中不包含该事务 id，说明是已经提交的事务，该数据版本可见</strong></li>
 </ul>
 <p>接下来我们来模拟几个事务的 SQL 执行场景，然后我们用上面的规则来分析可见性，看看是否和我们之前理解的数据可见性是一致的。下面的场景将会涵盖上面三种情况，SQL 执行的顺序就是按照表格从上到下的顺序，事务隔离级别没有特殊说明都是可重复读:</p>
-<p><img src="/Users/rookiedev/wechat/article_images/high_low_bit.png" alt="undo log"></p>
+<p><img src="/images/high_low_bit.png" alt="undo log"></p>
 <p>上面表格中没有显式开启事务的都是自动提交，表头描述了每个事务的名称以及对应的事务 id，表格内容从上到下可以看到首先是事务一将 id = 1 的 age 字段更新成 28 并且自动提交，接下来启动事务二但没提交，紧接着事务三将 id = 1 的 age 字段更新成 30 并且自动提交，然后事务二再将  id = 1 的 age 字段更新成 29 依然没提交，再接着事务 A 启动，随后对事务二进行提交，然后事务四将 id = 1 的 age 字段更新成 31 并且自动提交，这时再回到事务 A 查询 id = 1 的那条数据，这时看到的 id = 1 的那条数据的 age 等于多少呢？</p>
 <p>上面描述了这个场景的整个过程，我们用上面的规则来进行分析，其实主要就是分析事务 A 中的查询语句看到的 age 字段是多少。事务 A 启动时将当前库活跃事务的事务 id 放到一个数组里面，我们假设数据库目前只有这几个事务在操作数据库，那么事务 A 启动时处于活跃的事务就只有事务二是还没提交的，同时事务 A 启动时系统中已经创建的事务 id 的最大值是 103，高水位就是 104，那么事务 A 启动时对应的数组就是 [102, 104]，低水位就是 102，然后在事务 A 中进行查询 id = 1 的那条记录，该记录目前最新版本 age 的最新值是 31，对应的事务 id 是 105，105 比高水位大，对应上面规则中的第二种情况，那么该数据版本不可见，然后根据 undo log 回滚到前一个版本，前一个版本是事务二进行更新的，事务二的事务 id 是 102，等于最低水位并且数组中包含该事务 id，对应着上面规则中的第三种情况里面的第一种，数据版本依然不可见，继续根据 undo log 回滚到前一个版本，前一个版本是事务三进行更新的，事务三的事务 id 是 103，大于最低水位小于最高水位，但数组中没有包含该事务 id，对应着上面规则中的第三种情况里面的第二种，数据版本可见，所以在事务 A 中看到的数据 age = 30。而其实如果还需要再回滚的话，那就回滚到了事务一更新的版本，事务一的事务 id 是 101，比最低水位小，对应着上面规则中的第一种情况，该数据版本也是可见的。</p>
 <p>上面的场景实际执行结果也是一样的，实际操作如下所示:</p>
-<p><img src="/Users/rookiedev/wechat/article_images/high_low_sql_execute.png" alt="undo log"></p>
+<p><img src="/images/high_low_sql_execute.png" alt="undo log"></p>
 <p>上面开了五个终端，每个终端里面都和 MySQL 建立连接，各个连接中的 SQL 执行顺序对应着表格中从上到下的顺序，可以看到最后查询出来的值也是我们上面按照高低水位的判断规则分析出来的结果 age = 30。</p>
 <p>上面其实更多的是从底层实现层面来分析得到这个结果，如果说每次事务间的数据可见性都按照这个去分析就有点太麻烦了，所以也就有了下面更容易理解的判断方式，首先以事务启动的那一刻为准，</p>
 <p>1.该事物开启时，对于还没提交的事务更新都是不可见的</p>
@@ -369,16 +369,16 @@
 <p>再回到上面表格中模拟的场景，事务 A 开启时，事务一和事务三是已经提交了的，并且事务三在事务一之后提交，事务二还没提交，事务四在事务 A 开启时还没创建，那么在事务 A 中的查询，看到的就是事务三的更新 age = 30，这样去分析是不是就方便多了。从上面的分析也可以看到，事务开启后，不管在什么时候查询，前后看到的数据都是一致的，因为数据版本的可见性只取决于事务启动的那一刻，这个就是所谓的<strong>一致性读</strong>。</p>
 <p>可能你注意到了上面表格中事务 A 中的查询语句后面有两个划线了的 SQL 语句，一个是更新，一个是查询，假如我们把这两个 SQL 语句放开执行，那么后面的这个查询语句查询到的数据是多少？如果按照上面一致性读的说法，执行更新语句时看到的张三的年龄应该是 30，age = 30 + 1，那紧接着的查询语句查询出来的张三的年龄应该就是 31。如果是这样的话看起来好像不太对，因为事务四的更新看起来就丢失了，因为在事务 A 中进行更新前， 事务四已经将张三的年龄更新成 31 了。</p>
 <p>事实上，我们真正去执行的时候，事务 A 中查询得到的值是 age = 32，也就是事务 A 里面是认事务四的那个更新的，当然也必须得认，不然就都乱套了，但这样就又和我们上面的一致性读说法好像不一致了，这里就需要引出另一个概念，<strong>对于查询是按照一致性读的原则，而对于更新则是按照当前读的原则</strong>，也就是说更新都是从最新版本的数据上开始更新的，所以这里就是直接从事务四对应的版本的数据上进行更新的，age = 31 + 1，紧接着的查询语句一看最新版本的数据是 32，对应的事务 id 是 104，和自己的事务 id 相等，这个版本是自己的更新，那也是要认的，因此查询出来的数据就是 age = 32，下面我单独将事务 A 加上更新语句之后的执行截图贴出来:</p>
-<p><img src="/Users/rookiedev/wechat/article_images/update_current_read.png" alt="undo log"></p>
+<p><img src="/images/update_current_read.png" alt="undo log"></p>
 <p>其实除了更新语句，对于加读锁或者写锁的查询也是当前读，我们可以简单的模拟一下这种场景，先在一个连接中开启事务，然后在另一个连接中更新一条数据，再回到第一个连接中加读锁或者写锁去查询刚才更新的那条数据。</p>
-<p><img src="/Users/rookiedev/wechat/article_images/lock_share_current_read.png" alt="undo log"></p>
+<p><img src="/images/lock_share_current_read.png" alt="undo log"></p>
 <p>上面截图中就是先在上面的窗口查询当前 id = 1 的那条记录，age = 35，然后开启事务，紧接着在下面的窗口将 id = 1 的记录 age 更新成 40，再回到上面的窗口中去查询，可以看到在加读锁或者写锁的时候都是当前读，查询到的是当前最新版本的数据，其中在查询语句后面加上 lock in share mode，表示加读锁，查询语句后面加上 for update，表示加写锁，读读不冲突，读写和写写是冲突的，这个后面提到锁的时候再具体细说。</p>
 <p>上面我们就已经描述了在可重复读的隔离级别下，事务开启时会创建一个一致性视图，接下来的数据查询都依赖于事务开启时创建的一致性视图，而如果是读提交的隔离级别，不妨先来实际操作下，先将事务的隔离级别修改成读提交:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">set global transaction isolation level read committed;</span><br></pre></td></tr></table></figure>
 
 <p>注意执行完上面的 SQL 之后将连接断开，重新连接之后才会生效，这个操作最好不要在生产库上做测试。</p>
 <p>修改好了之后，同样用刚才的方式做测试，在一个连接里面开启事务，另一个连接里面更新，再回到第一个连接里面去查询，结果如下:</p>
-<p><img src="/Users/rookiedev/wechat/article_images/read_commited.png" alt="undo log"></p>
+<p><img src="/images/read_commited.png" alt="undo log"></p>
 <p>从结果可以看到，第一个窗口中查到的是已经提交的最新版本的值，这个其实和可重复读的隔离级别的区别就是，<strong>读提交是在每个 SQL 执行前都会重新创建一个一致性读视图，而可重复读则是在事务正式开启时创建，所以读提交的隔离级别下，每次都查询得到已经提交的最新版本的值。而对于读未提交的隔离级别那就是每次直接将当前数据的最新版本返回就可以了，也就没有视图的概念了。</strong></p>
 <p>上面我们可能多次提到一致性读视图，这里可能需要进行说明下，它和我们在查询时通过 create view 的方式创建的视图是不一样的，这里的一致性视图是静态的，当前视图对应的数据是由字段上的当前值通过 undo log 回滚计算得到的，它是用来辅助实现可重复读和读提交的隔离级别。而通过 create view 的方式创建的视图则是利用查询语句定义的一张虚拟的表，调用的时候执行相应的查询语句来生成查询结果。</p>
 <p>还有一点你可能也注意到了，我在上面的实践中开启事务都是用的 start transaciton with consistent snapshot; 语句，和我熟悉的 begin 或者 start transaction 好像有点不一样，这里我们来了解下他们之间的区别:</p>
@@ -392,7 +392,7 @@
     
         
   <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
-    <img id="wechat_subscriber_qcode" src="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
+    <img id="wechat_subscriber_qcode" src="/images/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
     <div>扫描上面图中二维码关注微信公众号</div>
   </div>
 <!-- 
@@ -402,7 +402,7 @@
     <div class="social-list">
 
         <div class="social-item">
-          <a target="_blank" class="social-link" href="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg">
+          <a target="_blank" class="social-link" href="/images/qrcode_for_rookiedev_258.jpg">
             <span class="icon">
               <i class="wechat"></i>
             </span>

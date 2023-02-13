@@ -27,15 +27,15 @@
 <meta property="og:site_name" content="rookiedev">
 <meta property="og:description" content="join 联表查询的性能有时候可能会听说尽量不要使用 join 联表查询，或者更直接一点就禁止使用 join 联表查询，这时如果我们要查询的数据分布在两张关联表中，就不得不先去一张表里面查出要查询的数据，然后再根据关联字段去另一张表里面查出数据，但你有想过从查询性能上来说，这样做的查询速度就一定比 join 联表查询速度要快吗？不妨来看一个具体的例子，下面是活动表和城市编码表的表结构，活动表里面的">
 <meta property="og:locale">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/image-20220514151259765.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/image-20220514154214185.png">
-<meta property="og:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/image-20220515192053380.png">
+<meta property="og:image" content="http://rookiedev.top/images/image-20220514151259765.png">
+<meta property="og:image" content="http://rookiedev.top/images/image-20220514154214185.png">
+<meta property="og:image" content="http://rookiedev.top/images/image-20220515192053380.png">
 <meta property="article:published_time" content="2022-12-17T15:27:50.000Z">
-<meta property="article:modified_time" content="2023-02-12T09:05:58.651Z">
+<meta property="article:modified_time" content="2023-02-13T07:34:54.836Z">
 <meta property="article:author" content="rookiedev">
 <meta property="article:tag" content="Java MySQL Life">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://rookiedev.top/Users/rookiedev/wechat/article_images/image-20220514151259765.png">
+<meta name="twitter:image" content="http://rookiedev.top/images/image-20220514151259765.png">
 
 <link rel="canonical" href="http://rookiedev.top/join-%E6%9F%A5%E8%AF%A2%E6%98%AF%E5%A6%82%E4%BD%95%E6%89%A7%E8%A1%8C%E7%9A%84/">
 
@@ -231,7 +231,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2023-02-12 17:05:58" itemprop="dateModified" datetime="2023-02-12T17:05:58+08:00">2023-02-12</time>
+                <time title="Modified: 2023-02-13 15:34:54" itemprop="dateModified" datetime="2023-02-13T15:34:54+08:00">2023-02-13</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -271,7 +271,7 @@
 
 <p>上面 activities 表中有 1000 条数据，cities 表里面有 3525 条数据，正常来说上面两个 SQL 其实都不算耗时操作，第一个仅仅是全表扫描 1000 行，第二个则是通过索引树所搜索 1000 行，加起来也就是扫描 2000 行，然后就是需要和 MySQL 服务建立两次连接</p>
 <p>接下来再来看另一种直接进行 join 联表查，通过城市编码字段进行关联查询，对应 SQL explain 结果如下：</p>
-<p><img src="/Users/rookiedev/wechat/article_images/image-20220514151259765.png" alt="image-20220514151259765"></p>
+<p><img src="/images/image-20220514151259765.png" alt="image-20220514151259765"></p>
 <p>从 explain 结果来看，对表 t1 采取的是全表扫描，扫描 1000 行，表 t2 采取的是等值索引查询，整体的执行流程是这样的:</p>
 <p>1.先从 activities 表里面读出一行数据，提取出 city_code 字段的值</p>
 <p>2.然后去 cities 表中对 code 字段进行索引树搜索，找到了则保存到结果里面</p>
@@ -281,7 +281,7 @@
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">DROP INDEX idx_city_code ON activities;</span><br><span class="line">DROP INDEX uk_code ON cities;</span><br></pre></td></tr></table></figure>
 
 <p>执行完上面的删除索引的语句后，再来看使用 join 查询 explain 的结果:</p>
-<p><img src="/Users/rookiedev/wechat/article_images/image-20220514154214185.png" alt="image-20220514154214185"></p>
+<p><img src="/images/image-20220514154214185.png" alt="image-20220514154214185"></p>
 <p>从图中可以看到，这时无论 activities 表还是 cities 表都是全表扫描，暂时先不去看 t1 表 Extra 里面的信息的话，整体查询流程是这样的:<br>1.先从 activities 表里面读出一行数据，提取出 city_code 字段的值</p>
 <p>2.然后去 cities 表中对 code 字段全表扫描，找到了则保存到结果里面</p>
 <p>3.继续重复步骤 1，2，直到 activities 表中的数据都读取完毕</p>
@@ -310,7 +310,7 @@
 <p>5.没法用上索引(hash join)并且 join buffer 内存不够需要分段的情况下，执行效率是 M+(M/buffer_size) * N，同理也是应尽量使用小表作为驱动表</p>
 <p>综上几点可以得出在进行 join 查询时，最好是让小表作为驱动表，大表作为被驱动表来进行查询。</p>
 <h4 id="如何判断小表大表"><a href="#如何判断小表大表" class="headerlink" title="如何判断小表大表"></a>如何判断小表大表</h4><p>在 join 联表查询时既然都说用小表作为驱动表，大表作为被驱动表，那么怎么去判断哪张表是大表，哪张表是小表呢，你可能会说当然数据量大的是大表，数据量小的是小表了，那真的是这样的吗？为了看出效果，我把上面两张表的索引都重新加上了，来看下面的几个例子:</p>
-<p><img src="/Users/rookiedev/wechat/article_images/image-20220515192053380.png" alt="image-20220515192053380"></p>
+<p><img src="/images/image-20220515192053380.png" alt="image-20220515192053380"></p>
 <p>同样是最开始的那个 SQL，只是在最后面给 cities 表加上了一个 where 条件，这时候虽然 cities 表的数据量更大，但是在这个 SQL 里面参与 join 的数据量其实只有一条数据(唯一索引)，所以在这个 SQL 里面 cities 应该作为驱动表，因为参与 join 联表查询的数据量更小。</p>
 <p>还有一种情况就是当两张表参与 join 查询的数据量一样时，这时还会去看需要查询的字段大小，MySQL 也会考虑将查询字段更少的表作为驱动表，比如说下面这两个 SQL:</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">explain select activities.*, cities.code from activities join cities on activities.city_code &#x3D; cities.code where cities.code &lt;&#x3D; 1000;</span><br><span class="line">explain select activities.code, cities.* from activities join cities on activities.city_code &#x3D; cities.code where cities.code &lt;&#x3D; 1000;</span><br></pre></td></tr></table></figure>
@@ -325,7 +325,7 @@
     
         
   <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
-    <img id="wechat_subscriber_qcode" src="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
+    <img id="wechat_subscriber_qcode" src="/images/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
     <div>扫描上面图中二维码关注微信公众号</div>
   </div>
 <!-- 
@@ -335,7 +335,7 @@
     <div class="social-list">
 
         <div class="social-item">
-          <a target="_blank" class="social-link" href="http://images.rookiezhou.top/qrcode_for_rookiedev_258.jpg">
+          <a target="_blank" class="social-link" href="/images/qrcode_for_rookiedev_258.jpg">
             <span class="icon">
               <i class="wechat"></i>
             </span>

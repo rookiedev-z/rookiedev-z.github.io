@@ -24,124 +24,6 @@
       </categories>
   </entry>
   <entry>
-    <title>Explain 的使用解析</title>
-    <url>/Explain-%E7%9A%84%E4%BD%BF%E7%94%A8%E8%A7%A3%E6%9E%90/</url>
-    <content><![CDATA[<h4 id="SQL-执行速度评估"><a href="#SQL-执行速度评估" class="headerlink" title="SQL 执行速度评估"></a>SQL 执行速度评估</h4><p>假如现在有一张活动表，表结构如下:</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">create table activities</span><br><span class="line">(</span><br><span class="line">    id bigint unsigned auto_increment comment &#39;主键&#39; primary key,</span><br><span class="line">    name varchar(255) default &#39;&#39; not null comment &#39;活动名称&#39;,</span><br><span class="line">    city_code varchar(64) default &#39;&#39; not null comment &#39;城市编码&#39;,</span><br><span class="line">    start_time timestamp default CURRENT_TIMESTAMP not null comment &#39;开始时间&#39;,</span><br><span class="line">    end_time timestamp default CURRENT_TIMESTAMP not null comment &#39;结束时间&#39;,</span><br><span class="line">    status tinyint unsigned default &#39;0&#39; not null comment &#39;状态:0-待启用,1-待生效,2-生效中,3-已结束,4-已禁用&#39;,</span><br><span class="line">    create_time timestamp default CURRENT_TIMESTAMP not null comment &#39;创建时间&#39;,</span><br><span class="line">    update_time timestamp default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment &#39;更新时间&#39;</span><br><span class="line">) comment &#39;活动表&#39; CHARSET&#x3D;utf8mb4;</span><br><span class="line">create index idx_city_code on activities(city_code);</span><br><span class="line">create index idx_create_time on activities (create_time);</span><br><span class="line">create index idx_start_end_time on activities (start_time, end_time);</span><br></pre></td></tr></table></figure>
-<a id="more"></a>
-
-
-
-<p>业务中需要查询目前正在生效中的活动有哪些，查询SQL 是下面这样的：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">select * from activities where start_time &lt; now() and now() &lt; end_time;</span><br></pre></td></tr></table></figure>
-
-<p>以我们对索引的了解，活动表上已经建了 start_time 和 end_time 的联合索引 idx_start_end_time，上面的 SQL 肯定会通过 idx_start_end_time 索引去查询，因此上面的 SQL 执行速度应该不会慢的，但事实上真的是这样吗，如果不是这样的话，我们该如何去评估这个 SQL 的执行速度呢，那就是通过 EXPLAIN 指令，也是我们今天要重点介绍的内容，通过 explain 的执行结果我们可以看到以下内容：</p>
-<p>1.SQL 语句中表的查询顺序</p>
-<p>2.SQL 的查询类型</p>
-<p>3.查询的是哪个分区表</p>
-<p>4.走的是哪个索引</p>
-<p>5.查询扫描行数</p>
-<p>6.SQL 的执行方式</p>
-<p>通过对这些内容进行分析之后我们就可以优化我们的 SQL 语句或者表的索引结构，进一步提高我们的查询效率</p>
-<h4 id="EXPLAIN-语法介绍"><a href="#EXPLAIN-语法介绍" class="headerlink" title="EXPLAIN 语法介绍"></a>EXPLAIN 语法介绍</h4><p>对于 explain 的使用，其实很简单，只要在要执行的 SQL 语句前面加上 explain 关键字就可以，以上面的 SQL 为例:</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select * from activities where start_time &lt; now() and now() &lt; end_time;</span><br></pre></td></tr></table></figure>
-
-<p>执行结果如下:</p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_intro.png" alt="image-20220423230701278"></p>
-<p>从执行结果来看，有点类似于在查询一张包含上面输出结果中的这些字段的表一样，这些字段包括 id，select_type, table,partitions, type, possible_keys, key, key_len, ref, rows, filtered, Extra，这些字段当中有些我们稍微了解一下就可以，有些字段对于我们优化 SQL 有很大的帮助，需要重点关注</p>
-<p>针对下面的示例，这里先准备一些表作为测试使用:</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">create table cities</span><br><span class="line">(</span><br><span class="line">    id bigint unsigned auto_increment comment &#39;主键&#39; primary key,</span><br><span class="line">    name varchar(255) default &#39;&#39; comment &#39;城市名称&#39;,</span><br><span class="line">    code varchar(64) default &#39;&#39; not null comment &#39;城市编码&#39;</span><br><span class="line">) comment &#39;城市编码表&#39;;</span><br><span class="line">create index idx_name on cities(name);</span><br><span class="line">create unique index uk_code on cities (code);</span><br></pre></td></tr></table></figure>
-
-<h4 id="EXPLAIN-各字段含义"><a href="#EXPLAIN-各字段含义" class="headerlink" title="EXPLAIN 各字段含义"></a>EXPLAIN 各字段含义</h4><p>上面我们提到通过 explain 的执行结果我们可以看到 SQL 执行过程中的一些关键信息，执行结果中每个字段都代表着不同的含义，在理解了这些字段的含义后，对我们优化 SQL 或索引都会起到很大的作用，我们来依次介绍这些字段的含义</p>
-<p>id，table: id 和 table 两个字段可以放在一起来看，id 的值代表了 SQL 语句中表的读取顺序，值越大读取顺序越靠前，当 id 值相同时，table 列按照从上往下的读取顺序。</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select * from activities where city_code &#x3D; (select code from cities limit 1);</span><br></pre></td></tr></table></figure>
-
-<p><img src="/Users/rookiedev/wechat/article_images/explain_table_sequence.png" alt="image-20220425204607073"></p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select * from activities t1 join cities t2 on t1.city_code &#x3D; t2.code;</span><br></pre></td></tr></table></figure>
-
-<p><img src="/Users/rookiedev/wechat/article_images/explain_id_sequence.png" alt="image-20220425204446829"></p>
-<p>select_type: 表示 SQL 语句的查询类型，常见的值有：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">SIMPLE：简单查询，不包含 UNION 或者子查询</span><br><span class="line">PRIMARY：查询中如果包含子查询或其他部分，外层的 SELECT 将被标记为 PRIMARY</span><br><span class="line">SUBQUERY：子查询中的第一个 SELECT 查询</span><br><span class="line">UNION：在 UNION 语句中，UNION 之后出现的 SELECT</span><br><span class="line">DERIVED：在 FROM 中出现的子查询将被标记为 DERIVED</span><br><span class="line">UNION RESULT：UNION 查询的结果</span><br></pre></td></tr></table></figure>
-
-<p>partitions: 如果查询的表是分区表，表示命中的数据记录所在的分区，对于不是分区表，值为 NULL</p>
-<p>type: 表示查询所执行的类型，通过它可以看出查询是如何执行的，这一列可以说是我们要重点优化的对象，它的值比较重要，主要有以下类型:</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">system &gt; const &gt; eq_ref &gt; ref &gt; fulltext &gt; ref_or_null &gt; index_merge &gt; unique_subquery &gt; index_subquery &gt; range &gt; index &gt; ALL</span><br></pre></td></tr></table></figure>
-
-<p>上面这些类型从左到右，查询性能依次降低，这里先不详细介绍每种类型的执行效果，先知道有这些类型即可，后面和 Extra 字段一起统一重点介绍。</p>
-<p>possible_keys: 表示查询可能使用到的索引，也有可能里面的索引一个都没用到，取决于优化器分析之后的结果，也就是有可能该列上存在索引，但优化器分析之后决定不使用该索引</p>
-<p>key: 表示查询过程中使用的索引，如果为 null 则表示该查询没有使用索引，该列的值有可能存在 possible_key 列中没有出现的索引，同时当查询满足覆盖索引的条件时，possible_keys 列为 NULL，索引仅在 key 列显示</p>
-<p>key_len: 表示查询过程中使用的索引字节数</p>
-<p>ref: 表示在查询索引时，哪些列或者常量被用来和索引的值进行比较</p>
-<p>rows: 表示查询过程中预估需要扫描的行数，注意这是一个估算的值，并不是具体的值</p>
-<p>filtered: 表示通过索引查询之后匹配到的数据量再经过 server 层 where 条件判断过滤之后剩余数据比例，比如说根据索引条件查询满足条件的数量是 100，经过其他条件过滤之后返回的结果数剩 60，filtered 的值就是 60%，通常这个值越大越好，直接经过索引条件查询得到的结果数就是最终查询的结果数肯定效率是更高的，但也不用过多的关注这个值，这个值对 SQL 性能的整体提升相比其他更重要的字段(type, Extra)来说并不是非常明显</p>
-<p>Extra: 表示 SQL 语句执行过程中一些额外的关键信息，常见的值有:</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Using where，Using index，Using index condition，Using index for group-by，Using join buffer (Block Nested Loop)，Using join buffer (hash join)，Using join buffer (Batched Key Access)，Using filesort，Using temporary</span><br></pre></td></tr></table></figure>
-
-<h4 id="Type-列解析"><a href="#Type-列解析" class="headerlink" title="Type 列解析"></a>Type 列解析</h4><p>对于一个 SQL 的优化，我们重点应该关注的是 Type 和 Extra 这两个字段，或者说这两个字段展示出来的信息几乎关系着整个 SQL 执行效率，先来看 Type 字段常见的值的含义:</p>
-<p>const: 主要是在通过主键或者唯一键等值查询的时候，type 字段的值是 const</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select * from cities where code &#x3D; &#39;330100&#39;;</span><br></pre></td></tr></table></figure>
-
-<p><img src="/Users/rookiedev/wechat/article_images/explain_type_const.png" alt="image-20220426192431443"></p>
-<p>eq_ref: 在联表查询查询时，A 表 join B 表，B 表是通过主键或者唯一键进行关联时，也就是在 A 表中只有唯一一条记录和 B 表中数据相匹配，那 B 表的 type 字段值就是 eq_ref 类型</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select * from activities t1 join cities t2 on t1.city_code &#x3D; t2.code;</span><br></pre></td></tr></table></figure>
-
-<p><img src="/Users/rookiedev/wechat/article_images/explain_type_eq_ref.png" alt="image-20220426193145085"></p>
-<p>ref: 通过普通索引进行等值查询，也就是表中可能有多条数据记录匹配，那 type 字段值就是 ref 类型</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select * from cities where name &#x3D; &#39;杭州&#39;;</span><br></pre></td></tr></table></figure>
-
-<p><img src="/Users/rookiedev/wechat/article_images/explain_type_ref.png" alt="image-20220426195602499"></p>
-<p>ref_or_null: 通过普通索引进行等值查询，或者该字段为 null 的情况，注意该字段不能设置为 not null，那 type 字段值就是 ref_or_null 类型</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select * from cities where name &#x3D; &#39;杭州&#39; or name is null;</span><br></pre></td></tr></table></figure>
-
-<p><img src="/Users/rookiedev/wechat/article_images/explain_type_ref_or_null.png" alt="image-20220426200127808"></p>
-<p>index_merge: 在 where 条件中的字段需要利用多个索引进行查询，这时 type 字段值就是 index_merge 类型，常见于多个索引字段进行 or 查询</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select * from cities where code &#x3D; &#39;330100&#39; or name &#x3D; &#39;杭州&#39;;</span><br></pre></td></tr></table></figure>
-
-<p><img src="/Users/rookiedev/wechat/article_images/explain_type_index_merge.png" alt="image-20220426201022049"></p>
-<p>range: 索引范围查询，这个可能见的相对比较多一点，常见于带 &lt;&gt;，&gt;，&gt;=，&lt;，&lt;=，between，in，like 等这些查询条件语句中</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select * from activities where start_time &gt;&#x3D; now();</span><br></pre></td></tr></table></figure>
-
-<p><img src="/Users/rookiedev/wechat/article_images/explain_type_range.png" alt="image-20220426234344870"></p>
-<p>index: 通过遍历索引树就能够得到相应的数据，相比下面的 All 类型来说要好一些，索引文件大小肯定要比数据文件大小要小，而且索引的根节点和第二层节点大概率处于内存当中，相对来说会更快一些，但注意这是索引树扫描，相比其他索引定位查询还是要慢很多的，所以不要看到使用上了索引就以为查询不慢</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select id, name from cities;</span><br></pre></td></tr></table></figure>
-
-<p><img src="/Users/rookiedev/wechat/article_images/explain_type_index.png" alt="image-20220427000036479"></p>
-<p>All: 这个就是通常我们所说的没有可用的索引可以利用，直接全表扫描，相对来说性能是最差的，最直接的方法就是通过加索引来避免全表扫描</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select * from activities where name &#x3D; &#39;活动一&#39;;</span><br></pre></td></tr></table></figure>
-
-<p><img src="/Users/rookiedev/wechat/article_images/explain_type_all.png" alt="image-20220426235124506"></p>
-<h4 id="Extra-列解析"><a href="#Extra-列解析" class="headerlink" title="Extra 列解析"></a>Extra 列解析</h4><p>上面已经介绍了 Type 字段常见的一些值的含义，但有时还需要配合 Extra 一起来看才能更好的进行优化，接下来我们一起来看 Extra 字段常见值含义:</p>
-<p>no matching row in const table: 通常根据主键查询的数据在表中不存在，Extra 列的值是这个</p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_no_matching.png" alt="image-20220430181005220"></p>
-<p>Using index: 表示利用到了我们在之前文章里面提到的索引覆盖优化功能，通常是要查询的字段以及条件字段都已经在索引中存在，也就是说通过索引树就可以满足查询条件以及结果，不需要再到主键索引树中查询该记录完整的数据，减少回表的过程</p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_index.png" alt="image-20220430182906088"></p>
-<p>Using index for group-by: 和 Using index 意思差不多，不过就是查询语句中如果包含了 distinct 和 group by 关键字的时候 Extra 里面的内容就是 Using index for group-by 了</p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_index_for_group_by.png" alt="image-20220430204616024"></p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_index_for_group_by1.png" alt="image-20220430204709766"></p>
-<p>Using index condition: 表示利用到了在我们在之前文章里面同样提到过的索引下推优化功能，在 “仅能利用最左前缀索引的场景” 下(无法能利用全部联合索引)，对不在最左前缀索引中的其他联合索引字段加以利用，在遍历索引时，由只传入可以利用到的字段值，改成了多传入下推字段值进行过滤，过滤会减少遍历索引查出的主键条数，从而减少回表次数，提升整体性能，对于 Using index 和 Using index condition 不是很熟悉的话建议去看之前的文章 &lt;&lt;深入索引二&gt;&gt;</p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_index_condition.png" alt="image-20220430183309242"></p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_index_condition1.png" alt="image-20220502110908831"></p>
-<p>Using where: 表示该查询需要在 Server 层得到存储引擎返回的结果之后需要再次进行过滤，这种情况可能使用了索引，只不过存在其他条件不在索引字段中，也有可能就完全没有使用索引</p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_where.png" alt="image-20220430202912973"></p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_where1.png" alt="image-20220430203040134"></p>
-<p>Using join buffer (Block Nested Loop): 表示在 join 联表查询的时候，当被驱动表的联表字段上没有索引的时候，Extra 里面就会出现这个值，但注意的是在 MySQL 8.0 版本之后 Extra 里面的值是 Using join buffer (hash join)，当出现不管是 Using join buffer (Block Nested Loop) 还是 Using join buffer (hash join) 我们都应该想办法进行优化，简单的做法就是在被驱动表的关联字段上建索引</p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_join_buffer_bnl.png" alt="image-20220502132957893"></p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_join_buffer_hash.png" alt="image-20220502122513317"></p>
-<p>Using join buffer (Batched Key Access): 表示在 join 联表查询的时，当被驱动表的联表字段上有索引，Extra 里面就会出现这个值，但注意的是需要将下面的优化开关设置如下</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">set optimizer_switch&#x3D;&#39;mrr&#x3D;on,mrr_cost_based&#x3D;off,batched_key_access&#x3D;on&#39;;</span><br></pre></td></tr></table></figure>
-
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_join_buffer_bka.png" alt="image-20220502121822919"></p>
-<p>Using temporary: 表示该查询需要借助临时表来存储中间查询结果才能进一步得到最终的查询结果，通常存在于 group by 的查询语句，同时又没有使用到索引的情况，这种 SQL 一般都需要优化</p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_temporary.png" alt="image-20220430210911712"></p>
-<p>Using filesort: 表示该查询没办法利用现有的索引对结果进行排序，而需要借助第三方存储空间来进行排序才能得到最终的排序结果，通常存在于包含 order by 的查询语句中，同时又没有使用到索引的情况，这种 SQL 一般都需要优化</p>
-<p><img src="/Users/rookiedev/wechat/article_images/explain_extra_using_filesort.png" alt="image-20220430211338265"></p>
-<p>好了，上面主要介绍了 explain 执行结果中的一些字段含义，type 字段和 Extra 字段里面常见的一些值以及这些值的含义，通过熟悉这些我们可以大概知道 SQL 是怎么执行的，执行的速度怎么样，是否还有优化空间，下篇文章就来看两个常见的 SQL 优化案例。</p>
-]]></content>
-      <categories>
-        <category>MySQL</category>
-      </categories>
-  </entry>
-  <entry>
     <title>Explain 的使用实践</title>
     <url>/Explain-%E7%9A%84%E4%BD%BF%E7%94%A8%E5%AE%9E%E8%B7%B5/</url>
     <content><![CDATA[<p>上篇文章中从整体上介绍了 explain 的使用以及 explain 执行得到的这些字段含义和常见的值，那得到这些字段信息后，对于这个 SQL 要不要优化，又该怎么优化，这个似乎没有什么固定的标准，但总体来说的话，要尽量让我们的查询使用上索引，然后在使用上索引之后再进一步看有没有优化的空间，当然对于实在没法用上索引或者说业务上能接受没必要多建一个索引的查询，我们也可以尝试在用不上索引的情况下去看看还有没有进一步优化的空间。</p>
@@ -189,6 +71,123 @@
       </categories>
   </entry>
   <entry>
+    <title>Explain 的使用解析</title>
+    <url>/Explain-%E7%9A%84%E4%BD%BF%E7%94%A8%E8%A7%A3%E6%9E%90/</url>
+    <content><![CDATA[<h4 id="SQL-执行速度评估"><a href="#SQL-执行速度评估" class="headerlink" title="SQL 执行速度评估"></a>SQL 执行速度评估</h4><p>假如现在有一张活动表，表结构如下:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">create table activities</span><br><span class="line">(</span><br><span class="line">    id bigint unsigned auto_increment comment &#39;主键&#39; primary key,</span><br><span class="line">    name varchar(255) default &#39;&#39; not null comment &#39;活动名称&#39;,</span><br><span class="line">    city_code varchar(64) default &#39;&#39; not null comment &#39;城市编码&#39;,</span><br><span class="line">    start_time timestamp default CURRENT_TIMESTAMP not null comment &#39;开始时间&#39;,</span><br><span class="line">    end_time timestamp default CURRENT_TIMESTAMP not null comment &#39;结束时间&#39;,</span><br><span class="line">    status tinyint unsigned default &#39;0&#39; not null comment &#39;状态:0-待启用,1-待生效,2-生效中,3-已结束,4-已禁用&#39;,</span><br><span class="line">    create_time timestamp default CURRENT_TIMESTAMP not null comment &#39;创建时间&#39;,</span><br><span class="line">    update_time timestamp default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment &#39;更新时间&#39;</span><br><span class="line">) comment &#39;活动表&#39; CHARSET&#x3D;utf8mb4;</span><br><span class="line">create index idx_city_code on activities(city_code);</span><br><span class="line">create index idx_create_time on activities (create_time);</span><br><span class="line">create index idx_start_end_time on activities (start_time, end_time);</span><br></pre></td></tr></table></figure>
+<a id="more"></a>
+
+
+
+<p>业务中需要查询目前正在生效中的活动有哪些，查询SQL 是下面这样的：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">select * from activities where start_time &lt; now() and now() &lt; end_time;</span><br></pre></td></tr></table></figure>
+
+<p>以我们对索引的了解，活动表上已经建了 start_time 和 end_time 的联合索引 idx_start_end_time，上面的 SQL 肯定会通过 idx_start_end_time 索引去查询，因此上面的 SQL 执行速度应该不会慢的，但事实上真的是这样吗，如果不是这样的话，我们该如何去评估这个 SQL 的执行速度呢，那就是通过 EXPLAIN 指令，也是我们今天要重点介绍的内容，通过 explain 的执行结果我们可以看到以下内容：</p>
+<p>1.SQL 语句中表的查询顺序</p>
+<p>2.SQL 的查询类型</p>
+<p>3.查询的是哪个分区表</p>
+<p>4.走的是哪个索引</p>
+<p>5.查询扫描行数</p>
+<p>6.SQL 的执行方式</p>
+<p>通过对这些内容进行分析之后我们就可以优化我们的 SQL 语句或者表的索引结构，进一步提高我们的查询效率</p>
+<h4 id="EXPLAIN-语法介绍"><a href="#EXPLAIN-语法介绍" class="headerlink" title="EXPLAIN 语法介绍"></a>EXPLAIN 语法介绍</h4><p>对于 explain 的使用，其实很简单，只要在要执行的 SQL 语句前面加上 explain 关键字就可以，以上面的 SQL 为例:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select * from activities where start_time &lt; now() and now() &lt; end_time;</span><br></pre></td></tr></table></figure>
+
+<p>执行结果如下:<br><img src="/images/explain_intro.png" alt="image-20220423230701278"></p>
+<p>从执行结果来看，有点类似于在查询一张包含上面输出结果中的这些字段的表一样，这些字段包括 id，select_type, table,partitions, type, possible_keys, key, key_len, ref, rows, filtered, Extra，这些字段当中有些我们稍微了解一下就可以，有些字段对于我们优化 SQL 有很大的帮助，需要重点关注</p>
+<p>针对下面的示例，这里先准备一些表作为测试使用:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">create table cities</span><br><span class="line">(</span><br><span class="line">    id bigint unsigned auto_increment comment &#39;主键&#39; primary key,</span><br><span class="line">    name varchar(255) default &#39;&#39; comment &#39;城市名称&#39;,</span><br><span class="line">    code varchar(64) default &#39;&#39; not null comment &#39;城市编码&#39;</span><br><span class="line">) comment &#39;城市编码表&#39;;</span><br><span class="line">create index idx_name on cities(name);</span><br><span class="line">create unique index uk_code on cities (code);</span><br></pre></td></tr></table></figure>
+
+<h4 id="EXPLAIN-各字段含义"><a href="#EXPLAIN-各字段含义" class="headerlink" title="EXPLAIN 各字段含义"></a>EXPLAIN 各字段含义</h4><p>上面我们提到通过 explain 的执行结果我们可以看到 SQL 执行过程中的一些关键信息，执行结果中每个字段都代表着不同的含义，在理解了这些字段的含义后，对我们优化 SQL 或索引都会起到很大的作用，我们来依次介绍这些字段的含义</p>
+<p>id，table: id 和 table 两个字段可以放在一起来看，id 的值代表了 SQL 语句中表的读取顺序，值越大读取顺序越靠前，当 id 值相同时，table 列按照从上往下的读取顺序。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select * from activities where city_code &#x3D; (select code from cities limit 1);</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/explain_table_sequence.png" alt="image-20220425204607073"></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select * from activities t1 join cities t2 on t1.city_code &#x3D; t2.code;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/explain_id_sequence.png" alt="image-20220425204446829"></p>
+<p>select_type: 表示 SQL 语句的查询类型，常见的值有：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">SIMPLE：简单查询，不包含 UNION 或者子查询</span><br><span class="line">PRIMARY：查询中如果包含子查询或其他部分，外层的 SELECT 将被标记为 PRIMARY</span><br><span class="line">SUBQUERY：子查询中的第一个 SELECT 查询</span><br><span class="line">UNION：在 UNION 语句中，UNION 之后出现的 SELECT</span><br><span class="line">DERIVED：在 FROM 中出现的子查询将被标记为 DERIVED</span><br><span class="line">UNION RESULT：UNION 查询的结果</span><br></pre></td></tr></table></figure>
+
+<p>partitions: 如果查询的表是分区表，表示命中的数据记录所在的分区，对于不是分区表，值为 NULL</p>
+<p>type: 表示查询所执行的类型，通过它可以看出查询是如何执行的，这一列可以说是我们要重点优化的对象，它的值比较重要，主要有以下类型:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">system &gt; const &gt; eq_ref &gt; ref &gt; fulltext &gt; ref_or_null &gt; index_merge &gt; unique_subquery &gt; index_subquery &gt; range &gt; index &gt; ALL</span><br></pre></td></tr></table></figure>
+
+<p>上面这些类型从左到右，查询性能依次降低，这里先不详细介绍每种类型的执行效果，先知道有这些类型即可，后面和 Extra 字段一起统一重点介绍。</p>
+<p>possible_keys: 表示查询可能使用到的索引，也有可能里面的索引一个都没用到，取决于优化器分析之后的结果，也就是有可能该列上存在索引，但优化器分析之后决定不使用该索引</p>
+<p>key: 表示查询过程中使用的索引，如果为 null 则表示该查询没有使用索引，该列的值有可能存在 possible_key 列中没有出现的索引，同时当查询满足覆盖索引的条件时，possible_keys 列为 NULL，索引仅在 key 列显示</p>
+<p>key_len: 表示查询过程中使用的索引字节数</p>
+<p>ref: 表示在查询索引时，哪些列或者常量被用来和索引的值进行比较</p>
+<p>rows: 表示查询过程中预估需要扫描的行数，注意这是一个估算的值，并不是具体的值</p>
+<p>filtered: 表示通过索引查询之后匹配到的数据量再经过 server 层 where 条件判断过滤之后剩余数据比例，比如说根据索引条件查询满足条件的数量是 100，经过其他条件过滤之后返回的结果数剩 60，filtered 的值就是 60%，通常这个值越大越好，直接经过索引条件查询得到的结果数就是最终查询的结果数肯定效率是更高的，但也不用过多的关注这个值，这个值对 SQL 性能的整体提升相比其他更重要的字段(type, Extra)来说并不是非常明显</p>
+<p>Extra: 表示 SQL 语句执行过程中一些额外的关键信息，常见的值有:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Using where，Using index，Using index condition，Using index for group-by，Using join buffer (Block Nested Loop)，Using join buffer (hash join)，Using join buffer (Batched Key Access)，Using filesort，Using temporary</span><br></pre></td></tr></table></figure>
+
+<h4 id="Type-列解析"><a href="#Type-列解析" class="headerlink" title="Type 列解析"></a>Type 列解析</h4><p>对于一个 SQL 的优化，我们重点应该关注的是 Type 和 Extra 这两个字段，或者说这两个字段展示出来的信息几乎关系着整个 SQL 执行效率，先来看 Type 字段常见的值的含义:</p>
+<p>const: 主要是在通过主键或者唯一键等值查询的时候，type 字段的值是 const</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select * from cities where code &#x3D; &#39;330100&#39;;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/explain_type_const.png" alt="image-20220426192431443"></p>
+<p>eq_ref: 在联表查询查询时，A 表 join B 表，B 表是通过主键或者唯一键进行关联时，也就是在 A 表中只有唯一一条记录和 B 表中数据相匹配，那 B 表的 type 字段值就是 eq_ref 类型</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select * from activities t1 join cities t2 on t1.city_code &#x3D; t2.code;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/explain_type_eq_ref.png" alt="image-20220426193145085"></p>
+<p>ref: 通过普通索引进行等值查询，也就是表中可能有多条数据记录匹配，那 type 字段值就是 ref 类型</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select * from cities where name &#x3D; &#39;杭州&#39;;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/explain_type_ref.png" alt="image-20220426195602499"></p>
+<p>ref_or_null: 通过普通索引进行等值查询，或者该字段为 null 的情况，注意该字段不能设置为 not null，那 type 字段值就是 ref_or_null 类型</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select * from cities where name &#x3D; &#39;杭州&#39; or name is null;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/explain_type_ref_or_null.png" alt="image-20220426200127808"></p>
+<p>index_merge: 在 where 条件中的字段需要利用多个索引进行查询，这时 type 字段值就是 index_merge 类型，常见于多个索引字段进行 or 查询</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select * from cities where code &#x3D; &#39;330100&#39; or name &#x3D; &#39;杭州&#39;;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/explain_type_index_merge.png" alt="image-20220426201022049"></p>
+<p>range: 索引范围查询，这个可能见的相对比较多一点，常见于带 &lt;&gt;，&gt;，&gt;=，&lt;，&lt;=，between，in，like 等这些查询条件语句中</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select * from activities where start_time &gt;&#x3D; now();</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/explain_type_range.png" alt="image-20220426234344870"></p>
+<p>index: 通过遍历索引树就能够得到相应的数据，相比下面的 All 类型来说要好一些，索引文件大小肯定要比数据文件大小要小，而且索引的根节点和第二层节点大概率处于内存当中，相对来说会更快一些，但注意这是索引树扫描，相比其他索引定位查询还是要慢很多的，所以不要看到使用上了索引就以为查询不慢</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select id, name from cities;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/explain_type_index.png" alt="image-20220427000036479"></p>
+<p>All: 这个就是通常我们所说的没有可用的索引可以利用，直接全表扫描，相对来说性能是最差的，最直接的方法就是通过加索引来避免全表扫描</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select * from activities where name &#x3D; &#39;活动一&#39;;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/explain_type_all.png" alt="image-20220426235124506"></p>
+<h4 id="Extra-列解析"><a href="#Extra-列解析" class="headerlink" title="Extra 列解析"></a>Extra 列解析</h4><p>上面已经介绍了 Type 字段常见的一些值的含义，但有时还需要配合 Extra 一起来看才能更好的进行优化，接下来我们一起来看 Extra 字段常见值含义:</p>
+<p>no matching row in const table: 通常根据主键查询的数据在表中不存在，Extra 列的值是这个</p>
+<p><img src="/images/explain_extra_no_matching.png" alt="image-20220430181005220"></p>
+<p>Using index: 表示利用到了我们在之前文章里面提到的索引覆盖优化功能，通常是要查询的字段以及条件字段都已经在索引中存在，也就是说通过索引树就可以满足查询条件以及结果，不需要再到主键索引树中查询该记录完整的数据，减少回表的过程</p>
+<p><img src="/images/explain_extra_using_index.png" alt="image-20220430182906088"></p>
+<p>Using index for group-by: 和 Using index 意思差不多，不过就是查询语句中如果包含了 distinct 和 group by 关键字的时候 Extra 里面的内容就是 Using index for group-by 了</p>
+<p><img src="/images/explain_extra_using_index_for_group_by.png" alt="image-20220430204616024"></p>
+<p><img src="/images/explain_extra_using_index_for_group_by1.png" alt="image-20220430204709766"></p>
+<p>Using index condition: 表示利用到了在我们在之前文章里面同样提到过的索引下推优化功能，在 “仅能利用最左前缀索引的场景” 下(无法能利用全部联合索引)，对不在最左前缀索引中的其他联合索引字段加以利用，在遍历索引时，由只传入可以利用到的字段值，改成了多传入下推字段值进行过滤，过滤会减少遍历索引查出的主键条数，从而减少回表次数，提升整体性能，对于 Using index 和 Using index condition 不是很熟悉的话建议去看之前的文章 &lt;&lt;深入索引二&gt;&gt;</p>
+<p><img src="/images/explain_extra_using_index_condition.png" alt="image-20220430183309242"></p>
+<p><img src="/images/explain_extra_using_index_condition1.png" alt="image-20220502110908831"></p>
+<p>Using where: 表示该查询需要在 Server 层得到存储引擎返回的结果之后需要再次进行过滤，这种情况可能使用了索引，只不过存在其他条件不在索引字段中，也有可能就完全没有使用索引</p>
+<p><img src="/images/explain_extra_using_where.png" alt="image-20220430202912973"></p>
+<p><img src="/images/explain_extra_using_where1.png" alt="image-20220430203040134"></p>
+<p>Using join buffer (Block Nested Loop): 表示在 join 联表查询的时候，当被驱动表的联表字段上没有索引的时候，Extra 里面就会出现这个值，但注意的是在 MySQL 8.0 版本之后 Extra 里面的值是 Using join buffer (hash join)，当出现不管是 Using join buffer (Block Nested Loop) 还是 Using join buffer (hash join) 我们都应该想办法进行优化，简单的做法就是在被驱动表的关联字段上建索引</p>
+<p><img src="/images/explain_extra_using_join_buffer_bnl.png" alt="image-20220502132957893"></p>
+<p><img src="/images/explain_extra_using_join_buffer_hash.png" alt="image-20220502122513317"></p>
+<p>Using join buffer (Batched Key Access): 表示在 join 联表查询的时，当被驱动表的联表字段上有索引，Extra 里面就会出现这个值，但注意的是需要将下面的优化开关设置如下</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">set optimizer_switch&#x3D;&#39;mrr&#x3D;on,mrr_cost_based&#x3D;off,batched_key_access&#x3D;on&#39;;</span><br></pre></td></tr></table></figure>
+
+<p><img src="/images/explain_extra_using_join_buffer_bka.png" alt="image-20220502121822919"></p>
+<p>Using temporary: 表示该查询需要借助临时表来存储中间查询结果才能进一步得到最终的查询结果，通常存在于 group by 的查询语句，同时又没有使用到索引的情况，这种 SQL 一般都需要优化</p>
+<p><img src="/images/explain_extra_using_temporary.png" alt="image-20220430210911712"></p>
+<p>Using filesort: 表示该查询没办法利用现有的索引对结果进行排序，而需要借助第三方存储空间来进行排序才能得到最终的排序结果，通常存在于包含 order by 的查询语句中，同时又没有使用到索引的情况，这种 SQL 一般都需要优化</p>
+<p><img src="/images/explain_extra_using_filesort.png" alt="image-20220430211338265"></p>
+<p>好了，上面主要介绍了 explain 执行结果中的一些字段含义，type 字段和 Extra 字段里面常见的一些值以及这些值的含义，通过熟悉这些我们可以大概知道 SQL 是怎么执行的，执行的速度怎么样，是否还有优化空间，下篇文章就来看两个常见的 SQL 优化案例。</p>
+]]></content>
+      <categories>
+        <category>MySQL</category>
+      </categories>
+  </entry>
+  <entry>
     <title>JVM 中垃圾收集器简单介绍</title>
     <url>/JVM-%E4%B8%AD%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%E5%99%A8%E7%AE%80%E5%8D%95%E4%BB%8B%E7%BB%8D/</url>
     <content><![CDATA[<p>之前我们简单提到了 JVM 中的垃圾收集算法，比较常见的包含有标记-清除算法，标记-复制算法，标记-整理算法，那么针对这些算法的各种具体实现也就有了 JVM 中使用的各种垃圾收集器，对于这些垃圾收集器，简单一点可以直接按照新生代和老年代来进行划分，<strong>针对新生代中使用的垃圾收集器有: Serial，Parallel New，Parallel Scavenge，针对老年代中使用的收集器有：Serial Old，Parallel Old，CMS(Concurrent Mark Sweep)。</strong>正是因为没有一款收集器能够适用于所有场景，所以才有了各种场景下的收集器出现。</p>
@@ -223,7 +222,7 @@
 <h3 id="如何判定对象是否还存活"><a href="#如何判定对象是否还存活" class="headerlink" title="如何判定对象是否还存活"></a>如何判定对象是否还存活</h3><p>既然要对不再需要的对象进行回收，那么首先就需要判定哪些对象是不再需要了的，如何判定呢？目前主要有以下两种方式:</p>
 <h5 id="引用计数算法"><a href="#引用计数算法" class="headerlink" title="引用计数算法"></a>引用计数算法</h5><p>引用计数算法通过对 Java 程序中的对象引用进行计数的方式来判定，每一个对象都有一个引用计数器，当有一个地方引用了该对象时，对象的引用计数器就加一，引用失效计数器减一，当对象的引用计数器是 0 时就认为该对象可以被回收了。这种方式看起来很简单，但是它有一个致命的问题：循环引用问题。比如说 A 对象中引用了 B 对象，B 对象也引用了 A 对象，他们之间互相引用，它们俩的引用计数器都不为 0，但是除了他们之间互相引用之外没有其他任何地方引用了这两个对象，事实上这两个对象的内存也是可以被回收的，但由于引用计数器不为 0 从而没有被回收，因此这种判定方式也没有作为 JVM 判定对象不再存活的方式，而是采用了下面的可达性分析算法。</p>
 <h5 id="可达性分析算法"><a href="#可达性分析算法" class="headerlink" title="可达性分析算法"></a>可达性分析算法</h5><p>可达性分析算法是通过一些 GC Roots 的对象来作为起点，然后往下搜索，搜索所经过的路径称为引用链，当一个对象没有任何一条引用链可达时，那就说明该对象不可达，也就间接说明该对象内存可以被回收了。这种方式就解决了上面所说的循环引用问题，比如说下图中 Object6 和 Object7 虽然相互引用，但是从 GC Roots 到这两个对象已经没有引用链可达了，因此这两个对象都可以被回收。</p>
-<p><img src="http://images.rookiezhou.top/blog/images/GC_Roots.png" alt="GC_Roots"></p>
+<p><img src="/images/GC_Roots.png" alt="GC_Roots"></p>
 <p>这种判定方式的关键在于如何确定 GC Roots 对象，在 Java 中下面这几种对象可作为 GC Roots 对象:</p>
 <ul>
 <li>虚拟机栈栈帧中本地变量表所引用的对象</li>
@@ -246,12 +245,12 @@
 <p>在介绍完新生代和老年代之后，根据对堆区不同区域产生的垃圾收集行为可分为部分收集(Partial GC)和完整收集(Full GC)，部分收集指只收集堆中的部分区域，其中针对新生代的收集称为 Minor GC 或 Young GC，针对老年代的收集称为 Major GC 或 Old GC。而完整收集一般是在内存比较紧张时才会触发的整个堆区和方法区的垃圾收集。</p>
 <h3 id="常见的几种垃圾收集算法"><a href="#常见的几种垃圾收集算法" class="headerlink" title="常见的几种垃圾收集算法"></a>常见的几种垃圾收集算法</h3><h5 id="标记-清除算法"><a href="#标记-清除算法" class="headerlink" title="标记-清除算法"></a>标记-清除算法</h5><p>标记-清除算法正如名称所描述的那样，先对存活对象进行标记，然后再统一回收未标记的对象内存。当然这里也可以反过来，标记需要回收的对象，再将标记的对象进行回收，这取决于具体的垃圾回收器采用哪种方式实现。</p>
 <p>对于标记-清除算法，它有两个比较明显的缺陷，一个是当遇到大量的对象需要被回收时，标记和清除的过程就会随着加长，效率比较低。还一个就是会产生大量的碎片空间，当遇到稍大对象可能就无法满足内存分配，这时将会触发一次垃圾回收动作，其实呢也许总的剩余内存是够的，但却没有足够的连续空间来分配。根据这种收集算法的特点，同时结合上面对堆中分代收集的描述，老年代比较适合采用标记-清除算法，老年代中一般都是存活比较长的对象，可回收的对象相对较少。</p>
-<p><img src="http://images.rookiezhou.top/blog/images/Mark-Sweep.png" alt="Mark-Sweep"></p>
+<p><img src="/images/Mark-Sweep.png" alt="Mark-Sweep"></p>
 <h5 id="标记-复制算法"><a href="#标记-复制算法" class="headerlink" title="标记-复制算法"></a>标记-复制算法</h5><p>由于采用标记-清除算法在大量对象需要进行回收时效率比较低，因此就有了标记-复制算法，将可用内存区域分成 A B 两块区域，每次使用 A 区域来分配内存，当 A 区域内存用完了之后，将 A 区域中还存活着的对象复制到 B 区域，然后将 A 区域中使用过的内存一次性全部回收。</p>
 <p>这种方式一个是需要避免在标记之后有大量对象还存活的情况，不然就需要执行大量对象的复制工作了。还有一个就是需要预留一半的空间出来，这就相当于浪费了一半的空间，这部分空间没办法得到利用。在上面分代收集思想中对于新生代刚好符合每次只有少量对象存活的特性，因此上面在分代收集中所提到的新生代中 Survivor from 和 Survivor to 区就是采用了这种算法，同时为了避免内存浪费，让 Eden 区和两个 Survivor 区的比例为 8:1:1，这样在新生代中就只有 10% 的内存是空着的。</p>
-<p><img src="http://images.rookiezhou.top/blog/images/Mark-Copying.png" alt="Mark-Copying"></p>
+<p><img src="/images/Mark-Copying.png" alt="Mark-Copying"></p>
 <h5 id="标记-整理算法"><a href="#标记-整理算法" class="headerlink" title="标记-整理算法"></a>标记-整理算法</h5><p>同样的在标记-清除算法的基础上，由于标记-清除算法会产生大量的碎片空间，因此就有了标记整理的算法，在标记之后先对存活的对象进行移动操作，也就是将这部分对象进行整理放到内存的一边，然后再将剩下的空间进行清理，这样就防止了产生大量的碎片化空间。这种方式也有一个比较严重的问题，那就是在标记之后如果存活的对象很多，那么要移动这部分对象的过程就会变得很长，同时由于对象需要进行移动，这时必须要暂停用户线程，这就让我们的程序看起来会暂停一下，也就是著名的 “Stop The World” 现象。</p>
-<p><img src="http://images.rookiezhou.top/blog/images/Mark-Compact.png" alt="Mark-Compact"></p>
+<p><img src="/images/Mark-Compact.png" alt="Mark-Compact"></p>
 <p>好了，上面大概介绍了 JVM 中是如何判定对象是否还存活，以及非常经典的分代收集思想，同时列举了几种常见的垃圾收集算法。到这里你可能会觉得这些知识点看起来好像对我们的编码没什么影响呀，但是呢这些东西就好比是我们的内功，那些武林高手到最后比拼的不都是谁的内功更深一筹么。</p>
 ]]></content>
       <categories>
@@ -299,33 +298,6 @@
       </categories>
   </entry>
   <entry>
-    <title>Java 8 特性--Optional 类、时间 API 以及 Base64 编解码</title>
-    <url>/Java-8-%E7%89%B9%E6%80%A7-Optional-%E7%B1%BB%E3%80%81%E6%97%B6%E9%97%B4-API-%E4%BB%A5%E5%8F%8A-Base64-%E7%BC%96%E8%A7%A3%E7%A0%81/</url>
-    <content><![CDATA[<h2 id="Optional-类"><a href="#Optional-类" class="headerlink" title="Optional 类"></a>Optional 类</h2><p>Optional 类是一个可以为 null 的容器对象，可以保存类型 T 的值，或者仅仅保存 null，它提供很多有用的方法，让我们不用再显式的进行空值检测，Optional 类的引入很好的避免了发生空指针异常，下面我们看一个简单的例子：</p>
-<a id="more"></a>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Integer value1 &#x3D; null;</span><br><span class="line">Integer value2 &#x3D; 10;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; Optional.ofNullable - 允许传递为 null 参数</span><br><span class="line">Optional&lt;Integer&gt; optional1 &#x3D; Optional.ofNullable(value1);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; Optional.of - 如果传递的参数是 null，抛出异常 NullPointerException</span><br><span class="line">Optional&lt;Integer&gt; optional2 &#x3D; Optional.of(value2);</span><br><span class="line"></span><br><span class="line">System.out.println(&quot;第一个参数值是否存在: &quot; + optional1.isPresent());</span><br><span class="line">System.out.println(&quot;第二个参数值是否存在: &quot; + optional2.isPresent());</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; Optional.orElse - 如果值存在，返回它，否则返回默认值</span><br><span class="line">Integer result1 &#x3D; optional1.orElse(0);</span><br><span class="line">System.out.println(result1);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;Optional.get - 获取值，值需要存在</span><br><span class="line">Integer result2 &#x3D; optional2.orElse(0);</span><br><span class="line">System.out.println(result2);</span><br></pre></td></tr></table></figure>
-
-<h2 id="Java-8-日期时间-API"><a href="#Java-8-日期时间-API" class="headerlink" title="Java 8 日期时间 API"></a>Java 8 日期时间 API</h2><p>在 Java 8 以前，我们都知道 Java 中的时间处理很繁琐，有时候还会去纠结我到底是用 java.util 包下的日期还是 java.sql 包下的日期呢。因此往往在遇到时间处理问题时都会借助于框架来实现，比如 Joda-Time。但在 Java 8 中也增加了同样的类似框架功能的时间处理 API，下面列出一些简单的例子：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&#x2F;&#x2F;Clock 类使用时区来返回当前的毫秒数和日期。Clock 可以替代System.currentTimeMillis() 和 TimeZone.getDefault()。</span><br><span class="line"> </span><br><span class="line">Clock clock &#x3D; Clock.systemUTC();</span><br><span class="line">System.out.println(clock.millis());</span><br><span class="line">System.out.println(System.currentTimeMillis());</span><br></pre></td></tr></table></figure>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&#x2F;&#x2F; 获取当前日期</span><br><span class="line">LocalDate currentDate &#x3D; LocalDate.now();</span><br><span class="line">System.out.println(&quot;当前日期: &quot; + currentDate);</span><br><span class="line">&#x2F;&#x2F; 获取当前时间</span><br><span class="line">LocalTime currentTime &#x3D; LocalTime.now();</span><br><span class="line">System.out.println(&quot;当前时间: &quot; + currentTime);</span><br><span class="line">&#x2F;&#x2F; 获取当前日期时间</span><br><span class="line">LocalDateTime currentDateTime &#x3D; LocalDateTime.now();</span><br><span class="line">System.out.println(&quot;当前日期时间: &quot; + currentDateTime);</span><br><span class="line">&#x2F;&#x2F; 根据当前日期时间获取当前日期</span><br><span class="line">LocalDate currentDate1 &#x3D; currentDateTime.toLocalDate();</span><br><span class="line">System.out.println(&quot;currentDate1: &quot; + currentDate1);</span><br><span class="line">&#x2F;&#x2F; 根据当前日期时间获取当前时间</span><br><span class="line">LocalTime currentTime1 &#x3D; currentDateTime.toLocalTime();</span><br><span class="line">System.out.println(&quot;currentTime1: &quot; + currentTime1);</span><br><span class="line"></span><br><span class="line">Month month &#x3D; currentDateTime.getMonth();</span><br><span class="line">int day &#x3D; currentDateTime.getDayOfMonth();</span><br><span class="line">int seconds &#x3D; currentDateTime.getSecond();</span><br><span class="line">System.out.println(&quot;月: &quot; + month +&quot;, 日: &quot; + day +&quot;, 秒: &quot; + seconds);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 指定日期</span><br><span class="line">LocalDateTime date2 &#x3D; currentDateTime.withDayOfMonth(10).withYear(2012);</span><br><span class="line">System.out.println(&quot;date2: &quot; + date2);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 12 december 2014</span><br><span class="line">LocalDate date3 &#x3D; LocalDate.of(2014, Month.DECEMBER, 12);</span><br><span class="line">System.out.println(&quot;date3: &quot; + date3);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 22 小时 15 分钟</span><br><span class="line">LocalTime date4 &#x3D; LocalTime.of(22, 15);</span><br><span class="line">System.out.println(&quot;date4: &quot; + date4);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 解析字符串</span><br><span class="line">LocalTime date5 &#x3D; LocalTime.parse(&quot;20:15:30&quot;);</span><br><span class="line">System.out.println(&quot;date5: &quot; + date5);</span><br><span class="line">&#x2F;&#x2F; 获取当前日期时间的另一个时区的日期时间</span><br><span class="line"></span><br><span class="line">System.out.println(currentDateTime.atZone(ZoneId.of(&quot;America&#x2F;New_York&quot;)));</span><br></pre></td></tr></table></figure>
-
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">LocalDateTime from &#x3D; LocalDateTime.of( 2017, Month.MAY, 16, 0, 0, 0 );</span><br><span class="line">LocalDateTime to &#x3D; LocalDateTime.of( 2018, Month.MAY, 16, 23, 59, 59 );</span><br><span class="line">Duration duration &#x3D; Duration.between( from, to );</span><br><span class="line">System.out.println( &quot;Duration in days: &quot; + duration.toDays() );</span><br><span class="line">System.out.println( &quot;Duration in hours: &quot; + duration.toHours());</span><br></pre></td></tr></table></figure>
-<p>上面只是列举了一些简单的东西，其实还有一些，比如时间的加减运算，这些在用到时可以根据提示来进行我们想要的操作。</p>
-<h2 id="Java8-Base64"><a href="#Java8-Base64" class="headerlink" title="Java8 Base64"></a>Java8 Base64</h2><p>Java 8 内置了 Base64 编码的编码器和解码器，并且 Base64 工具类提供了一套静态方法获取下面三种 BASE64 编解码器：</p>
-<ul>
-<li>基本：输出被映射到一组字符 A-Za-z0-9+/，编码不添加任何行标，输出的解码仅支持 A-Za-z0-9+/。</li>
-<li>URL：输出映射到一组字符A-Za-z0-9+_，输出是 URL 和文件。</li>
-<li>MIME：输出映射到 MIME 友好格式，输出每行不超过 76 字符，并且使用 ‘\r’ 并跟随 ‘\n’ 作为分割，编码输出最后没有行分割。</li>
-</ul>
-<p>下面也是一个简单的例子展示了如何获取这三种编解码器：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&#x2F;&#x2F; 基本编码</span><br><span class="line">String base64encodedString &#x3D; Base64.getEncoder().encodeToString(&quot;java 8&quot;.getBytes(&quot;utf-8&quot;));</span><br><span class="line">System.out.println(&quot;Base64 编码字符串 (基本) :&quot; + base64encodedString);</span><br><span class="line">&#x2F;&#x2F; 基本解码</span><br><span class="line">byte[] base64decodedBytes &#x3D; Base64.getDecoder().decode(base64encodedString);</span><br><span class="line">System.out.println(&quot;原始字符串: &quot; + new String(base64decodedBytes, &quot;utf-8&quot;));</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; URL 编码</span><br><span class="line">base64encodedString &#x3D; Base64.getUrlEncoder().encodeToString(&quot;url?java8&quot;.getBytes(&quot;utf-8&quot;));</span><br><span class="line">System.out.println(&quot;Base64 编码字符串 (URL) :&quot; + base64encodedString);</span><br><span class="line">&#x2F;&#x2F; URL 解码</span><br><span class="line">byte[] base64decodedBytesUrl &#x3D; Base64.getUrlDecoder().decode(base64encodedString);</span><br><span class="line">System.out.println(&quot;原始字符串: &quot; + new String(base64decodedBytesUrl, &quot;utf-8&quot;));</span><br><span class="line"></span><br><span class="line">StringBuilder stringBuilder &#x3D; new StringBuilder();</span><br><span class="line">for (int i &#x3D; 0; i &lt; 10; ++i) &#123;</span><br><span class="line">    stringBuilder.append(UUID.randomUUID().toString());</span><br><span class="line">&#125;</span><br><span class="line">byte[] mimeBytes &#x3D; stringBuilder.toString().getBytes(&quot;utf-8&quot;);</span><br><span class="line">&#x2F;&#x2F; MINE 编码</span><br><span class="line">String mimeEncodedString &#x3D; Base64.getMimeEncoder().encodeToString(mimeBytes);</span><br><span class="line">System.out.println(&quot;Base64 编码字符串 (MIME) :&quot; + mimeEncodedString);</span><br></pre></td></tr></table></figure>
-
-]]></content>
-      <categories>
-        <category>Java 8</category>
-      </categories>
-  </entry>
-  <entry>
     <title>Java 8 特性--Lambda 表达式、接口默认方法以及方法引用</title>
     <url>/Java-8-%E7%89%B9%E6%80%A7-Lambda-%E8%A1%A8%E8%BE%BE%E5%BC%8F%E3%80%81%E6%8E%A5%E5%8F%A3%E9%BB%98%E8%AE%A4%E6%96%B9%E6%B3%95%E4%BB%A5%E5%8F%8A%E6%96%B9%E6%B3%95%E5%BC%95%E7%94%A8/</url>
     <content><![CDATA[<p>Java 8 (又称为 jdk 1.8) 是 Java 语言开发的一个主要版本，Java 8 增加了许多的新特性，在此先记录一下 Lambda 表达式，接口默认方法和方法引用这三个特性。</p>
@@ -364,6 +336,33 @@
 <li>方法引用所引用的方法的参数列表必须要和函数式接口中抽象方法的参数列表完全一致。</li>
 <li>方法引用所引用的方法的的返回值必须要和函数式接口中抽象方法的返回值完全一致</li>
 </ol>
+]]></content>
+      <categories>
+        <category>Java 8</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>Java 8 特性--Optional 类、时间 API 以及 Base64 编解码</title>
+    <url>/Java-8-%E7%89%B9%E6%80%A7-Optional-%E7%B1%BB%E3%80%81%E6%97%B6%E9%97%B4-API-%E4%BB%A5%E5%8F%8A-Base64-%E7%BC%96%E8%A7%A3%E7%A0%81/</url>
+    <content><![CDATA[<h2 id="Optional-类"><a href="#Optional-类" class="headerlink" title="Optional 类"></a>Optional 类</h2><p>Optional 类是一个可以为 null 的容器对象，可以保存类型 T 的值，或者仅仅保存 null，它提供很多有用的方法，让我们不用再显式的进行空值检测，Optional 类的引入很好的避免了发生空指针异常，下面我们看一个简单的例子：</p>
+<a id="more"></a>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Integer value1 &#x3D; null;</span><br><span class="line">Integer value2 &#x3D; 10;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; Optional.ofNullable - 允许传递为 null 参数</span><br><span class="line">Optional&lt;Integer&gt; optional1 &#x3D; Optional.ofNullable(value1);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; Optional.of - 如果传递的参数是 null，抛出异常 NullPointerException</span><br><span class="line">Optional&lt;Integer&gt; optional2 &#x3D; Optional.of(value2);</span><br><span class="line"></span><br><span class="line">System.out.println(&quot;第一个参数值是否存在: &quot; + optional1.isPresent());</span><br><span class="line">System.out.println(&quot;第二个参数值是否存在: &quot; + optional2.isPresent());</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; Optional.orElse - 如果值存在，返回它，否则返回默认值</span><br><span class="line">Integer result1 &#x3D; optional1.orElse(0);</span><br><span class="line">System.out.println(result1);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;Optional.get - 获取值，值需要存在</span><br><span class="line">Integer result2 &#x3D; optional2.orElse(0);</span><br><span class="line">System.out.println(result2);</span><br></pre></td></tr></table></figure>
+
+<h2 id="Java-8-日期时间-API"><a href="#Java-8-日期时间-API" class="headerlink" title="Java 8 日期时间 API"></a>Java 8 日期时间 API</h2><p>在 Java 8 以前，我们都知道 Java 中的时间处理很繁琐，有时候还会去纠结我到底是用 java.util 包下的日期还是 java.sql 包下的日期呢。因此往往在遇到时间处理问题时都会借助于框架来实现，比如 Joda-Time。但在 Java 8 中也增加了同样的类似框架功能的时间处理 API，下面列出一些简单的例子：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&#x2F;&#x2F;Clock 类使用时区来返回当前的毫秒数和日期。Clock 可以替代System.currentTimeMillis() 和 TimeZone.getDefault()。</span><br><span class="line"> </span><br><span class="line">Clock clock &#x3D; Clock.systemUTC();</span><br><span class="line">System.out.println(clock.millis());</span><br><span class="line">System.out.println(System.currentTimeMillis());</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&#x2F;&#x2F; 获取当前日期</span><br><span class="line">LocalDate currentDate &#x3D; LocalDate.now();</span><br><span class="line">System.out.println(&quot;当前日期: &quot; + currentDate);</span><br><span class="line">&#x2F;&#x2F; 获取当前时间</span><br><span class="line">LocalTime currentTime &#x3D; LocalTime.now();</span><br><span class="line">System.out.println(&quot;当前时间: &quot; + currentTime);</span><br><span class="line">&#x2F;&#x2F; 获取当前日期时间</span><br><span class="line">LocalDateTime currentDateTime &#x3D; LocalDateTime.now();</span><br><span class="line">System.out.println(&quot;当前日期时间: &quot; + currentDateTime);</span><br><span class="line">&#x2F;&#x2F; 根据当前日期时间获取当前日期</span><br><span class="line">LocalDate currentDate1 &#x3D; currentDateTime.toLocalDate();</span><br><span class="line">System.out.println(&quot;currentDate1: &quot; + currentDate1);</span><br><span class="line">&#x2F;&#x2F; 根据当前日期时间获取当前时间</span><br><span class="line">LocalTime currentTime1 &#x3D; currentDateTime.toLocalTime();</span><br><span class="line">System.out.println(&quot;currentTime1: &quot; + currentTime1);</span><br><span class="line"></span><br><span class="line">Month month &#x3D; currentDateTime.getMonth();</span><br><span class="line">int day &#x3D; currentDateTime.getDayOfMonth();</span><br><span class="line">int seconds &#x3D; currentDateTime.getSecond();</span><br><span class="line">System.out.println(&quot;月: &quot; + month +&quot;, 日: &quot; + day +&quot;, 秒: &quot; + seconds);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 指定日期</span><br><span class="line">LocalDateTime date2 &#x3D; currentDateTime.withDayOfMonth(10).withYear(2012);</span><br><span class="line">System.out.println(&quot;date2: &quot; + date2);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 12 december 2014</span><br><span class="line">LocalDate date3 &#x3D; LocalDate.of(2014, Month.DECEMBER, 12);</span><br><span class="line">System.out.println(&quot;date3: &quot; + date3);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 22 小时 15 分钟</span><br><span class="line">LocalTime date4 &#x3D; LocalTime.of(22, 15);</span><br><span class="line">System.out.println(&quot;date4: &quot; + date4);</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; 解析字符串</span><br><span class="line">LocalTime date5 &#x3D; LocalTime.parse(&quot;20:15:30&quot;);</span><br><span class="line">System.out.println(&quot;date5: &quot; + date5);</span><br><span class="line">&#x2F;&#x2F; 获取当前日期时间的另一个时区的日期时间</span><br><span class="line"></span><br><span class="line">System.out.println(currentDateTime.atZone(ZoneId.of(&quot;America&#x2F;New_York&quot;)));</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">LocalDateTime from &#x3D; LocalDateTime.of( 2017, Month.MAY, 16, 0, 0, 0 );</span><br><span class="line">LocalDateTime to &#x3D; LocalDateTime.of( 2018, Month.MAY, 16, 23, 59, 59 );</span><br><span class="line">Duration duration &#x3D; Duration.between( from, to );</span><br><span class="line">System.out.println( &quot;Duration in days: &quot; + duration.toDays() );</span><br><span class="line">System.out.println( &quot;Duration in hours: &quot; + duration.toHours());</span><br></pre></td></tr></table></figure>
+<p>上面只是列举了一些简单的东西，其实还有一些，比如时间的加减运算，这些在用到时可以根据提示来进行我们想要的操作。</p>
+<h2 id="Java8-Base64"><a href="#Java8-Base64" class="headerlink" title="Java8 Base64"></a>Java8 Base64</h2><p>Java 8 内置了 Base64 编码的编码器和解码器，并且 Base64 工具类提供了一套静态方法获取下面三种 BASE64 编解码器：</p>
+<ul>
+<li>基本：输出被映射到一组字符 A-Za-z0-9+/，编码不添加任何行标，输出的解码仅支持 A-Za-z0-9+/。</li>
+<li>URL：输出映射到一组字符A-Za-z0-9+_，输出是 URL 和文件。</li>
+<li>MIME：输出映射到 MIME 友好格式，输出每行不超过 76 字符，并且使用 ‘\r’ 并跟随 ‘\n’ 作为分割，编码输出最后没有行分割。</li>
+</ul>
+<p>下面也是一个简单的例子展示了如何获取这三种编解码器：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&#x2F;&#x2F; 基本编码</span><br><span class="line">String base64encodedString &#x3D; Base64.getEncoder().encodeToString(&quot;java 8&quot;.getBytes(&quot;utf-8&quot;));</span><br><span class="line">System.out.println(&quot;Base64 编码字符串 (基本) :&quot; + base64encodedString);</span><br><span class="line">&#x2F;&#x2F; 基本解码</span><br><span class="line">byte[] base64decodedBytes &#x3D; Base64.getDecoder().decode(base64encodedString);</span><br><span class="line">System.out.println(&quot;原始字符串: &quot; + new String(base64decodedBytes, &quot;utf-8&quot;));</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F; URL 编码</span><br><span class="line">base64encodedString &#x3D; Base64.getUrlEncoder().encodeToString(&quot;url?java8&quot;.getBytes(&quot;utf-8&quot;));</span><br><span class="line">System.out.println(&quot;Base64 编码字符串 (URL) :&quot; + base64encodedString);</span><br><span class="line">&#x2F;&#x2F; URL 解码</span><br><span class="line">byte[] base64decodedBytesUrl &#x3D; Base64.getUrlDecoder().decode(base64encodedString);</span><br><span class="line">System.out.println(&quot;原始字符串: &quot; + new String(base64decodedBytesUrl, &quot;utf-8&quot;));</span><br><span class="line"></span><br><span class="line">StringBuilder stringBuilder &#x3D; new StringBuilder();</span><br><span class="line">for (int i &#x3D; 0; i &lt; 10; ++i) &#123;</span><br><span class="line">    stringBuilder.append(UUID.randomUUID().toString());</span><br><span class="line">&#125;</span><br><span class="line">byte[] mimeBytes &#x3D; stringBuilder.toString().getBytes(&quot;utf-8&quot;);</span><br><span class="line">&#x2F;&#x2F; MINE 编码</span><br><span class="line">String mimeEncodedString &#x3D; Base64.getMimeEncoder().encodeToString(mimeBytes);</span><br><span class="line">System.out.println(&quot;Base64 编码字符串 (MIME) :&quot; + mimeEncodedString);</span><br></pre></td></tr></table></figure>
+
 ]]></content>
       <categories>
         <category>Java 8</category>
@@ -456,42 +455,6 @@
 ]]></content>
       <categories>
         <category>JVM</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>Java 中通过枚举实现单例和策略模式</title>
-    <url>/Java-%E4%B8%AD%E9%80%9A%E8%BF%87%E6%9E%9A%E4%B8%BE%E5%AE%9E%E7%8E%B0%E5%8D%95%E4%BE%8B%E5%92%8C%E7%AD%96%E7%95%A5%E6%A8%A1%E5%BC%8F/</url>
-    <content><![CDATA[<p>在上篇文章中主要介绍了 Java 中对于枚举的合理使用能让我们的代码看起来更优雅，但其实枚举还有一个特异功能，可以实现设计模式中的单例模式。</p>
-<p>先来看我们最熟悉的单例模式，我们之前看到的最多的单例模式实现是像下面这种，线程安全的双重检查锁懒汉单例。</p>
-<a id="more"></a> 
-
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ThreadSafeSingleton</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">static</span> ThreadSafeSingleton singleton;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="title">ThreadSafeSingleton</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> ThreadSafeSingleton <span class="title">getInstance</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (singleton != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> singleton;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">synchronized</span> (ThreadSafeSingleton.class) &#123;</span><br><span class="line">            <span class="keyword">if</span> (singleton == <span class="keyword">null</span>) &#123;</span><br><span class="line">                singleton = <span class="keyword">new</span> ThreadSafeSingleton();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> singleton;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>上面这种实现方式是懒汉式单例，同时通过双重检查锁规避了线程安全问题和性能问题，同时利用 volatile 关键字杜绝 JVM 的指令重排，避免了多线程情况下可能出现 NPE 的问题，上面的实现方式既做到了线程安全，同时又不失性能的单例实现。</p>
-<p>那么这里我么说到通过枚举来实现单例又是如何实现的呢，其实很简单，比如下面的代码就是使用枚举来实现的一个单例。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> DeployEnvSingleton &#123;</span><br><span class="line"></span><br><span class="line">    INSTANCE;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>上面代码实现了一个很简单的单例模式，虽然看起来非常简单，但是做的事情一点也不比上面开头提出的单例模式少，甚至在某些极端情况下还有特殊的效果。先来看看这个简单的单例做到了哪些事情：</p>
-<ul>
-<li>只会创建一个实例，因为枚举类型可确保 JVM 中仅存在所定义的常量的一个实例</li>
-<li>线程安全，因为 Java 虚拟机在加载枚举类的时候，会使用 ClassLoader 的 loadClass 方法，而这个方法使用了同步代码块来保证线程安全</li>
-<li>反射安全，因为JVM 会阻止反射获取枚举类的私有构造方法，而其他的单例实现是可以通过反射来创建对象的</li>
-<li>序列化/反序列化安全，你用序列化工具对该实例进行序列化然后再反序列化会发现得到值是同一个</li>
-<li>优雅简单，从代码就可以看出来实现非常简单</li>
-</ul>
-<p>从列举的这些可以看出使用枚举来实现单例是非常好的选择，当然唯一的一个缺点是不能实现懒加载，枚举中的实例不管我们有没有用到它，它都已经创建好了在那里。</p>
-<p>说完单例，再看下策略模式又是怎样的。一般我们实现策略模式是通过实现接口的方式来实现的，每加一个新的策略就加一个子类实现相应的接口</p>
-<p><img src="http://images.rookiezhou.top/blog/images/strategy_uml.png" alt="strategy_uml"></p>
-<p>上面就是策略模式的 UML 图，Strategy 是接口，ConcreteStrategyA 和 ConcreteStrategyB 是具体的策略实现，增加的新的策略则再加一个子类实现 Strategy 接口，然后我们再看采用枚举的实现方式。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> EnvEnum &#123;</span><br><span class="line"></span><br><span class="line">    DEVELOPMENT&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span> </span>&#123;</span><br><span class="line">            System.out.println(issue.getId() + <span class="string">&quot; issue will deploy to DEVELOPMENT&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;,</span><br><span class="line"></span><br><span class="line">    TESTING&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span> </span>&#123;</span><br><span class="line">            System.out.println(issue.getId() + <span class="string">&quot; issue will deploy to TESTING&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;,</span><br><span class="line"></span><br><span class="line">    PRODUCTION&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span> </span>&#123;</span><br><span class="line">            System.out.println(issue.getId() + <span class="string">&quot; issue will deploy to PRODUCTION&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>上面的代码就是一个简易的策略模式，预先定义了三个环境，dev，test，prod，后期如果想要再加一个环境 staging 只需要在枚举类中再加一个 STAGING 实例即可。</p>
-<p>整体看下来是不是觉得枚举这个类型还是可以做到很多特性的，不过我最喜欢枚举的一点还是它能够帮助我们写出易于阅读同时又非常优雅的代码。所以说好好利用枚举这个类型，也让你代码实现更优雅一些吧。</p>
-<p>完整测试代码地址：<a href="https://github.com/rookiedev-z/sample/tree/master/java-basic-sample">Java basic sample</a></p>
-<p>参考：<a href="https://www.baeldung.com/a-guide-to-java-enums">https://www.baeldung.com/a-guide-to-java-enums</a></p>
-]]></content>
-      <categories>
-        <category>Java</category>
       </categories>
   </entry>
   <entry>
@@ -609,6 +572,42 @@
       </categories>
   </entry>
   <entry>
+    <title>Java 中通过枚举实现单例和策略模式</title>
+    <url>/Java-%E4%B8%AD%E9%80%9A%E8%BF%87%E6%9E%9A%E4%B8%BE%E5%AE%9E%E7%8E%B0%E5%8D%95%E4%BE%8B%E5%92%8C%E7%AD%96%E7%95%A5%E6%A8%A1%E5%BC%8F/</url>
+    <content><![CDATA[<p>在上篇文章中主要介绍了 Java 中对于枚举的合理使用能让我们的代码看起来更优雅，但其实枚举还有一个特异功能，可以实现设计模式中的单例模式。</p>
+<p>先来看我们最熟悉的单例模式，我们之前看到的最多的单例模式实现是像下面这种，线程安全的双重检查锁懒汉单例。</p>
+<a id="more"></a> 
+
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ThreadSafeSingleton</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">static</span> ThreadSafeSingleton singleton;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="title">ThreadSafeSingleton</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> ThreadSafeSingleton <span class="title">getInstance</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (singleton != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> singleton;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">synchronized</span> (ThreadSafeSingleton.class) &#123;</span><br><span class="line">            <span class="keyword">if</span> (singleton == <span class="keyword">null</span>) &#123;</span><br><span class="line">                singleton = <span class="keyword">new</span> ThreadSafeSingleton();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> singleton;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面这种实现方式是懒汉式单例，同时通过双重检查锁规避了线程安全问题和性能问题，同时利用 volatile 关键字杜绝 JVM 的指令重排，避免了多线程情况下可能出现 NPE 的问题，上面的实现方式既做到了线程安全，同时又不失性能的单例实现。</p>
+<p>那么这里我么说到通过枚举来实现单例又是如何实现的呢，其实很简单，比如下面的代码就是使用枚举来实现的一个单例。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> DeployEnvSingleton &#123;</span><br><span class="line"></span><br><span class="line">    INSTANCE;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面代码实现了一个很简单的单例模式，虽然看起来非常简单，但是做的事情一点也不比上面开头提出的单例模式少，甚至在某些极端情况下还有特殊的效果。先来看看这个简单的单例做到了哪些事情：</p>
+<ul>
+<li>只会创建一个实例，因为枚举类型可确保 JVM 中仅存在所定义的常量的一个实例</li>
+<li>线程安全，因为 Java 虚拟机在加载枚举类的时候，会使用 ClassLoader 的 loadClass 方法，而这个方法使用了同步代码块来保证线程安全</li>
+<li>反射安全，因为JVM 会阻止反射获取枚举类的私有构造方法，而其他的单例实现是可以通过反射来创建对象的</li>
+<li>序列化/反序列化安全，你用序列化工具对该实例进行序列化然后再反序列化会发现得到值是同一个</li>
+<li>优雅简单，从代码就可以看出来实现非常简单</li>
+</ul>
+<p>从列举的这些可以看出使用枚举来实现单例是非常好的选择，当然唯一的一个缺点是不能实现懒加载，枚举中的实例不管我们有没有用到它，它都已经创建好了在那里。</p>
+<p>说完单例，再看下策略模式又是怎样的。一般我们实现策略模式是通过实现接口的方式来实现的，每加一个新的策略就加一个子类实现相应的接口</p>
+<p><img src="/images/strategy_uml.png" alt="strategy_uml"></p>
+<p>上面就是策略模式的 UML 图，Strategy 是接口，ConcreteStrategyA 和 ConcreteStrategyB 是具体的策略实现，增加的新的策略则再加一个子类实现 Strategy 接口，然后我们再看采用枚举的实现方式。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> EnvEnum &#123;</span><br><span class="line"></span><br><span class="line">    DEVELOPMENT&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span> </span>&#123;</span><br><span class="line">            System.out.println(issue.getId() + <span class="string">&quot; issue will deploy to DEVELOPMENT&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;,</span><br><span class="line"></span><br><span class="line">    TESTING&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span> </span>&#123;</span><br><span class="line">            System.out.println(issue.getId() + <span class="string">&quot; issue will deploy to TESTING&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;,</span><br><span class="line"></span><br><span class="line">    PRODUCTION&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span> </span>&#123;</span><br><span class="line">            System.out.println(issue.getId() + <span class="string">&quot; issue will deploy to PRODUCTION&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面的代码就是一个简易的策略模式，预先定义了三个环境，dev，test，prod，后期如果想要再加一个环境 staging 只需要在枚举类中再加一个 STAGING 实例即可。</p>
+<p>整体看下来是不是觉得枚举这个类型还是可以做到很多特性的，不过我最喜欢枚举的一点还是它能够帮助我们写出易于阅读同时又非常优雅的代码。所以说好好利用枚举这个类型，也让你代码实现更优雅一些吧。</p>
+<p>完整测试代码地址：<a href="https://github.com/rookiedev-z/sample/tree/master/java-basic-sample">Java basic sample</a></p>
+<p>参考：<a href="https://www.baeldung.com/a-guide-to-java-enums">https://www.baeldung.com/a-guide-to-java-enums</a></p>
+]]></content>
+      <categories>
+        <category>Java</category>
+      </categories>
+  </entry>
+  <entry>
     <title>Java 面试系列——基础篇(一)</title>
     <url>/Java-%E9%9D%A2%E8%AF%95%E7%B3%BB%E5%88%97%E2%80%94%E2%80%94%E5%9F%BA%E7%A1%80%E7%AF%87-%E4%B8%80/</url>
     <content><![CDATA[<h2 id="面向对象的特征：封装、继承、多态、抽象"><a href="#面向对象的特征：封装、继承、多态、抽象" class="headerlink" title="面向对象的特征：封装、继承、多态、抽象"></a>面向对象的特征：封装、继承、多态、抽象</h2><p>封装给对象提供了隐藏内部特性和行为的能力，对象提供一些能被其他对象访问的方法来改变它内部的数据。在 Java 当中，有 4 种访问权限，对应有三个修饰符 : public、private 、protected，每一种修饰符给其他的位于同一个包或者不同包下面对象赋予了不同的访问权限。下面列出了使用封装的一些好处:</p>
@@ -720,25 +719,6 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
       </categories>
   </entry>
   <entry>
-    <title>Linux 系统下 AES 解密报错问题</title>
-    <url>/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B-AES-%E8%A7%A3%E5%AF%86%E6%8A%A5%E9%94%99%E9%97%AE%E9%A2%98/</url>
-    <content><![CDATA[<p>前两天在开发中遇到一个问题，就是一个服务部署在 Window 系统上的，而另一个服务部署在 Linux 系统上，Linux 系统上的服务需要通过 WebService 向 Window 系统上的服务获取数据，而这个数据是经过 AES 加密的，获取到密文之后需要进行解密，然后拿到解密之后的数据进行处理，但是在 Linux 系统服务上进行解密时却报错了，下面就是报错信息。</p>
-<a id="more"></a>
-
-<p><img src="http://images.rookiezhou.top/AES-Error.png" alt="解密时报错信息"></p>
-<p>遇到错误第一时间找度娘 ( 其实应该找 Google )，结果发现原来是操作系统的原因，Linux 系统下在进行 AES 加解密时生成 key 时是有问题的，key 值的生成方式如下：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">KeyGenerator generator &#x3D; KeyGenerator.getInstance(&quot;AES&quot;);</span><br><span class="line">&#x2F;&#x2F;password 为加解密使用的密钥</span><br><span class="line">generator.init(128, new SecureRandom(password.getBytes()));</span><br><span class="line">Key key &#x3D; generator.generateKey();</span><br></pre></td></tr></table></figure>
-
-<p>SecureRandom 的实现尝试完全随机化生成器本身的内部状态，因此随操作系统本身的內部状态而定，该实现在 windows 上每次生成的 key 都相同，但是在 linux 系统上则不同，除非调用方在调用 getInstance 方法之后又调用了 setSeed 方法，将上述生成 key 值的方式改为如下：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">KeyGenerator generator &#x3D; KeyGenerator.getInstance(&quot;AES&quot;);</span><br><span class="line">&#x2F;&#x2F;generator.init(128, new SecureRandom(password.getBytes()));</span><br><span class="line">SecureRandom secureRandom &#x3D; SecureRandom.getInstance(&quot;SHA1PRNG&quot;);</span><br><span class="line">&#x2F;&#x2F;password 为加解密使用的密钥</span><br><span class="line">secureRandom.setSeed(password.getBytes());</span><br><span class="line">generator.init(128, secureRandom);</span><br><span class="line">Key key &#x3D; generator.generateKey();</span><br></pre></td></tr></table></figure>
-<p>上面只是修改了 key 值的生成方式，这样就能够避免在 Linux 系统上加解密失败的错误了。完整的 AES 加解密工具类如下：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">package com.ecjtu.common.util;</span><br><span class="line"></span><br><span class="line">import sun.misc.BASE64Decoder;</span><br><span class="line">import sun.misc.BASE64Encoder;</span><br><span class="line"></span><br><span class="line">import javax.crypto.Cipher;</span><br><span class="line">import javax.crypto.KeyGenerator;</span><br><span class="line">import java.security.Key;</span><br><span class="line">import java.security.NoSuchAlgorithmException;</span><br><span class="line">import java.security.SecureRandom;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * @author zhouxh</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class AesEncodeUtil &#123;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line"></span><br><span class="line">        String content &#x3D; &quot;www.baidu.com&quot;;</span><br><span class="line">        String pwd &#x3D; &quot;ecjtu&quot;;</span><br><span class="line"></span><br><span class="line">        System.out.println(&quot;加密前content：&quot; + content);</span><br><span class="line">        &#x2F;&#x2F; 加密</span><br><span class="line">        String enContent &#x3D; encodeByAes(content, pwd);</span><br><span class="line">        System.out.println(&quot;加密后content：&quot; + enContent);</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F; 解密</span><br><span class="line">        String deContent &#x3D; decodeByAes(enContent, pwd);</span><br><span class="line">        System.out.println(&quot;解密后content：&quot; + deContent);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * 加密</span><br><span class="line">     *</span><br><span class="line">     * @param content  待加密内容</span><br><span class="line">     * @param password 加密密钥</span><br><span class="line">     * @return</span><br><span class="line">     *&#x2F;</span><br><span class="line">    public static String encodeByAes(String content, String password) &#123;</span><br><span class="line">        Key key &#x3D; generateKey(password);</span><br><span class="line">        BASE64Encoder base64en &#x3D; new BASE64Encoder();</span><br><span class="line">        try &#123;</span><br><span class="line">            &#x2F;&#x2F; 创建密码器</span><br><span class="line">            Cipher cipher &#x3D; Cipher.getInstance(&quot;AES&quot;);</span><br><span class="line">            byte[] byteContent &#x3D; content.getBytes(&quot;utf-8&quot;);</span><br><span class="line">            &#x2F;&#x2F; 初始化</span><br><span class="line">            cipher.init(Cipher.ENCRYPT_MODE, key);</span><br><span class="line">            &#x2F;&#x2F; 加密</span><br><span class="line">            content &#x3D; base64en.encode(cipher.doFinal(byteContent));</span><br><span class="line">        &#125; catch (Exception e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        return content;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * 解密</span><br><span class="line">     *</span><br><span class="line">     * @param content  待解密内容</span><br><span class="line">     * @param password 解密密钥</span><br><span class="line">     * @return</span><br><span class="line">     *&#x2F;</span><br><span class="line">    public static String decodeByAes(String content, String password) &#123;</span><br><span class="line">        Key key &#x3D; generateKey(password);</span><br><span class="line">        BASE64Decoder base64de &#x3D; new BASE64Decoder();</span><br><span class="line">        try &#123;</span><br><span class="line">            byte[] byteContent &#x3D; base64de.decodeBuffer(content);</span><br><span class="line">            &#x2F;&#x2F; 创建密码器</span><br><span class="line">            Cipher cipher &#x3D; Cipher.getInstance(&quot;AES&quot;);</span><br><span class="line">            &#x2F;&#x2F; 初始化</span><br><span class="line">            cipher.init(Cipher.DECRYPT_MODE, key);</span><br><span class="line">            &#x2F;&#x2F; 解密</span><br><span class="line">            content &#x3D; new String(cipher.doFinal(byteContent), &quot;UTF8&quot;);</span><br><span class="line">        &#125; catch (Exception e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        return content;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * 根据密钥生成加解密使用的 key 值</span><br><span class="line">     *</span><br><span class="line">     * @param password 加解密密钥</span><br><span class="line">     * @return</span><br><span class="line">     *&#x2F;</span><br><span class="line">    public static Key generateKey(String password) &#123;</span><br><span class="line">        Key key &#x3D; null;</span><br><span class="line">        try &#123;</span><br><span class="line">            KeyGenerator generator &#x3D; KeyGenerator.getInstance(&quot;AES&quot;);</span><br><span class="line">            &#x2F;&#x2F;下面这种方式在 Linux 系统下会报错</span><br><span class="line">            &#x2F;&#x2F;generator.init(128, new SecureRandom(password.getBytes()));</span><br><span class="line">            SecureRandom secureRandom &#x3D; SecureRandom.getInstance(&quot;SHA1PRNG&quot;);</span><br><span class="line">            secureRandom.setSeed(password.getBytes());</span><br><span class="line">            generator.init(128, secureRandom);</span><br><span class="line">            key &#x3D; generator.generateKey();</span><br><span class="line">        &#125; catch (NoSuchAlgorithmException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        return key;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-]]></content>
-      <categories>
-        <category>Java</category>
-      </categories>
-  </entry>
-  <entry>
     <title>JdbcTemplate 实现批量插入</title>
     <url>/JdbcTemplate-%E5%AE%9E%E7%8E%B0%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5/</url>
     <content><![CDATA[<p>项目中有时候我们会遇到 excel 导入的需求, excle 文件的每一行记录对应的可能都是数据库中的一条记录，一个 excel 中可能有很多行，所以导入一个 excel 就意味着 excel 里面有多少行，我们就要插入多少条记录。如果我们采用一条一条记录插入的方式，毫无疑问，这可能要执行很久。</p>
@@ -761,20 +741,20 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 
 <p>其中 mockStatsData() 方法是一个 for 循环构建了 10000 个 ActivityStat，返回 activityStatList:</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> List&lt;ActivityStat&gt; <span class="title">mockStatsData</span><span class="params">()</span></span>&#123;</span><br><span class="line">        List&lt;ActivityStat&gt; activityStatList = <span class="keyword">new</span> ArrayList&lt;&gt;(<span class="number">10000</span>);</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; <span class="number">10000</span>; i++)&#123;</span><br><span class="line">            ActivityStat activityStat = <span class="keyword">new</span> ActivityStat();</span><br><span class="line">            activityStat.setActivityId((<span class="keyword">long</span>)i)</span><br><span class="line">                    .setTimesViewed((<span class="keyword">long</span>)(i + <span class="number">100</span>))</span><br><span class="line">                    .setWorksCount((<span class="keyword">long</span>) i + <span class="number">50</span>)</span><br><span class="line">                    .setUserCount((<span class="keyword">long</span>) i + <span class="number">10</span>);</span><br><span class="line">            activityStatList.add(activityStat);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> activityStatList;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
-<p>运行测试的结果是下面这样的:<br><img src="http://images.rookiezhou.top/inser_stats_result.png" alt="insert stats result"></p>
-<p><img src="http://images.rookiezhou.top/batch_insert_stats_result.png" alt="batch insert stats result"></p>
+<p>运行测试的结果是下面这样的:<br><img src="/images/inser_stats_result.png" alt="insert stats result"></p>
+<p><img src="/images/batch_insert_stats_result.png" alt="batch insert stats result"></p>
 <p>往数据库中插入 10000 条记录，采用 for 循环的方式和采用批量的方式插入竟然时间量级是一样的，是不是有点懵，说实话刚开始我也有点懵，就觉得不应该啊，如果这样的话那还要 batchUpdate 方法有什么意义呢。</p>
-<p>懵归懵，但还是要找出其中的原因来，正常来说肯定不会是这种结果，应该是哪个环节没弄好，从我们写的代码来看应该是没有问题的，那就通过 debug 的方式看看 batchUpdate 方法里面到底是怎么执行的。这里建议如果要 debug 的源码是稍微比较复杂的，建议不要直接看 class 文件，calss 文件毕竟是编译之后的，代码看起来不是那么的直观，可以在打开 class 文件之后点击右上角提示的下载源码按钮。<br><img src="http://images.rookiezhou.top/download_source.png" alt="download_source"></p>
-<p>通过 debug 的方式我在 ClientPreparedStatement 类中找到下面这样一段代码:<br><img src="http://images.rookiezhou.top/batch_insert_condition.png" alt="batch insert condition"></p>
+<p>懵归懵，但还是要找出其中的原因来，正常来说肯定不会是这种结果，应该是哪个环节没弄好，从我们写的代码来看应该是没有问题的，那就通过 debug 的方式看看 batchUpdate 方法里面到底是怎么执行的。这里建议如果要 debug 的源码是稍微比较复杂的，建议不要直接看 class 文件，calss 文件毕竟是编译之后的，代码看起来不是那么的直观，可以在打开 class 文件之后点击右上角提示的下载源码按钮。<br><img src="/images/download_source.png" alt="download_source"></p>
+<p>通过 debug 的方式我在 ClientPreparedStatement 类中找到下面这样一段代码:<br><img src="/images/batch_insert_condition.png" alt="batch insert condition"></p>
 <p>这里有个判断 !this.batchHasPlainStatements &amp;&amp; this.rewriteBatchedStatements.getValue()<br>只有这两个条件同时都满足的情况下才会执行下面的 executeBatchedInserts 或 executePreparedBatchAsMultiStatement 方法，这两个都是批量的方法，第一个是针对 Insert 语句的，下面那个是 Update 和 Delete 语句的批量方法。</p>
-<p>当上面这两个条件只要有一个不满足，就会执行最下面的 executeBatchSerially 方法，而在这个方法的内部可以看到有一个 for 循环，然后在 for 循环里面一个一个执行 SQL。<br><img src="http://images.rookiezhou.top/batch_insert_for_loop.png" alt="batch insert for loop"></p>
+<p>当上面这两个条件只要有一个不满足，就会执行最下面的 executeBatchSerially 方法，而在这个方法的内部可以看到有一个 for 循环，然后在 for 循环里面一个一个执行 SQL。<br><img src="/images/batch_insert_for_loop.png" alt="batch insert for loop"></p>
 <p>看到这里再仔细看上面两个条件，对于    !this.batchHasPlainStatements 是类的一个属性，默认值是 false:</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment">     * Does the batch (if any) contain &quot;plain&quot; statements added by</span></span><br><span class="line"><span class="comment">     * Statement.addBatch(String)?</span></span><br><span class="line"><span class="comment">     * </span></span><br><span class="line"><span class="comment">     * If so, we can&#x27;t re-write it to use multi-value or multi-queries.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">protected</span> <span class="keyword">boolean</span> batchHasPlainStatements = <span class="keyword">false</span>;</span><br></pre></td></tr></table></figure>
 <p>只有在 addBatch 方法中才会置为 true，所以第一个条件满足的。再看第二个条件 thi.rewriteBatchedStatements,是父类的一个属性:</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">protected</span> RuntimeProperty&lt;Boolean&gt; rewriteBatchedStatements;</span><br></pre></td></tr></table></figure>
-<p><img src="http://images.rookiezhou.top/jdbc_url_property.png" alt="jdbc_url_property"><br>再看这个属性的初始化值的地方应该能猜到是这个是数据库地址 url 后面接的配置信息。</p>
+<p><img src="/images/jdbc_url_property.png" alt="jdbc_url_property"><br>再看这个属性的初始化值的地方应该能猜到是这个是数据库地址 url 后面接的配置信息。</p>
 <p>到这里我们应该知道为什么批量执行的方式和 for 循环一个一个插入时间量级是一样的了，是由于我们的少了rewriteBatchedStatements=true 的配置，导致 batchUpdate 代码内部其实还是通过 for 循环的方式来执行的，所以量级才会是一样的，接下来我们加上这项配置再执行就可以看到速度明显上来了，下面是加上改配置执行之后的结果:</p>
-<p><img src="http://images.rookiezhou.top/real_batch_insert_stats_result.png" alt="real batch update result"></p>
+<p><img src="/images/real_batch_insert_stats_result.png" alt="real batch update result"></p>
 <p>插入 10000 条记录用时才 2s，而加上配置之前是 30s。其实 rewriteBatchedStatements=true 配置对于批量的 insert 语句来说，是实现了下面的效果:</p>
 <figure class="highlight sql"><table><tr><td class="code"><pre><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> activity_stats(activity_id, times_viewed, works_count, user_count) <span class="keyword">values</span>(?, ?, ?, ?);</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> activity_stats(activity_id, times_viewed, works_count, user_count) <span class="keyword">values</span>(?, ?, ?, ?);</span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> activity_stats(activity_id, times_viewed, works_count, user_count) <span class="keyword">values</span>(?, ?, ?, ?)</span><br><span class="line"><span class="comment"># 重写之后</span></span><br><span class="line"><span class="keyword">insert</span> <span class="keyword">into</span> activity_stats(activity_id, times_viewed, works_count, user_count) <span class="keyword">values</span>(?, ?, ?, ?),(?, ?, ?, ?),(?, ?, ?, ?);</span><br></pre></td></tr></table></figure>
 <p>也就是是否将多条重写成一条，然后在发给 MySQL 执行，这样不用一条一条发过去执行，大大提高了执行效率。</p>
@@ -834,6 +814,25 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
       </categories>
   </entry>
   <entry>
+    <title>Linux 系统下 AES 解密报错问题</title>
+    <url>/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B-AES-%E8%A7%A3%E5%AF%86%E6%8A%A5%E9%94%99%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<p>前两天在开发中遇到一个问题，就是一个服务部署在 Window 系统上的，而另一个服务部署在 Linux 系统上，Linux 系统上的服务需要通过 WebService 向 Window 系统上的服务获取数据，而这个数据是经过 AES 加密的，获取到密文之后需要进行解密，然后拿到解密之后的数据进行处理，但是在 Linux 系统服务上进行解密时却报错了，下面就是报错信息。</p>
+<a id="more"></a>
+
+<p><img src="http://images.rookiezhou.top/AES-Error.png" alt="解密时报错信息"></p>
+<p>遇到错误第一时间找度娘 ( 其实应该找 Google )，结果发现原来是操作系统的原因，Linux 系统下在进行 AES 加解密时生成 key 时是有问题的，key 值的生成方式如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">KeyGenerator generator &#x3D; KeyGenerator.getInstance(&quot;AES&quot;);</span><br><span class="line">&#x2F;&#x2F;password 为加解密使用的密钥</span><br><span class="line">generator.init(128, new SecureRandom(password.getBytes()));</span><br><span class="line">Key key &#x3D; generator.generateKey();</span><br></pre></td></tr></table></figure>
+
+<p>SecureRandom 的实现尝试完全随机化生成器本身的内部状态，因此随操作系统本身的內部状态而定，该实现在 windows 上每次生成的 key 都相同，但是在 linux 系统上则不同，除非调用方在调用 getInstance 方法之后又调用了 setSeed 方法，将上述生成 key 值的方式改为如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">KeyGenerator generator &#x3D; KeyGenerator.getInstance(&quot;AES&quot;);</span><br><span class="line">&#x2F;&#x2F;generator.init(128, new SecureRandom(password.getBytes()));</span><br><span class="line">SecureRandom secureRandom &#x3D; SecureRandom.getInstance(&quot;SHA1PRNG&quot;);</span><br><span class="line">&#x2F;&#x2F;password 为加解密使用的密钥</span><br><span class="line">secureRandom.setSeed(password.getBytes());</span><br><span class="line">generator.init(128, secureRandom);</span><br><span class="line">Key key &#x3D; generator.generateKey();</span><br></pre></td></tr></table></figure>
+<p>上面只是修改了 key 值的生成方式，这样就能够避免在 Linux 系统上加解密失败的错误了。完整的 AES 加解密工具类如下：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">package com.ecjtu.common.util;</span><br><span class="line"></span><br><span class="line">import sun.misc.BASE64Decoder;</span><br><span class="line">import sun.misc.BASE64Encoder;</span><br><span class="line"></span><br><span class="line">import javax.crypto.Cipher;</span><br><span class="line">import javax.crypto.KeyGenerator;</span><br><span class="line">import java.security.Key;</span><br><span class="line">import java.security.NoSuchAlgorithmException;</span><br><span class="line">import java.security.SecureRandom;</span><br><span class="line"></span><br><span class="line">&#x2F;**</span><br><span class="line"> * @author zhouxh</span><br><span class="line"> *&#x2F;</span><br><span class="line">public class AesEncodeUtil &#123;</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line"></span><br><span class="line">        String content &#x3D; &quot;www.baidu.com&quot;;</span><br><span class="line">        String pwd &#x3D; &quot;ecjtu&quot;;</span><br><span class="line"></span><br><span class="line">        System.out.println(&quot;加密前content：&quot; + content);</span><br><span class="line">        &#x2F;&#x2F; 加密</span><br><span class="line">        String enContent &#x3D; encodeByAes(content, pwd);</span><br><span class="line">        System.out.println(&quot;加密后content：&quot; + enContent);</span><br><span class="line"></span><br><span class="line">        &#x2F;&#x2F; 解密</span><br><span class="line">        String deContent &#x3D; decodeByAes(enContent, pwd);</span><br><span class="line">        System.out.println(&quot;解密后content：&quot; + deContent);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * 加密</span><br><span class="line">     *</span><br><span class="line">     * @param content  待加密内容</span><br><span class="line">     * @param password 加密密钥</span><br><span class="line">     * @return</span><br><span class="line">     *&#x2F;</span><br><span class="line">    public static String encodeByAes(String content, String password) &#123;</span><br><span class="line">        Key key &#x3D; generateKey(password);</span><br><span class="line">        BASE64Encoder base64en &#x3D; new BASE64Encoder();</span><br><span class="line">        try &#123;</span><br><span class="line">            &#x2F;&#x2F; 创建密码器</span><br><span class="line">            Cipher cipher &#x3D; Cipher.getInstance(&quot;AES&quot;);</span><br><span class="line">            byte[] byteContent &#x3D; content.getBytes(&quot;utf-8&quot;);</span><br><span class="line">            &#x2F;&#x2F; 初始化</span><br><span class="line">            cipher.init(Cipher.ENCRYPT_MODE, key);</span><br><span class="line">            &#x2F;&#x2F; 加密</span><br><span class="line">            content &#x3D; base64en.encode(cipher.doFinal(byteContent));</span><br><span class="line">        &#125; catch (Exception e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        return content;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * 解密</span><br><span class="line">     *</span><br><span class="line">     * @param content  待解密内容</span><br><span class="line">     * @param password 解密密钥</span><br><span class="line">     * @return</span><br><span class="line">     *&#x2F;</span><br><span class="line">    public static String decodeByAes(String content, String password) &#123;</span><br><span class="line">        Key key &#x3D; generateKey(password);</span><br><span class="line">        BASE64Decoder base64de &#x3D; new BASE64Decoder();</span><br><span class="line">        try &#123;</span><br><span class="line">            byte[] byteContent &#x3D; base64de.decodeBuffer(content);</span><br><span class="line">            &#x2F;&#x2F; 创建密码器</span><br><span class="line">            Cipher cipher &#x3D; Cipher.getInstance(&quot;AES&quot;);</span><br><span class="line">            &#x2F;&#x2F; 初始化</span><br><span class="line">            cipher.init(Cipher.DECRYPT_MODE, key);</span><br><span class="line">            &#x2F;&#x2F; 解密</span><br><span class="line">            content &#x3D; new String(cipher.doFinal(byteContent), &quot;UTF8&quot;);</span><br><span class="line">        &#125; catch (Exception e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        return content;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    &#x2F;**</span><br><span class="line">     * 根据密钥生成加解密使用的 key 值</span><br><span class="line">     *</span><br><span class="line">     * @param password 加解密密钥</span><br><span class="line">     * @return</span><br><span class="line">     *&#x2F;</span><br><span class="line">    public static Key generateKey(String password) &#123;</span><br><span class="line">        Key key &#x3D; null;</span><br><span class="line">        try &#123;</span><br><span class="line">            KeyGenerator generator &#x3D; KeyGenerator.getInstance(&quot;AES&quot;);</span><br><span class="line">            &#x2F;&#x2F;下面这种方式在 Linux 系统下会报错</span><br><span class="line">            &#x2F;&#x2F;generator.init(128, new SecureRandom(password.getBytes()));</span><br><span class="line">            SecureRandom secureRandom &#x3D; SecureRandom.getInstance(&quot;SHA1PRNG&quot;);</span><br><span class="line">            secureRandom.setSeed(password.getBytes());</span><br><span class="line">            generator.init(128, secureRandom);</span><br><span class="line">            key &#x3D; generator.generateKey();</span><br><span class="line">        &#125; catch (NoSuchAlgorithmException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">        return key;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Java</category>
+      </categories>
+  </entry>
+  <entry>
     <title>Linux 系统下远程连接和远程拷贝命令</title>
     <url>/Linux-%E7%B3%BB%E7%BB%9F%E4%B8%8B%E8%BF%9C%E7%A8%8B%E8%BF%9E%E6%8E%A5%E5%92%8C%E8%BF%9C%E7%A8%8B%E6%8B%B7%E8%B4%9D%E5%91%BD%E4%BB%A4/</url>
     <content><![CDATA[<p>在平常开发部署中，我们可能经常需要远程连接到服务器上执行一些操作，有时还需要拷贝相应的文件过去，这里记录下平常自己用的比较多的远程连接命令以及远程拷贝文件的命令。</p>
@@ -866,7 +865,7 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;asyncServlet&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">asyncServlet</span><span class="params">(HttpServletRequest servletRequest)</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received async servlet endpoint request&quot;</span>);</span><br><span class="line">    AsyncContext asyncContext = servletRequest.startAsync();</span><br><span class="line">    asyncContext.setTimeout(<span class="number">5000</span>);</span><br><span class="line">    <span class="keyword">this</span>.executorService.submit(() -&gt; &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            String result = <span class="keyword">this</span>.taskService.execute();</span><br><span class="line">            asyncContext.getResponse().getWriter().println(result);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                asyncContext.getResponse().getWriter().println(e.getCause());</span><br><span class="line">            &#125; <span class="keyword">catch</span> (IOException ioException) &#123;</span><br><span class="line">                ioException.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;<span class="keyword">finally</span> &#123;</span><br><span class="line">            asyncContext.complete();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>上面代码中其实主要是看从接收到请求，servletRequest 调用 startAsync 方法得到 asyncContext 实例，然后在业务线程池中调用 service 层的方法执行得到结果，再通过 asyncContext 拿到 response 将结果写入响应，最后在 finally 代码块里面执行 complete 方法，整个请求结束。</p>
-<p><img src="http://images.rookiezhou.top/blog/images/async_request_response.png" alt="async_request_response"></p>
+<p><img src="/images/async_request_response.png" alt="async_request_response"></p>
 <p>整个执行顺序如下：</p>
 <ol>
 <li>客户端发送请求</li>
@@ -1131,7 +1130,7 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 
 <p>上面 activities 表中有 1000 条数据，cities 表里面有 3525 条数据，正常来说上面两个 SQL 其实都不算耗时操作，第一个仅仅是全表扫描 1000 行，第二个则是通过索引树所搜索 1000 行，加起来也就是扫描 2000 行，然后就是需要和 MySQL 服务建立两次连接</p>
 <p>接下来再来看另一种直接进行 join 联表查，通过城市编码字段进行关联查询，对应 SQL explain 结果如下：</p>
-<p><img src="/Users/rookiedev/wechat/article_images/image-20220514151259765.png" alt="image-20220514151259765"></p>
+<p><img src="/images/image-20220514151259765.png" alt="image-20220514151259765"></p>
 <p>从 explain 结果来看，对表 t1 采取的是全表扫描，扫描 1000 行，表 t2 采取的是等值索引查询，整体的执行流程是这样的:</p>
 <p>1.先从 activities 表里面读出一行数据，提取出 city_code 字段的值</p>
 <p>2.然后去 cities 表中对 code 字段进行索引树搜索，找到了则保存到结果里面</p>
@@ -1141,7 +1140,7 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">DROP INDEX idx_city_code ON activities;</span><br><span class="line">DROP INDEX uk_code ON cities;</span><br></pre></td></tr></table></figure>
 
 <p>执行完上面的删除索引的语句后，再来看使用 join 查询 explain 的结果:</p>
-<p><img src="/Users/rookiedev/wechat/article_images/image-20220514154214185.png" alt="image-20220514154214185"></p>
+<p><img src="/images/image-20220514154214185.png" alt="image-20220514154214185"></p>
 <p>从图中可以看到，这时无论 activities 表还是 cities 表都是全表扫描，暂时先不去看 t1 表 Extra 里面的信息的话，整体查询流程是这样的:<br>1.先从 activities 表里面读出一行数据，提取出 city_code 字段的值</p>
 <p>2.然后去 cities 表中对 code 字段全表扫描，找到了则保存到结果里面</p>
 <p>3.继续重复步骤 1，2，直到 activities 表中的数据都读取完毕</p>
@@ -1170,7 +1169,7 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <p>5.没法用上索引(hash join)并且 join buffer 内存不够需要分段的情况下，执行效率是 M+(M/buffer_size) * N，同理也是应尽量使用小表作为驱动表</p>
 <p>综上几点可以得出在进行 join 查询时，最好是让小表作为驱动表，大表作为被驱动表来进行查询。</p>
 <h4 id="如何判断小表大表"><a href="#如何判断小表大表" class="headerlink" title="如何判断小表大表"></a>如何判断小表大表</h4><p>在 join 联表查询时既然都说用小表作为驱动表，大表作为被驱动表，那么怎么去判断哪张表是大表，哪张表是小表呢，你可能会说当然数据量大的是大表，数据量小的是小表了，那真的是这样的吗？为了看出效果，我把上面两张表的索引都重新加上了，来看下面的几个例子:</p>
-<p><img src="/Users/rookiedev/wechat/article_images/image-20220515192053380.png" alt="image-20220515192053380"></p>
+<p><img src="/images/image-20220515192053380.png" alt="image-20220515192053380"></p>
 <p>同样是最开始的那个 SQL，只是在最后面给 cities 表加上了一个 where 条件，这时候虽然 cities 表的数据量更大，但是在这个 SQL 里面参与 join 的数据量其实只有一条数据(唯一索引)，所以在这个 SQL 里面 cities 应该作为驱动表，因为参与 join 联表查询的数据量更小。</p>
 <p>还有一种情况就是当两张表参与 join 查询的数据量一样时，这时还会去看需要查询的字段大小，MySQL 也会考虑将查询字段更少的表作为驱动表，比如说下面这两个 SQL:</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">explain select activities.*, cities.code from activities join cities on activities.city_code &#x3D; cities.code where cities.code &lt;&#x3D; 1000;</span><br><span class="line">explain select activities.code, cities.* from activities join cities on activities.city_code &#x3D; cities.code where cities.code &lt;&#x3D; 1000;</span><br></pre></td></tr></table></figure>
@@ -1189,7 +1188,7 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <p>当时我做的测试是在 macOS 系统下完成的，当时使用 Docker 启动服务的时候报错了，报错信息如下:</p>
 <a id="more"></a>
 
-<p><img src="http://images.rookiezhou.top/blog/images/docker_run_error.png" alt="docker run error"></p>
+<p><img src="/images/docker_run_error.png" alt="docker run error"></p>
 <p>当时我没太在意为什么会出现这种情况，我以为是跟我的目录包含大写字母的目录有关系，就直接去查了下解决办法，当时找到的解决方法是就是加上 mysqld –lower_case_table_names=0 这一串参数。</p>
 <p>但其实不是这样的，首先先说明跟我指定的数据存储的目录包含大写路径无关。出现这个错误的原因其实错误信息里面已经提示了，”lower_case_table_names” 设置不一致，server 上该参数的值是 2，数据目录是 0。</p>
 <p>首先我们先明白 lower_case_table_names 这个参数的作用，它的值可能有三种: 0，1，2.</p>
@@ -1204,7 +1203,7 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <p>知道原因之后，那我们就尝试在初始化的时候就指定，加上 mysqld –lower_case_table_names=0 这一串参数来指定 lower_case_table_names 的值为 0，所以我们启动成功了。</p>
 <p>但是我们一般都希望数据库名称或表名称在比较时不区分大小写，而且官方也有说明: “如果您在具有不区分大小写的文件名（例如 Windows 或 macOS）的系统上运行 MySQL，则不应将此变量设置为 0。如果在不区分大小写的文件系统上使用 –lower-case-table-names = 0 将此变量强制为 0，并使用不同的字母大小写访问 MyISAM 表名，则可能导致索引损坏”。</p>
 <p>所以我们还是将 lower_case_table_names 的值设置成 1。同时我们在创建数据库名或表名的时候也尽量不要大小写混用，这也是为了避免出现意外情况。其实在阿里的 Java 开发手册中是强制约束表名、字段名必须使用小写字母，也是为了避免节外生枝。</p>
-<p><img src="http://images.rookiezhou.top/blog/images/table_name_rule.png" alt="table name rule"></p>
+<p><img src="/images/table_name_rule.png" alt="table name rule"></p>
 <p>好了，如果我们想要将 lower_case_table_names 的值设置成 1 该怎么做呢。是不是直接将参数改成 1 就可以了呢，我们可以试下，看看效果。试之前记得将挂载的数据库数据目录删除再做测试，不然会影响测试效果，或者重新挂载另一个目录也行，做完测试删掉就好了。</p>
 <p>我们执行下面命令:</p>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">d run -d -p 3307:3307 -v /Users/rookiedev/docker/mysql/data1:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=root --name mysql8.0-test mysql/mysql-server:8.0 mysqld --lower_case_table_names=1</span><br></pre></td></tr></table></figure>
@@ -1212,7 +1211,7 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <p>这里要注意，不同的数据库版本测试效果不一样的，这里我测试的效果是启动成功了，也验证确实将 lower_case_table_names 参数设置为 1 了，我通过以下命令进入连接 mysql 服务并且查看该参数的值确实是 1。</p>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">docker exec -it a9 mysql -uroot -p</span><br><span class="line">show variables like &quot;%case_table%&quot;;</span><br></pre></td></tr></table></figure>
 
-<p><img src="http://images.rookiezhou.top/blog/images/mysql_case_table.png" alt="mysql case table"></p>
+<p><img src="/images/mysql_case_table.png" alt="mysql case table"></p>
 <p>但有的版本是会失败的，我遇到过，但我没找出其中失败的规律，如果刚好你也碰到了，感兴趣的话可以研究看看，但我觉得大概率是不同版本的 mysql 启动配置文件可能不一样导致的，接下来我们就来介绍一下通过配置文件的方式来指定该参数值的方式。</p>
 <p>之前我们只是通过 -v 参数挂载了数据目录，我们也可以通过 -v 参数来挂载 mysql 的配置文件, -v /Users/rookiedev/docker/mysql/conf:/etc/mysql，完整启动命令如下:</p>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">d run -d -p 3307:3307 -v /Users/rookiedev/docker/mysql/data1:/var/lib/mysql -v /Users/rookiedev/docker/mysql/conf:/etc/mysql -e MYSQL_ROOT_PASSWORD=root --name mysql8.0-test mysql/mysql-server:8.0</span><br></pre></td></tr></table></figure>
@@ -1667,7 +1666,7 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">private</span> Long <span class="title">findByActivityId</span><span class="params">(String activityId)</span> </span>&#123;</span><br><span class="line">   String selectSql = <span class="string">&quot;select * from activity_stats where activity_id = ?&quot;</span>;</span><br><span class="line">   ActivityStat activityStat = <span class="keyword">this</span>.jdbcTemplate.queryForObject(selectSql, ActivityStat.class,</span><br><span class="line">            activityId);</span><br><span class="line">   <span class="keyword">return</span> timesViewed;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>执行之后会发现报错了，错误信息如下:</p>
-<p><img src="http://images.rookiezhou.top/execute_error.png" alt="execute error"></p>
+<p><img src="/images/execute_error.png" alt="execute error"></p>
 <p>从字面意思看是提示查询结果列的数量不正确，期望值是 1，但实际是 4。</p>
 <p>是不是感觉有点奇怪，看代码好像也没啥问题，我们找到报错的位置看看为什么会出现这种结果:</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> T <span class="title">mapRow</span><span class="params">(ResultSet rs, <span class="keyword">int</span> rowNum)</span> <span class="keyword">throws</span> SQLException </span>&#123;</span><br><span class="line">        ResultSetMetaData rsmd = rs.getMetaData();</span><br><span class="line">        <span class="keyword">int</span> nrOfColumns = rsmd.getColumnCount();</span><br><span class="line">        <span class="keyword">if</span> (nrOfColumns != <span class="number">1</span>) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> IncorrectResultSetColumnCountException(<span class="number">1</span>, nrOfColumns);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            Object result = <span class="keyword">this</span>.getColumnValue(rs, <span class="number">1</span>, <span class="keyword">this</span>.requiredType);</span><br><span class="line">            <span class="keyword">if</span> (result != <span class="keyword">null</span> &amp;&amp; <span class="keyword">this</span>.requiredType != <span class="keyword">null</span> &amp;&amp; !<span class="keyword">this</span>.requiredType.isInstance(result)) &#123;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    <span class="keyword">return</span> <span class="keyword">this</span>.convertValueToRequiredType(result, <span class="keyword">this</span>.requiredType);</span><br><span class="line">                &#125; <span class="keyword">catch</span> (IllegalArgumentException var7) &#123;</span><br><span class="line">                    <span class="keyword">throw</span> <span class="keyword">new</span> TypeMismatchDataAccessException(<span class="string">&quot;Type mismatch affecting row number &quot;</span> + rowNum + <span class="string">&quot; and column type &#x27;&quot;</span> + rsmd.getColumnTypeName(<span class="number">1</span>) + <span class="string">&quot;&#x27;: &quot;</span> + var7.getMessage());</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> result;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
@@ -1814,7 +1813,7 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 </ul>
 <p>上面 Zset 和 List 里面的消息根据不同 topic 作为 key 进行存储，这样可以避免将所有消息都放到一个 topic 下，当消息量比较多的时候出现 redis 里面的大 key 问题，导致存储和查询性能降低。</p>
 <p>核心流程图如下：</p>
-<p>![image-20230205113334143](/Users/xxx-xifan/Library/Application Support/typora-user-images/image-20230205113334143.png)</p>
+<p><img src="/images/redis_delay_queue.png" alt="redisDelayQueue"></p>
 <p>redis 实现延迟队列的优缺点：</p>
 <ul>
 <li>优点<ol>
@@ -2118,7 +2117,7 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 
 <p>上面 asyncEndpoint 是一个不需要返回结果的接口，主要是通过 @Async 注解来实现的，请求到了后台，从 Tomcat 服务器处理请求的线程池中获取一个线程 A 处理该请求，在该线程中执行到调用 asyncExecute 方法的时候，由于 asyncExecute 方法的上面由 @Async 注解所标注，这样的话该方法会以异步的方式来执行，也就是说在 asyncEndpoint 方法中调用 asyncExecute 方法以异步的方式执行，asyncExecute 方法中的代码在另一个线程 B 中执行，线程 A 继续往下执行，打印完最后一行日志之后，整个请求就结束了，线程 A 也就释放了，可以继续处理其他的请求了。 而比较耗时的方法 asyncExecute 继续在线程 B 中执行。</p>
 <p>请求 asyncEndpoint 接口，通过以下日志可以看出来：</p>
-<p><img src="http://images.rookiezhou.top/blog/images/asyncEndpoint_log.png" alt="asyncEndpoint_log"></p>
+<p><img src="/images/asyncEndpoint_log.png" alt="asyncEndpoint_log"></p>
 <h3 id="有返回值的接口之-Callable-作为返回值"><a href="#有返回值的接口之-Callable-作为返回值" class="headerlink" title="有返回值的接口之 Callable 作为返回值"></a>有返回值的接口之 Callable 作为返回值</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;callableEndpoint&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Callable&lt;String&gt; <span class="title">callableEndpoint</span><span class="params">()</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received callable endpoint request&quot;</span>);</span><br><span class="line">    Callable&lt;String&gt; callable = <span class="keyword">this</span>.taskService ::execute;</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> callable;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@SneakyThrows</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">execute</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== task execute start&quot;</span>);</span><br><span class="line">    TimeUnit.SECONDS.sleep(<span class="number">5</span>);</span><br><span class="line">    log.info(<span class="string">&quot;========== task execute end&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;task execute success&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
@@ -2126,23 +2125,23 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <p>而在这里，主要是利用了 Servlet 3.0 中引入了对于异步的支持，至于 Servlet 3.0 中引入的对异步的支持，下次再用一篇文章详细介绍下，我们先大概了解以 Callable 作为返回值的接口为什么会以异步的方式执行。</p>
 <p>这里首先后台收到 asyncEndpoint 请求后，同样从 Tomcat 容器处理请求的线程池中获取一个线程处理该请求。这里大概说下，我们是使用的 SpringMVC 的那一套请求执行流程，SpringMVC 中有一个 DispatcherServlet 类里面的 doDispatch 方法是请求的统一入口，通过它来协调其它组件来处理前端请求。</p>
 <p>比如说通过处理器映射器 HandlerMapping 查找对应的 Handler 处理器 Controller，然后再通过请求适配器 HandlerAdapter 对处理器进行执行，在处理器执行之后得到一个返回值结果，SpringMVC 里面有一些处理返回值的 Handler 来对结果进行解析，根据返回值类型选取合适的 returnValueHandler 来处理。下面是直接到了处理器执行获取执行结果的代码。</p>
-<p><img src="http://images.rookiezhou.top/blog/images/handler_return_value.png" alt="handler_return_value"></p>
+<p><img src="/images/handler_return_value.png" alt="handler_return_value"></p>
 <p>至于选择处理范湖结果的 handler 的过程通过下面代码可以看出，是根据返回值的类型来从已经注册的 returnValueHandler 选择能处理当前返回值类型的 handler，</p>
-<p><img src="http://images.rookiezhou.top/blog/images/handler_select_handler.png" alt="handler_select_handler"></p>
-<p><img src="http://images.rookiezhou.top/blog/images/select_handler.png" alt="select_handler"></p>
-<p><img src="http://images.rookiezhou.top/blog/images/support_return_value.png" alt="support_return_value"></p>
+<p><img src="/images/handler_select_handler.png" alt="handler_select_handler"></p>
+<p><img src="/images/select_handler.png" alt="select_handler"></p>
+<p><img src="/images/support_return_value.png" alt="support_return_value"></p>
 <p>从上面第三段代码中可以看到由于返回值类型 Callable，最终会匹配到 CallableMethodReturnValueHandler 这个返回值处理器，在这个类中还有一个方法 handleReturnValue，也就是在选择好匹配的 returnValueHandler 之后调用的那个方法，异步的处理也就是在这个方法的最后一行代码中，</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line">WebAsyncUtils.getAsyncManager(webRequest).startCallableProcessing(callable, mavContainer);</span><br></pre></td></tr></table></figure>
 
 <p>这行代码先是调用 getAsyncManager 获取到 WebAsyncManager，然后调用 startCallableProcessing 开始 Callable 结果的处理流程，而在 startCallableProcessing 方法里面又是调用了一个内部重载的方法，通过 WebAsyncTask 包装了以下 Callable 作为参数</p>
-<p><img src="http://images.rookiezhou.top/blog/images/startCallableProcessing.png" alt="startCallableProcessing"></p>
-<p><img src="http://images.rookiezhou.top/blog/images/set_concurrent_result_dispatch.png" alt="set_concurrent_result_dispatch"></p>
+<p><img src="/images/startCallableProcessing.png" alt="startCallableProcessing"></p>
+<p><img src="/images/set_concurrent_result_dispatch.png" alt="set_concurrent_result_dispatch"></p>
 <p>在 startCallableProcessing 方法中可以清楚的看到将 callable 交给 taskExecutor 来执行，然后设置并发执行得到的结果并且调用 dispatch 方法将请求再次分派到容器，以便应用程序线程中并发执行之后的恢复处理，其实也就是将并发执行的结果再次交给容器线程来恢复刚才的请求，将刚才的流程再执行一次。</p>
 <p>只不过在处理器执行的时候调用的不再是 Contrller 里面的方法，而是直接调用 Callable 的 call 方法拿刚才执行的结果，等到再执行到 handleReturnValue 方法的时候，这时由于 return value 是一个字符串，所以匹配到的 returnValueHandler 是 RequestResponseBodyMethodProcessor,这时会将 callable 的执行结果返回给客户端，本次请求结束。</p>
 <p>需要注意的是，应用程序的异步任务的执行时间过长会导致超时的问题，还记得上面的 startCallableProcessing 方法里面有 addTimeoutHandler，addErrorHandler，addCompletionHandler 三个回调，分别是超时，发生错误以及异步执行完成的回调处理。里面其实会去读 WebAsyncTask 中设置的超时时间，但里面没有设置，但我测试是有一个默认的超时时间 30s(我通过测试，发现 30s 没执行完就会 timeout)。</p>
 <p>还有一个就是需要注意的是在整个的处理过程中，服务端和客户端的连接是一直保持着的，所以需要注意连接超时的问题，虽然默认没有设置的话是无限的，但如果设置了就需要注意了，这个的超时时间必然要比异步执行里面的超时时间要大一些。</p>
 <p>上面的 taskExecutor 是 SpringBoot 中 TaskExecutionAutoConfiguration 自动配置的 ThreadPoolTaskExecutor，对于这个类的配置也可以在配置文件中进行配置，线程数，queue capacity 等。</p>
-<p>最终的执行打印日志如下：<br><img src="http://images.rookiezhou.top/blog/images/callableEndpoint_log.png" alt="callableEndpoint_log"></p>
+<p>最终的执行打印日志如下：<br><img src="/images/callableEndpoint_log.png" alt="callableEndpoint_log"></p>
 <h3 id="有返回值的接口之-WebAsyncTask-作为返回值"><a href="#有返回值的接口之-WebAsyncTask-作为返回值" class="headerlink" title="有返回值的接口之 WebAsyncTask 作为返回值"></a>有返回值的接口之 WebAsyncTask 作为返回值</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;webAsyncTaskEndpoint&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> WebAsyncTask&lt;String&gt; <span class="title">webAsyncTaskEndpoint</span><span class="params">()</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received web async task endpoint request&quot;</span>);</span><br><span class="line">    Callable&lt;String&gt; callable = () -&gt; <span class="keyword">this</span>.taskService.execute();</span><br><span class="line">    WebAsyncTask&lt;String&gt; webAsyncTask = <span class="keyword">new</span> WebAsyncTask&lt;&gt;(<span class="number">3000</span>, callable);</span><br><span class="line">    webAsyncTask.onCompletion(() -&gt; log.info(<span class="string">&quot;========== execute finish&quot;</span>));</span><br><span class="line"></span><br><span class="line">    webAsyncTask.onTimeout(() -&gt; <span class="string">&quot;execute timeout&quot;</span>);</span><br><span class="line"></span><br><span class="line">    webAsyncTask.onError(() -&gt; <span class="string">&quot;execute error&quot;</span>);</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> webAsyncTask;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>在理解了 Callable 作为接口返回值之后，就能够很好地理解这个流程了，大体的流程是一样的，只不过就是返回值的 Handler 处理器不一样，这里用到的处理器是 AsyncTaskMethodReturnValueHandler，在这个类中 handleReturnValue 方法调用的 startCallableProcessing 传的参数就是 Controller 里面返回的这个 webAsyncTask，这个 webAsyncTask 定义了三个回调函数，方便做特殊的处理。</p>
 <p>这里需要注意的是 onError 的回调并不是说异步任务里面执行出错了的回调，其实异步任务里面的出错的话已经 try catch 了，并且将异常信息作为结果返回，所以说如果异步任务里面抛异常了，并不会回调到这里，而且这里回调的是 onCompletion，只不过得到的结果是抛出的异常。至于这里的 onError 是哪里出现异常的回调呢，看 WebAsyncTask 类的 onError 方法上面的 doc 描述有一段这样的话：</p>
@@ -2150,19 +2149,19 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <p>看意思是在异步任务执行完成之前，处理异步请求的过程中发生的异常会回调，具体有待测试。</p>
 <p>所以说 WebAsyncTask 作为接口返回值的话，扩展性更强一些，提供了更完善的超时，异常，异步执行完成的回调处理。</p>
 <p>最终的执行打印日志如下:</p>
-<p><img src="http://images.rookiezhou.top/blog/images/webAsyncTaskEndpoint_log.png" alt="webAsyncTaskEndpoint_log"></p>
+<p><img src="/images/webAsyncTaskEndpoint_log.png" alt="webAsyncTaskEndpoint_log"></p>
 <h3 id="有返回值的接口之-DeferredResult-作为返回值"><a href="#有返回值的接口之-DeferredResult-作为返回值" class="headerlink" title="有返回值的接口之 DeferredResult 作为返回值"></a>有返回值的接口之 DeferredResult 作为返回值</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;deferredResultEndpoint&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> DeferredResult&lt;String&gt; <span class="title">deferredResultEndpoint</span><span class="params">()</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received deferred result endpoint request&quot;</span>);</span><br><span class="line">    DeferredResult&lt;String&gt; deferredResult = <span class="keyword">new</span> DeferredResult&lt;&gt;();</span><br><span class="line">    CompletableFuture.supplyAsync(<span class="keyword">this</span>.taskService ::execute)</span><br><span class="line">            .whenCompleteAsync((result, throwable) -&gt; deferredResult.setResult(result));</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> deferredResult;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>上面这个接口的返回值是 DeferredResult，那么请求的处理流程和 Callable 是一样的，不同的地方也是在于<br>返回值的 Handler 处理器不一样，这里用到的处理器是 DeferredResultMethodReturnValueHandler，而且这个类里面的 handleReturnValue 方法和上面的 CallableMethodReturnValueHandler 以及 AsyncTaskMethodReturnValueHandler 方法又不一样，这里调用的是 WebAsyncManager 类中 startDeferredResultProcessing 方法</p>
-<p><img src="http://images.rookiezhou.top/blog/images/startDeferredResultProcessing.png" alt="startDeferredResultProcessing"></p>
+<p><img src="/images/startDeferredResultProcessing.png" alt="startDeferredResultProcessing"></p>
 <p>startDeferredResultProcessing 方法和 startCallableProcessing 差不多，前面都是设置超时时间，设置超时，错误，完成的回调，最后有点不同，在 startCallableProcessing 方法里面是开始通过 taskExecutor 来执行异步任务。</p>
 <p>而在这里是为 deferredResult 设置了一个 resultHandler，然后在 resultHandler 里面调用 setConcurrentResultAndDispatch，来设置结果并且将请求再次分派到容器恢复请求过程返回结果给客户端。至于这里的 resultHandler 的用处是 Controller 里面异步任务执行完成后为 deferredResult 设置结果的时候调用 setResult 方法里面会用到。</p>
-<p><img src="http://images.rookiezhou.top/blog/images/setResult.png" alt="setResult"></p>
+<p><img src="/images/setResult.png" alt="setResult"></p>
 <p>从上面可以看出在设置结果之后，会调用在 startDeferredResultProcessing 设置好的 resultHandler ，也就是执行 setConcurrentResultAndDispatch，到这里就又和上面的流程一样了，调用 dispatch 方法将请求再次分派到容器，执行之后的恢复过程返回结果给客户端。</p>
 <p>对于 DeferredResult 作为接口返回值还有个不同的地方就是异步任务的执行完全是由开发人员自己控制了，而不是像之前的那样交给应用程序默认的 ThreadPoolTaskExecutor 来执行，这其实就给开发人员很大的灵活性了。</p>
 <p>采用这种异步方式的好处：<br>一般来说，我们写的更多的是阻塞同步式的接口，但有时候如果我们碰到比较耗时任务的接口，这时候我们如果还采用阻塞同步式的写法的话，那么前端请求到后台，首先 Tomcat 服务器从处理请求的线程池中获取一个线程 A 来处理该请求，</p>
 <p>然后由于这个接口要执行的任务耗时比较长，耗时任务一直在线程 A 中执行，直到任务执行完成才得到释放，对于并发量比较小的程序来说那还好，线程占着也就占着了，但如果是并发量比较大的程序，容器中大量的处理请求的线程将一直被占用，如果突然请求的高峰到来，那么容器中处理请求的线程有可能被耗尽，就不能再处理更多请求了，也就是说这严重影响了系统的并发吞吐量。</p>
 <p>而如果我们采取的是异步的方式来处理的话，这时就像我们前面所介绍的一样，请求到了后台，由于是异步的方式，处理请求的线程在处理完请求之后就被释放了，可以继续处理其他请求，等到异步任务执行完之后再移交给容器线程返回结果给客户端，这样的话就很大的提高了系统的并发量。</p>
-<p>最终的执行打印日志如下：<br><img src="http://images.rookiezhou.top/blog/images/deferredResultEndpoint_log.png" alt="deferredResultEndpoint_log"></p>
+<p>最终的执行打印日志如下：<br><img src="/images/deferredResultEndpoint_log.png" alt="deferredResultEndpoint_log"></p>
 <h3 id="各自的适用场景，"><a href="#各自的适用场景，" class="headerlink" title="各自的适用场景，"></a>各自的适用场景，</h3><p>首先一个前提就是要执行的任务是耗时的任务，或者需要等第三方的通知的任务</p>
 <ol>
 <li>通过 @Async 注解的方式</li>
@@ -2243,8 +2242,8 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">ps -ef|grep java|grep JdbctemplateSampleApplication</span><br></pre></td></tr></table></figure>
 <p>然后看看是否存在我们刚才启动的那个程序的进程，如果有的话说明程序确实在运行着，如果没有的话有可能是因为内存不足或者其他原因导致我们的程序启动成功后又停止了。这时可以再次通过 nohup 命令来启动程序，不出意外的话，前端应该可以调通了。</p>
 <p>接下来我们可以继续开发接口，过了两天加了几个接口然后需要再次部署到服务器上，这时我们需要先停掉之前正在运行的程序然后再启动新的程序，毕竟程序使用的端口是一样的，如果不停掉正在运行的程序而直接启动将会因为端口被占用而导致程序启动失败。</p>
-<p>好了，那我们就还是先找到上次运行的程序进程 id，再通过 kill 命令杀掉那个进程然后就可以启动了。同样的我们还是用 ps 命令来找到程序的进程：<br><img src="http://images.rookiezhou.top/blog/images/ps_output_no_head.png" alt="output_no_head"><br>从上面截图中可以看到我们确实找到了我们所运行的程序所在的那个进程，但是却不知道标记的那几个数字哪个是进程的 id，当然熟悉 ps 命令的可能都知道第二列是进程 id，但如果这时恰好我们忘了哪一列是进程 id 咋办呢？</p>
-<p>其实如果我们不带筛选条件的话，打印到终端的结果中第一行为每一列的列表标题，表示每一列的字段含义，有点类似 MySQL 中查询得到的结果中第一行代表的是每一列字段的含义。<br><img src="http://images.rookiezhou.top/blog/images/ps_output_with_head.png" alt="output_with_head"><br>但是由于我们带上了筛选条件，所以将第一行标题也过滤掉了，那我们能不能想办法在每次输出的结果中都带上第一行的标题行呢？其实是可以的，下面就是两种每次输出都带上标题行的方法:</p>
+<p>好了，那我们就还是先找到上次运行的程序进程 id，再通过 kill 命令杀掉那个进程然后就可以启动了。同样的我们还是用 ps 命令来找到程序的进程：<br><img src="/images/ps_output_no_head.png" alt="output_no_head"><br>从上面截图中可以看到我们确实找到了我们所运行的程序所在的那个进程，但是却不知道标记的那几个数字哪个是进程的 id，当然熟悉 ps 命令的可能都知道第二列是进程 id，但如果这时恰好我们忘了哪一列是进程 id 咋办呢？</p>
+<p>其实如果我们不带筛选条件的话，打印到终端的结果中第一行为每一列的列表标题，表示每一列的字段含义，有点类似 MySQL 中查询得到的结果中第一行代表的是每一列字段的含义。<br><img src="/images/ps_output_with_head.png" alt="output_with_head"><br>但是由于我们带上了筛选条件，所以将第一行标题也过滤掉了，那我们能不能想办法在每次输出的结果中都带上第一行的标题行呢？其实是可以的，下面就是两种每次输出都带上标题行的方法:</p>
 <ol>
 <li>使用 ‘grep’ 的扩展 ‘egrep’</li>
 </ol>
@@ -2266,12 +2265,12 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <p>上面的整个命令就是通过管道符 | 传递上一个命令的执行结果，然后利用 awk 命令 以空格为默认分隔符将每行进行切片，然后只打印出每行第二列的内容，也就是进程 PID，之后再交给 xargs 命令 将所有行数据转为单行以空格分开，然后再将结果作为 kill 命令的参数，这样就做到了一步到位，查找进程杀死进程，这在我们需要批量杀死进程的时候还是非常便利的，省去了一个一个去找到进程 id，再一个一个去杀死进程。</p>
 <p>当然里面的 xargs 命令还是非常强大的，其实是由于很多命令不支持管道符 | 来传递参数，所以就用到了它的将管道或标准输入数据转换成命令行参数，上面的 Kill -9 就不支持管道符来传递参数，所以就通过 xargs 命令将上一个命令的执行结果作为 kill -9 的参数，当然这里还用到了 xargs 命令的多行变单行的作用。</p>
 <p>我放一张上面这个命令分开执行的效果图，有利于我们更好地理解上面完整的命令。</p>
-<p><img src="http://images.rookiezhou.top/blog/images/ps_awk_xargs.png" alt="ps_awk_xargs"></p>
+<p><img src="/images/ps_awk_xargs.png" alt="ps_awk_xargs"></p>
 <p>注意这里为了方便看出整体的效果，我筛选的是系统进程，所以我就没有执行最后加上 kill -9 的完整命令，不然系统的进程都被我杀死了，我系统都要错乱了。理解了上面的命令执行过程之后你可以换一个筛选条件，筛选出可以关掉的进程拿来测试看看效果。</p>
 <p>上面说的都是通过 ps 命令，然后加上对应的筛选条件来查找我们在这台服务器上运行的程序进程，那如果这台服务器运行的 Java 程序很多，筛选之后还需要人工来确认才知道是哪一个，又或者如果服务器上的程序是你前同事部署的，这时你可能都不知道怎么去筛选，但是呢通过前端请求的地址你能知道程序运行占用的端口号。那么我们就能根据端口号来找到对应的进程。</p>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">lsof -i:8081</span><br></pre></td></tr></table></figure>
 <p>上面的 lsof 命令就是列出谁在使用某个端口，其实这个命令还有很多功能，而我用的最多的就是上面这个，当然感兴趣的话可以自己去研究下这个命令的其他功能。</p>
-<p><img src="http://images.rookiezhou.top/blog/images/lsof.png" alt="lsof"></p>
+<p><img src="/images/lsof.png" alt="lsof"></p>
 <p>是不是觉得很方便，反正我是经常使用这个命令来查找后台运行的程序的，因为很简单，敲得的字符也少，还能精确定位到相关的进程，真的是爱了爱了。</p>
 <p>然后呢到这里 ps 命令就分享完了，当然我只是列举了它的一小部分常用的，更多功能还是需要我们在平常使用中去探索。同时我还提到了 lsof 命令，说实话，这个命令在我知道之后使用频率真的是非常非常高了，可以说很有用的一个命令，希望同样对你也很有帮助。</p>
 ]]></content>
@@ -2293,7 +2292,7 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 </li>
 <li><p>数字和单位之间不加空格<br>eg. 现在的安卓手机运行内存没有 6G 都装不了几个应用了。<br>eg. 今天的气温又超过了 40°。<br>eg. 之前买的基金昨天一天跌了 5%。</p>
 </li>
-<li><p>推荐在链接前后加一个空格<br>eg.  我的公众号和博客名称都是 rookiezhou，搜索 rookiezhou 关注我，点击这里 <a href="http://www.rookiezhou.top/">rookiezhou</a> 访问个人博客。</p>
+<li><p>推荐在链接前后加一个空格<br>eg.  我的公众号和博客名称都是 rookiedev，搜索 rookiedev 关注我，点击这里 <a href="http://www.rookiedev.top/">rookiedev</a> 访问个人博客。</p>
 </li>
 </ol>
 <h3 id="标点符号的细节"><a href="#标点符号的细节" class="headerlink" title="标点符号的细节"></a>标点符号的细节</h3><ol>
@@ -2326,15 +2325,15 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <p>比如说用 A 代表我们本地用来开发的电脑， B 代表远程其中一台服务器，上面部署了我们的后端应用，你在 A 上去访问 B 上部署的应用相关接口，这时候出现访问不了的情况。那么我们可能需要先检查下 A 和 B 的网络是否通畅，也就是说 A 是否能正常访问 B，这时我们可能会用 ping 命令来检查，如果能 ping 通，说明 A 和 B 之间的网络是通畅的，否则需要进一步检查为什么两者网络不通了，当然也不排除服务器设置了禁 ping。</p>
 <p>如果能 ping 通的话，接下来可能就需要检测端口是否畅通，也就是使用 telnet 命令来检测，如果端口不通，可以检查下部署的应用是否已经挂了，或者是否有防火墙配置。</p>
 <p>但是 telnet 命令的作用是执行 telnet 指令开启终端机阶段作业，并登入远端主机。也就是说当你执行下面的命令之后，会根据指定的端口建立连接，连接成功也就成功了，它不会自己断开。</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">telnet server.rookiezhou.top 80</span><br></pre></td></tr></table></figure>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">telnet server.rookiedev.top 80</span><br></pre></td></tr></table></figure>
 
 <p>后来我在使用 Ubuntu 系统的时候呢，这个命令让我有点苦恼，每次执行这个命令之后都会进入交互模式占据了当前终端，由于它不会自动断开，这就需要我每次测试完了之后自己来手动断开，可是我找了许多断开退出的操作方式，比如说：ctrl + c 或者 ctrl + ] + q，但有时都无法退出来，以至于我每执行一次这个命令都需要关掉一个终端才能断开，然后再另起一个终端来继续操作。当你需要频繁测试的时候，这就太麻烦了。</p>
 <p>再到后来使用 macOS 系统的时候，macOS 10.13.1 之后就已经没有这个命令了，需要你自己去安装，不过不知道在 Mac 上面使用这个命令的体验怎么样，至少在 Ubuntu 系统上给我的感觉不太好，当然也有可能是我使用的姿势不对。</p>
 <p>至于为什么说不知道在 Mac 上面这个命令的体验怎样呢，因为我遇到了更好的替代命令，也就是今天要说的 Netcat(nc) 命令。如果需要检测对方主机端口是否畅通，可以使用下面命令：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nc -zv server.rookiezhou.top 80</span><br></pre></td></tr></table></figure>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nc -zv server.rookiedev.top 80</span><br></pre></td></tr></table></figure>
 
 <p>其中 -z 表示使用 0 输入/输出模式，只在扫描通信端口时使用，连接成功后立即断开，-v 表示显示指令执行过程。同时看下面截图，命令的打印输出结果也让我们一眼就能判断出端口是否通畅，而且命令执行完之后自动断开连接，不会进入交互模式占据终端的使用权。</p>
-<p><img src="http://images.rookiezhou.top/blog/images/nc_host_port.png" alt="nc_host_port"></p>
+<p><img src="/images/nc_host_port.png" alt="nc_host_port"></p>
 <p>说实话，这个命令用来检测端口是否通畅可以说是非常方便了，不过这个命令可谓是非常强大，可以实现的功能远不止这么一点，下面就来简单介绍一下该命令。</p>
 <p>Netcat（或<code>nc</code>）是一个使用 TCP 或 UDP 协议跨网络连接读取和写入数据的命令行工具，可以用来调试和监控网络连接，扫描端口的开放情况，传输数据等。同时这个命令在 macOS，Ubuntu，Debian，CentOS 上都已经预安装好了。</p>
 <p>语法：nc [options] host port</p>
@@ -2353,11 +2352,11 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <p>常见的使用方式有：</p>
 <h3 id="开放端口扫描"><a href="#开放端口扫描" class="headerlink" title="开放端口扫描"></a>开放端口扫描</h3><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nc -zv 192.168.1.104 20-80</span><br></pre></td></tr></table></figure>
 
-<p><img src="http://images.rookiezhou.top/blog/images/nc_scan_port.png" alt="nc_scan_port"></p>
+<p><img src="/images/nc_scan_port.png" alt="nc_scan_port"></p>
 <p>该命令同时还可以接管道符 | 添加过滤条件过滤出开放的端口，在扫描的端口比较多的时候就很用了：</p>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nc -z -v 192.168.1.104 20-80 2&gt;&amp;1 | grep succeeded</span><br></pre></td></tr></table></figure>
 
-<p><img src="http://images.rookiezhou.top/blog/images/nc_scan_port_grep.png" alt="nc_scan_port_grep"></p>
+<p><img src="/images/nc_scan_port_grep.png" alt="nc_scan_port_grep"></p>
 <p>注意：该命令默认情况下和主机建立的是 TCP 连接，如果需要 UDP 的可以通过 -u 参数指定。</p>
 <h3 id="文件传输"><a href="#文件传输" class="headerlink" title="文件传输"></a>文件传输</h3><p>假如说我们现在想从 A 传输文件 test.txt 到 B，A 的 IP 是 192.168.1.107，B 的 IP 是 192.168.1.104， 那么这时可以在 A 上通过 nc 命令开启监听模式，并且输入为你要传输的文件：</p>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nc -l 8080 &lt; test.txt</span><br></pre></td></tr></table></figure>
@@ -2372,8 +2371,8 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <p>在 B 上执行：</p>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nc 192.168.1.104 8080</span><br></pre></td></tr></table></figure>
 
-<p>接下来在 A 上输入的内容将会被传输到 B 上，同时 B 上传输的内容会被传输到 A 上，注意下面截图中 server.rookiezhou.top 是我用我自己的服务器测试的，你可以用本地的两天主机进行测试，就像上面命令中指定的内网地址一样。</p>
-<p><img src="http://images.rookiezhou.top/blog/images/nc_chat_online.png" alt="nc_chat_online"></p>
+<p>接下来在 A 上输入的内容将会被传输到 B 上，同时 B 上传输的内容会被传输到 A 上，注意下面截图中 server.rookiedev.top 是我用我自己的服务器测试的，你可以用本地的两天主机进行测试，就像上面命令中指定的内网地址一样。</p>
+<p><img src="/images/nc_chat_online.png" alt="nc_chat_online"></p>
 <p>上面算是列举了几种关于 Netcat 命令的简单用法，至于更复杂的一些用法，感兴趣的话可以去研究看看，总之 Natcat 这个命令还是非常强大的，可以做到的事情非常多。</p>
 <p>参考：</p>
 <p><a href="https://www.jianshu.com/p/32c8f9ea0ed9">https://www.jianshu.com/p/32c8f9ea0ed9</a></p>
@@ -2857,7 +2856,7 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">update users set age &#x3D; 28 where name &#x3D; &#39;张三&#39;; #① 事务一</span><br><span class="line"></span><br><span class="line">update users set age &#x3D; 29 where name &#x3D; &#39;张三&#39;; #② 事务二</span><br><span class="line"></span><br><span class="line">update users set age &#x3D; 30 where name &#x3D; &#39;张三&#39;; #③ 事务三</span><br></pre></td></tr></table></figure>
 
 <p>上面这三个更新事务分别对应着数据库中三个数据版本，下面图中详细展示了三个事务更新后记录的 undo log。</p>
-<p><img src="/Users/rookiedev/wechat/article_images/undo_log.png" alt="undo log"></p>
+<p><img src="/images/undo_log.png" alt="undo log"></p>
 <p>从上面图中可以看出，三个事务更新后都会记录相应的 undo log 用来回滚到上一个版本，那么在查询张三的年龄的时候，不同时刻启动的事务查询得到的年龄是不一样的，但数据库中数据肯定已经是最新值了，只不过根据事务的隔离级别不同，需要通过 undo log 回滚到对应的可见版本，这里举几个例子:</p>
 <p>从图中可以看到刚开始张三的那条数据年龄是 27，对应的更新事务是 X，目前最新的数据年龄值是 30，对应的更新事务是事务三：</p>
 <p>如果是在事务一启动之前开启事务 A 来查询，在事务 A 启动的时刻创建了一个一致性读视图，后面的更改对我都不可见，我只认我创建的视图中能看到的数据，后面在事务中查询看到的数据都依赖于视图中能看到的数据，虽然读到最新的值是 age=30，但是不可见，通过 undo log 回滚到上一个版本 age=29，同样不可见，直到回滚到 age = 27，可见。</p>
@@ -2866,7 +2865,7 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <p>从上面例子可以看出，一条记录在数据库中看起来就存在多个版本一样，也就是我们经常听到的多版本并发控制(MVCC)，不同时刻启动的事务看到的是不同版本的数据，但要注意，并不是说这多个版本的数据是物理结构上存在的，它们都是需要拿到当前的最新值再通过 undo log 进行回滚到相应的版本，那么就会引出一个问题了，对于那种长事务，往往数据已经更新了很多个版本了，但在这个事务里面依然需要通过 undo log 一步一步回滚到可见的那个版本，也就是说在事务提交前这些 undo log 就没办法进行删除，需要一直保留，直到没有对应的事务再需要这些日志的时候才能够删除，如果存在很多的长事务，就可能导致这些 undo log 越来越大，因此在我们日常的开发中，我们需要尽量的去避免使用长事务，长事务不仅会造成回滚日志会越来越大，还会导致锁资源的占用问题，这个后面在分析锁的时候再说。</p>
 <p>上面也说了事务的很多东西了，事务的基本定义，ACID 特性，以及隔离性是如何实现的，然后引出了 undo log 这个新的日志，但 undo log 只是我们实现隔离性的一个辅助工具，能够让我们回滚到之前的数据版本，那 MySQL 是怎么去判定具体要回滚到哪个版本呢？</p>
 <p>接下来我们再引出一个事务 id 的概念，实际上数据库在每个事务启动时都会向服务申请一个唯一的事务 id，而且这个事务 id 是顺序递增的，每次事务更新数据的时候会生成一个新的数据版本，并且把当前事务 id 赋值给这个数据版本，记为 trx_id，同时旧的数据版本要保留，并且在新的数据版本中，能够有信息可以直接拿到它，因此在新的数据版本中除了包含本次数据的值和当前更新的事务 id 外，还有一个引用(指向上一个数据版本)，通过 undo log 进行回滚时需要用到。上面的几个事务更新在加上事务 id 之后，更新流程图如下:</p>
-<p><img src="/Users/rookiedev/wechat/article_images/undo_log_trx_id.png" alt="undo log"></p>
+<p><img src="/images/undo_log_trx_id.png" alt="undo log"></p>
 <p>从图中可以看到最开始更新之前张三这条数据是由事务 id=100 的事务 X 所更新的，接下来依次被事务一事务二事务三所更新，对应的事务 id 分别是 105，110，115，而<strong>在不同时刻启动的事务会创建不同的一致性读视图，这个一致性读视图其实也就是给整个库打了个快照</strong>，注意并不是说事务启动的时候将整个库的数据拷贝一份出来，要是这样做的话就太费内存，太费时间了。</p>
 <p>它的实现上是<strong>将目前还处于活跃事务的事务 id 放到一个数组里面，活跃事务是指事务开启了但还没提交的事务，数组中最小值记为低水位，当前系统中已经创建的事务 id 的最大值 +1 记为高水位，然后依据高低水位来判断数据版本可不可见</strong>，注意理解这句话，说明数组中包含的是活跃事务 id，中间已经提交了的事务是不在里面的，也就是说数组中的值不一定是连续的。</p>
 <p>有了这个数组之后，就可以利用这个数组来判断数据可不可见了，判断规则如下:</p>
@@ -2878,11 +2877,11 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <li><strong>数组中不包含该事务 id，说明是已经提交的事务，该数据版本可见</strong></li>
 </ul>
 <p>接下来我们来模拟几个事务的 SQL 执行场景，然后我们用上面的规则来分析可见性，看看是否和我们之前理解的数据可见性是一致的。下面的场景将会涵盖上面三种情况，SQL 执行的顺序就是按照表格从上到下的顺序，事务隔离级别没有特殊说明都是可重复读:</p>
-<p><img src="/Users/rookiedev/wechat/article_images/high_low_bit.png" alt="undo log"></p>
+<p><img src="/images/high_low_bit.png" alt="undo log"></p>
 <p>上面表格中没有显式开启事务的都是自动提交，表头描述了每个事务的名称以及对应的事务 id，表格内容从上到下可以看到首先是事务一将 id = 1 的 age 字段更新成 28 并且自动提交，接下来启动事务二但没提交，紧接着事务三将 id = 1 的 age 字段更新成 30 并且自动提交，然后事务二再将  id = 1 的 age 字段更新成 29 依然没提交，再接着事务 A 启动，随后对事务二进行提交，然后事务四将 id = 1 的 age 字段更新成 31 并且自动提交，这时再回到事务 A 查询 id = 1 的那条数据，这时看到的 id = 1 的那条数据的 age 等于多少呢？</p>
 <p>上面描述了这个场景的整个过程，我们用上面的规则来进行分析，其实主要就是分析事务 A 中的查询语句看到的 age 字段是多少。事务 A 启动时将当前库活跃事务的事务 id 放到一个数组里面，我们假设数据库目前只有这几个事务在操作数据库，那么事务 A 启动时处于活跃的事务就只有事务二是还没提交的，同时事务 A 启动时系统中已经创建的事务 id 的最大值是 103，高水位就是 104，那么事务 A 启动时对应的数组就是 [102, 104]，低水位就是 102，然后在事务 A 中进行查询 id = 1 的那条记录，该记录目前最新版本 age 的最新值是 31，对应的事务 id 是 105，105 比高水位大，对应上面规则中的第二种情况，那么该数据版本不可见，然后根据 undo log 回滚到前一个版本，前一个版本是事务二进行更新的，事务二的事务 id 是 102，等于最低水位并且数组中包含该事务 id，对应着上面规则中的第三种情况里面的第一种，数据版本依然不可见，继续根据 undo log 回滚到前一个版本，前一个版本是事务三进行更新的，事务三的事务 id 是 103，大于最低水位小于最高水位，但数组中没有包含该事务 id，对应着上面规则中的第三种情况里面的第二种，数据版本可见，所以在事务 A 中看到的数据 age = 30。而其实如果还需要再回滚的话，那就回滚到了事务一更新的版本，事务一的事务 id 是 101，比最低水位小，对应着上面规则中的第一种情况，该数据版本也是可见的。</p>
 <p>上面的场景实际执行结果也是一样的，实际操作如下所示:</p>
-<p><img src="/Users/rookiedev/wechat/article_images/high_low_sql_execute.png" alt="undo log"></p>
+<p><img src="/images/high_low_sql_execute.png" alt="undo log"></p>
 <p>上面开了五个终端，每个终端里面都和 MySQL 建立连接，各个连接中的 SQL 执行顺序对应着表格中从上到下的顺序，可以看到最后查询出来的值也是我们上面按照高低水位的判断规则分析出来的结果 age = 30。</p>
 <p>上面其实更多的是从底层实现层面来分析得到这个结果，如果说每次事务间的数据可见性都按照这个去分析就有点太麻烦了，所以也就有了下面更容易理解的判断方式，首先以事务启动的那一刻为准，</p>
 <p>1.该事物开启时，对于还没提交的事务更新都是不可见的</p>
@@ -2890,16 +2889,16 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <p>再回到上面表格中模拟的场景，事务 A 开启时，事务一和事务三是已经提交了的，并且事务三在事务一之后提交，事务二还没提交，事务四在事务 A 开启时还没创建，那么在事务 A 中的查询，看到的就是事务三的更新 age = 30，这样去分析是不是就方便多了。从上面的分析也可以看到，事务开启后，不管在什么时候查询，前后看到的数据都是一致的，因为数据版本的可见性只取决于事务启动的那一刻，这个就是所谓的<strong>一致性读</strong>。</p>
 <p>可能你注意到了上面表格中事务 A 中的查询语句后面有两个划线了的 SQL 语句，一个是更新，一个是查询，假如我们把这两个 SQL 语句放开执行，那么后面的这个查询语句查询到的数据是多少？如果按照上面一致性读的说法，执行更新语句时看到的张三的年龄应该是 30，age = 30 + 1，那紧接着的查询语句查询出来的张三的年龄应该就是 31。如果是这样的话看起来好像不太对，因为事务四的更新看起来就丢失了，因为在事务 A 中进行更新前， 事务四已经将张三的年龄更新成 31 了。</p>
 <p>事实上，我们真正去执行的时候，事务 A 中查询得到的值是 age = 32，也就是事务 A 里面是认事务四的那个更新的，当然也必须得认，不然就都乱套了，但这样就又和我们上面的一致性读说法好像不一致了，这里就需要引出另一个概念，<strong>对于查询是按照一致性读的原则，而对于更新则是按照当前读的原则</strong>，也就是说更新都是从最新版本的数据上开始更新的，所以这里就是直接从事务四对应的版本的数据上进行更新的，age = 31 + 1，紧接着的查询语句一看最新版本的数据是 32，对应的事务 id 是 104，和自己的事务 id 相等，这个版本是自己的更新，那也是要认的，因此查询出来的数据就是 age = 32，下面我单独将事务 A 加上更新语句之后的执行截图贴出来:</p>
-<p><img src="/Users/rookiedev/wechat/article_images/update_current_read.png" alt="undo log"></p>
+<p><img src="/images/update_current_read.png" alt="undo log"></p>
 <p>其实除了更新语句，对于加读锁或者写锁的查询也是当前读，我们可以简单的模拟一下这种场景，先在一个连接中开启事务，然后在另一个连接中更新一条数据，再回到第一个连接中加读锁或者写锁去查询刚才更新的那条数据。</p>
-<p><img src="/Users/rookiedev/wechat/article_images/lock_share_current_read.png" alt="undo log"></p>
+<p><img src="/images/lock_share_current_read.png" alt="undo log"></p>
 <p>上面截图中就是先在上面的窗口查询当前 id = 1 的那条记录，age = 35，然后开启事务，紧接着在下面的窗口将 id = 1 的记录 age 更新成 40，再回到上面的窗口中去查询，可以看到在加读锁或者写锁的时候都是当前读，查询到的是当前最新版本的数据，其中在查询语句后面加上 lock in share mode，表示加读锁，查询语句后面加上 for update，表示加写锁，读读不冲突，读写和写写是冲突的，这个后面提到锁的时候再具体细说。</p>
 <p>上面我们就已经描述了在可重复读的隔离级别下，事务开启时会创建一个一致性视图，接下来的数据查询都依赖于事务开启时创建的一致性视图，而如果是读提交的隔离级别，不妨先来实际操作下，先将事务的隔离级别修改成读提交:</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">set global transaction isolation level read committed;</span><br></pre></td></tr></table></figure>
 
 <p>注意执行完上面的 SQL 之后将连接断开，重新连接之后才会生效，这个操作最好不要在生产库上做测试。</p>
 <p>修改好了之后，同样用刚才的方式做测试，在一个连接里面开启事务，另一个连接里面更新，再回到第一个连接里面去查询，结果如下:</p>
-<p><img src="/Users/rookiedev/wechat/article_images/read_commited.png" alt="undo log"></p>
+<p><img src="/images/read_commited.png" alt="undo log"></p>
 <p>从结果可以看到，第一个窗口中查到的是已经提交的最新版本的值，这个其实和可重复读的隔离级别的区别就是，<strong>读提交是在每个 SQL 执行前都会重新创建一个一致性读视图，而可重复读则是在事务正式开启时创建，所以读提交的隔离级别下，每次都查询得到已经提交的最新版本的值。而对于读未提交的隔离级别那就是每次直接将当前数据的最新版本返回就可以了，也就没有视图的概念了。</strong></p>
 <p>上面我们可能多次提到一致性读视图，这里可能需要进行说明下，它和我们在查询时通过 create view 的方式创建的视图是不一样的，这里的一致性视图是静态的，当前视图对应的数据是由字段上的当前值通过 undo log 回滚计算得到的，它是用来辅助实现可重复读和读提交的隔离级别。而通过 create view 的方式创建的视图则是利用查询语句定义的一张虚拟的表，调用的时候执行相应的查询语句来生成查询结果。</p>
 <p>还有一点你可能也注意到了，我在上面的实践中开启事务都是用的 start transaciton with consistent snapshot; 语句，和我熟悉的 begin 或者 start transaction 好像有点不一样，这里我们来了解下他们之间的区别:</p>
@@ -2926,11 +2925,11 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">select * from users where id &#x3D; 1;</span><br></pre></td></tr></table></figure>
 
 <p>不出意外的话你拿这个 SQL 去终端执行，得到的是张三的那条数据。</p>
-<p><img src="/Users/rookiedev/wechat/article_images/simple_query.png" alt="simple_query"></p>
+<p><img src="/images/simple_query.png" alt="simple_query"></p>
 <p>也许我们实现业务需求的时候可能到这里就结束了，但既然我们要做一个极致的 CRUD 工程师，那可不能就这么结束了，接下来我们要刨根问底，看看这个 SQL 在服务器上到底是怎么执行的。</p>
 <p>MySQL 服务器它是由两部分组成，分别是 Server 层和存储引擎层，Server 层又有连接器，缓存(新版本已经去掉)，分析器，包括词法分析器和语法分析器，优化器，执行器这些服务，存储引擎层则主要是负责数据的存储和提取，同时存储引擎层是可以替换 的，根据业务需要选择合适的引擎，默认是 InnoDB，常见的引擎还有 Memory，MyISAM 等，这里暂时先不讨论这些引擎的优劣。</p>
 <p>我先贴一张 SQL 的执行流程图，下面我会对这个流程图进行详细介绍，你可以对照着这个图看下面的内容，这样更容易理解一些。</p>
-<p><img src="/Users/rookiedev/wechat/article_images/sql_execute_flow.png" alt="SQL 执行流程"></p>
+<p><img src="/images/sql_execute_flow.png" alt="SQL 执行流程"></p>
 <p>从上面图中可以看到，首先客户端需要和服务器端建立连接，而服务器端负责和客户端建立连接的是连接器，它先是验证建立连接的用户名密码是否正确，如果不正确会直接报错 Access denied for user 拒绝连接，验证成功后这时会去查询得到该用户所拥有的权限信息，后面在执行 SQL 的过程中所依赖的权限验证就来自于这里获取得到的权限信息，也就是说修改用户的权限信息对于已经连接成功的用户是不生效的，需要重新建立连接后才生效。</p>
 <p>连接建立成功之后，接下来就可以执行 SQL 了，客户端通过建立好的连接向服务器端发送 SQL 语句，服务器端接收到 SQL 后，会经历以下流程:</p>
 <p>在之前的版本中首先会去缓存中看有没有命中的缓存，如果命中就直接返回缓存中的数据，不过后期的版本中已经将缓存去掉了，主要是因为缓存的利用率不高，每次将查询之后得到数据进行缓存，但只要对刚才查询的表有更新，和这个表有关的缓存就都被清空了，所以经常出现的情况就是往往缓存中的数据还没用到就已经被清空了，这可能只适合于一些配置表，查询较频繁但不怎么更新的数据，由于后期的版本中已经将缓存去掉了，所以上面图中我就没画出来。</p>
@@ -2952,7 +2951,7 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 
 <p>这个 SQL 同样的会走一遍上面的 SQL 执行流程，这里我就不再重复，毕竟前面都是一样的，重点说一下走到执行器的那部分的流程，<strong>首先执行器收到优化器制定的执行方案后开始调用引擎层接口取出 id 等于 1 的记录，引擎层会去看要查询的数据是否在内存中，在的话直接从内存中取，没有的话则去磁盘中取，取到后将 age 更新成 28，然后调用引擎层接口将新的记录写入到内存，引擎层在写入内存后记录 redo log，此时处于 prepare 状态，然后返回给执行器，执行器收到之后再记录 binlog，紧接着调用引擎层提交事务的接口，引擎层将刚才记录的 redo log 状态更新成 commit 状态，整个更新结束。</strong></p>
 <p>上面描述相对应的最后执行器那部分的执行流程图如下，其中浅色部分表示的是 Server 层的行为，深色部分表示的是引擎层：</p>
-<p><img src="/Users/rookiedev/wechat/article_images/update_sql_execute_flow.png" alt="更新 SQL 执行流程图"></p>
+<p><img src="/images/update_sql_execute_flow.png" alt="更新 SQL 执行流程图"></p>
 <h3 id="两阶段提交"><a href="#两阶段提交" class="headerlink" title="两阶段提交"></a>两阶段提交</h3><p>上面提到了数据在更新的时候，会记录两份日志，一个是 binlog，一个是 redo log，同时也提到了各自大概的作用和区别，接下来我们再来看下 Server 层既然已经有了 binlog，为什么 InnoDB 引擎还要引入 redo log，以及这两个日志是怎么配合使用的。</p>
 <p>第一个问题，Server 层既然已经有了 binlog，为什么 InnoDB 引擎还要引入 redo log？其实上面我们已经提到了，因为它 InnoDB 引擎层才能够做到崩溃恢复的功能，同时 binlog 是 Server 层共用的，设计的初衷也就不具备这一功能，而是直接交给各个引擎层去实现。比如说在某一时刻，MySQL 服务突然挂了，这时可能有一部分修改的数据还在内存中，随着 MySQL 服务的崩溃也就丢失了，而如果有了 redo log，在服务重启后时候就可以将还在内存中没来得及持久化到磁盘上的数据通过重放 redo log 里面的日志来恢复数据。</p>
 <p>当然你也可以说通过 binlog 来恢复数据， 可是 binlog 设计的初衷就不是用来服务 crash 恢复数据的，它更多的是用于恢复到一个之前的某个时间点的数据，由于它是增量写入的，可以记录很长时间的 log，理论上来说可以恢复到之前任意时间点的数据库。比如说数据库在某一天误操作删除了数据，那么就可以找到距离误操作最近的时间节点前的 bin log 重放到临时数据库里，然后选择当天误删的数据恢复到线上数据库。</p>
