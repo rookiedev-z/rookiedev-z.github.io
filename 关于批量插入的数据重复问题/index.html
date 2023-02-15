@@ -20,15 +20,15 @@
     var CONFIG = {"hostname":"rookiedev.top","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="在上一篇文章中我们谈到了数据库批量插入，如果你已经亲自实践过了的话你会发现有个问题，就是我们在第一次执行完测试之后，再次执行的话会报错，除非你删掉数据库中的数据再执行。 那是因为 activity_stats 表中 activity_id 是表的主键，第二次执行的话就会因为主键重复而报错了，当然你也可以选择去掉这个主键的限制来进行测试。 但真正在项目中可就不能这么做了，项目中我们可能就是想要 ac">
+  <meta name="description" content="在上一篇文章中我们谈到了数据库批量插入，如果你已经亲自实践过了的话你会发现有个问题，就是我们在第一次执行完测试之后，再次执行的话会报错，除非你删掉数据库中的数据再执行。 那是因为 activity_stats 表中 activity_id 是表的主键，第二次执行的话就会因为主键重复而报错了，当然你也可以选择去掉这个主键的限制来进行测试。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="关于批量插入的数据重复问题">
 <meta property="og:url" content="http://rookiedev.top/%E5%85%B3%E4%BA%8E%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5%E7%9A%84%E6%95%B0%E6%8D%AE%E9%87%8D%E5%A4%8D%E9%97%AE%E9%A2%98/index.html">
 <meta property="og:site_name" content="rookiedev">
-<meta property="og:description" content="在上一篇文章中我们谈到了数据库批量插入，如果你已经亲自实践过了的话你会发现有个问题，就是我们在第一次执行完测试之后，再次执行的话会报错，除非你删掉数据库中的数据再执行。 那是因为 activity_stats 表中 activity_id 是表的主键，第二次执行的话就会因为主键重复而报错了，当然你也可以选择去掉这个主键的限制来进行测试。 但真正在项目中可就不能这么做了，项目中我们可能就是想要 ac">
+<meta property="og:description" content="在上一篇文章中我们谈到了数据库批量插入，如果你已经亲自实践过了的话你会发现有个问题，就是我们在第一次执行完测试之后，再次执行的话会报错，除非你删掉数据库中的数据再执行。 那是因为 activity_stats 表中 activity_id 是表的主键，第二次执行的话就会因为主键重复而报错了，当然你也可以选择去掉这个主键的限制来进行测试。">
 <meta property="og:locale">
 <meta property="article:published_time" content="2020-08-12T13:31:20.000Z">
-<meta property="article:modified_time" content="2020-08-12T13:33:05.031Z">
+<meta property="article:modified_time" content="2023-02-15T14:40:16.998Z">
 <meta property="article:author" content="rookiedev">
 <meta property="article:tag" content="Java MySQL Life">
 <meta name="twitter:card" content="summary">
@@ -219,10 +219,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2020-08-12 21:31:20 / Modified: 21:33:05" itemprop="dateCreated datePublished" datetime="2020-08-12T21:31:20+08:00">2020-08-12</time>
+              <time title="Created: 2020-08-12 21:31:20" itemprop="dateCreated datePublished" datetime="2020-08-12T21:31:20+08:00">2020-08-12</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-02-15 22:40:16" itemprop="dateModified" datetime="2023-02-15T22:40:16+08:00">2023-02-15</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -253,9 +259,9 @@
       
         <p>在上一篇文章中我们谈到了数据库批量插入，如果你已经亲自实践过了的话你会发现有个问题，就是我们在第一次执行完测试之后，再次执行的话会报错，除非你删掉数据库中的数据再执行。</p>
 <p>那是因为 activity_stats 表中 activity_id 是表的主键，第二次执行的话就会因为主键重复而报错了，当然你也可以选择去掉这个主键的限制来进行测试。</p>
-<p>但真正在项目中可就不能这么做了，项目中我们可能就是想要 activity_id 字段作为主键，不允许插入重复数据。</p>
 <a id="more"></a>
 
+<p>但真正在项目中可就不能这么做了，项目中我们可能就是想要 activity_id 字段作为主键，不允许插入重复数据。</p>
 <p>虽然说一般情况下不会有重复的，但毕竟是一般情况下，对于特殊情况我们也是需要考虑的。比如说 excel 中就是因为运营人员粗心弄了多条相同的数据，或者再次将同样的 excel 文件拿来上传，这时候就会有问题了。</p>
 <p>所以对于这种情况我们需要做到兼容，尽量给用户好的体验，不然说因为几条重复的数据就让用户去修改再次上传。对于这种普通的数据，可能就需要系统自动去重了，当然如果是涉及到金钱方面的数据那还是需要人工再次确认过的。</p>
 <p>下面我们就讨论下 key 重复的几种不同处理方式:<br>1.忽略重复 key 的数据，由于主键或者唯一键重复的记录，数据库自动忽略，在 insert 后面加上 ignore 关键字。</p>

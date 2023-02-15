@@ -20,18 +20,18 @@
     var CONFIG = {"hostname":"rookiedev.top","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
   </script>
 
-  <meta name="description" content="对于 MySQL 的认识，我们大部分人可能都还只是停留在增删改查的阶段，当然我们接触的更多的也就是页面上输入一些信息，调用后台接口保存到数据库，然后再从数据库查询得到值后返回给前端展示在页面上，这也就是业界俗称的 CRUD 工程师。怎么说呢，如果我们日常只能接触到这些 CRUD 的需求，那就算是 CRUD，我们也要努力将 CRUD 做到极致。 怎么个极致法呢？那就是我们要对我们日常写的这些 CRU">
+  <meta name="description" content="对于 MySQL 的认识，我们大部分人可能都还只是停留在增删改查的阶段，当然我们接触的更多的也就是页面上输入一些信息，调用后台接口保存到数据库，然后再从数据库查询得到值后返回给前端展示在页面上，这也就是业界俗称的 CRUD 工程师。怎么说呢，如果我们日常只能接触到这些 CRUD 的需求，那就算是 CRUD，我们也要努力将 CRUD 做到极致。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="深入理解 MySQL 的 SQL 执行流程">
 <meta property="og:url" content="http://rookiedev.top/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%9A%84-SQL-%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B/index.html">
 <meta property="og:site_name" content="rookiedev">
-<meta property="og:description" content="对于 MySQL 的认识，我们大部分人可能都还只是停留在增删改查的阶段，当然我们接触的更多的也就是页面上输入一些信息，调用后台接口保存到数据库，然后再从数据库查询得到值后返回给前端展示在页面上，这也就是业界俗称的 CRUD 工程师。怎么说呢，如果我们日常只能接触到这些 CRUD 的需求，那就算是 CRUD，我们也要努力将 CRUD 做到极致。 怎么个极致法呢？那就是我们要对我们日常写的这些 CRU">
+<meta property="og:description" content="对于 MySQL 的认识，我们大部分人可能都还只是停留在增删改查的阶段，当然我们接触的更多的也就是页面上输入一些信息，调用后台接口保存到数据库，然后再从数据库查询得到值后返回给前端展示在页面上，这也就是业界俗称的 CRUD 工程师。怎么说呢，如果我们日常只能接触到这些 CRUD 的需求，那就算是 CRUD，我们也要努力将 CRUD 做到极致。">
 <meta property="og:locale">
 <meta property="og:image" content="http://rookiedev.top/images/simple_query.png">
 <meta property="og:image" content="http://rookiedev.top/images/sql_execute_flow.png">
 <meta property="og:image" content="http://rookiedev.top/images/update_sql_execute_flow.png">
 <meta property="article:published_time" content="2022-08-01T14:52:19.000Z">
-<meta property="article:modified_time" content="2023-02-13T07:34:54.814Z">
+<meta property="article:modified_time" content="2023-02-15T14:36:56.357Z">
 <meta property="article:author" content="rookiedev">
 <meta property="article:tag" content="Java MySQL Life">
 <meta name="twitter:card" content="summary">
@@ -231,7 +231,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2023-02-13 15:34:54" itemprop="dateModified" datetime="2023-02-13T15:34:54+08:00">2023-02-13</time>
+                <time title="Modified: 2023-02-15 22:36:56" itemprop="dateModified" datetime="2023-02-15T22:36:56+08:00">2023-02-15</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -262,9 +262,9 @@
 
       
         <p>对于 MySQL 的认识，我们大部分人可能都还只是停留在增删改查的阶段，当然我们接触的更多的也就是页面上输入一些信息，调用后台接口保存到数据库，然后再从数据库查询得到值后返回给前端展示在页面上，这也就是业界俗称的 CRUD 工程师。怎么说呢，如果我们日常只能接触到这些 CRUD 的需求，那就算是 CRUD，我们也要努力将 CRUD 做到极致。</p>
-<p>怎么个极致法呢？那就是我们要对我们日常写的这些 CRUD 语句做到心里有数，每写出一个 SQL 我们脑海里都能够知道这个 SQL 经历了哪些过程才得到我们想要的数据，具体体现在 MySQL 在收到我们发出的 SQL 语句之后是怎么执行的，走了哪个索引，为什么选择这个索引，大概需要扫描多少行记录，执行这个 SQL 加了哪些锁，以及为什么有时需要开启事务，不同事务之间看到的数据为什么不一样等等，这些东西都需要我们去了解和熟悉，这样才能在遇到更复杂的需求的时候从容应对。</p>
 <a id="more"></a>
 
+<p>怎么个极致法呢？那就是我们要对我们日常写的这些 CRUD 语句做到心里有数，每写出一个 SQL 我们脑海里都能够知道这个 SQL 经历了哪些过程才得到我们想要的数据，具体体现在 MySQL 在收到我们发出的 SQL 语句之后是怎么执行的，走了哪个索引，为什么选择这个索引，大概需要扫描多少行记录，执行这个 SQL 加了哪些锁，以及为什么有时需要开启事务，不同事务之间看到的数据为什么不一样等等，这些东西都需要我们去了解和熟悉，这样才能在遇到更复杂的需求的时候从容应对。</p>
 <p>首先我们来看看一个 SQL 的执行在服务器上经历了哪些过程，对于查询语句和更新语句整体上差不太多，更新语句只不过是先查到结果再进行更新，我们日常使用的最多的应该是查询 SQL 了，先来看一个查询 SQL 发到服务器上会经历那些过程才得到我们想要的数据。</p>
 <p>注: 下面的测试是基于 MySQL 服务器，版本号是 8.0.26</p>
 <h3 id="查询-SQL"><a href="#查询-SQL" class="headerlink" title="查询 SQL"></a>查询 SQL</h3><p>首先通过下面的建表语句创建一张表，并插入几条测试数据，建表语句如下:</p>

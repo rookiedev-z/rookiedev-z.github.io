@@ -225,7 +225,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2023-02-13 22:37:44" itemprop="dateModified" datetime="2023-02-13T22:37:44+08:00">2023-02-13</time>
+                <time title="Modified: 2023-02-15 22:34:26" itemprop="dateModified" datetime="2023-02-15T22:34:26+08:00">2023-02-15</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -249,7 +249,6 @@
 
       
           <p>延迟队列或许大家都听过，可能也用过，一种比较常见的应用场景就是用户下单后，超过 10 分钟未支付将用户订单取消，这种其实就可以通过延迟队列来实现，这里先不考虑订单数量特别大的情况。大概流程就是用户下单后，订单服务创建订单保存后同时将这笔订单信息放入延迟队列中，设置延迟时间为 10 分钟，10 分钟后从队列中取出来判断支付状态，未支付则将这笔订单取消。</p>
-<p>实现延迟队列的方式或许有很多种，如果用 redis 来实现一个延迟队列功能应该怎么做呢，主要是通过 redis 里面的 Zset 集合来实现，Zset 自带的 score 值排序特性就非常适合用来做时间戳排序，当消息的时间戳值小于等于当前时间戳，将该消息取出来进行消费，执行相应的业务逻辑。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/%E5%A6%82%E4%BD%95%E9%80%9A%E8%BF%87-Redis-%E6%9D%A5%E5%AE%9E%E7%8E%B0%E6%B6%88%E6%81%AF%E5%BB%B6%E8%BF%9F%E9%98%9F%E5%88%97/#more" rel="contents">
@@ -469,7 +468,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2023-02-13 15:34:54" itemprop="dateModified" datetime="2023-02-13T15:34:54+08:00">2023-02-13</time>
+                <time title="Modified: 2023-02-15 22:35:16" itemprop="dateModified" datetime="2023-02-15T22:35:16+08:00">2023-02-15</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -493,7 +492,6 @@
 
       
           <h4 id="SQL-执行速度评估"><a href="#SQL-执行速度评估" class="headerlink" title="SQL 执行速度评估"></a>SQL 执行速度评估</h4><p>假如现在有一张活动表，表结构如下:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">create table activities</span><br><span class="line">(</span><br><span class="line">    id bigint unsigned auto_increment comment &#39;主键&#39; primary key,</span><br><span class="line">    name varchar(255) default &#39;&#39; not null comment &#39;活动名称&#39;,</span><br><span class="line">    city_code varchar(64) default &#39;&#39; not null comment &#39;城市编码&#39;,</span><br><span class="line">    start_time timestamp default CURRENT_TIMESTAMP not null comment &#39;开始时间&#39;,</span><br><span class="line">    end_time timestamp default CURRENT_TIMESTAMP not null comment &#39;结束时间&#39;,</span><br><span class="line">    status tinyint unsigned default &#39;0&#39; not null comment &#39;状态:0-待启用,1-待生效,2-生效中,3-已结束,4-已禁用&#39;,</span><br><span class="line">    create_time timestamp default CURRENT_TIMESTAMP not null comment &#39;创建时间&#39;,</span><br><span class="line">    update_time timestamp default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment &#39;更新时间&#39;</span><br><span class="line">) comment &#39;活动表&#39; CHARSET&#x3D;utf8mb4;</span><br><span class="line">create index idx_city_code on activities(city_code);</span><br><span class="line">create index idx_create_time on activities (create_time);</span><br><span class="line">create index idx_start_end_time on activities (start_time, end_time);</span><br></pre></td></tr></table></figure>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/Explain-%E7%9A%84%E4%BD%BF%E7%94%A8%E8%A7%A3%E6%9E%90/#more" rel="contents">
@@ -551,7 +549,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2023-02-12 17:10:09" itemprop="dateModified" datetime="2023-02-12T17:10:09+08:00">2023-02-12</time>
+                <time title="Modified: 2023-02-15 22:35:46" itemprop="dateModified" datetime="2023-02-15T22:35:46+08:00">2023-02-15</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -575,7 +573,6 @@
 
       
           <h4 id="索引字段的查询方式"><a href="#索引字段的查询方式" class="headerlink" title="索引字段的查询方式"></a>索引字段的查询方式</h4><p>上篇文章我们介绍了什么是索引，索引的结构以及一些关于索引的细节问题，那  MySQL 又是怎么利用索引进行查询的，来看一个具体的查询示例，下面是 users 表的建表语句:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">CREATE TABLE &#96;users&#96; (</span><br><span class="line">  &#96;id&#96; bigint NOT NULL AUTO_INCREMENT,</span><br><span class="line">  &#96;identity&#96; varchar(18) NOT NULL COMMENT &#39;身份证号&#39;,</span><br><span class="line">  &#96;name&#96; varchar(32) NOT NULL COMMENT &#39;用户名&#39;,</span><br><span class="line">  &#96;age&#96; int DEFAULT &#39;0&#39; COMMENT &#39;年龄&#39;,</span><br><span class="line">  &#96;sex&#96; tinyint(1) NOT NULL DEFAULT &#39;0&#39; COMMENT &#39;性别 0：男，1：女&#39;,</span><br><span class="line">  &#96;birthday&#96; date DEFAULT NULL COMMENT &#39;生日&#39;,</span><br><span class="line">  &#96;address&#96; varchar(128) NOT NULL DEFAULT &#39;&#39; COMMENT &#39;地址&#39;,</span><br><span class="line">  PRIMARY KEY (&#96;id&#96;),</span><br><span class="line">  KEY &#96;idx_identity&#96; (&#96;identity&#96;),</span><br><span class="line">  KEY &#96;idx_name&#96; (&#96;name&#96;, &#96;age&#96;)</span><br><span class="line">) ENGINE&#x3D;InnoDB AUTO_INCREMENT&#x3D;0 COMMENT&#x3D;&#39;用户表&#39;;</span><br><span class="line"># 初始化数据</span><br><span class="line">INSERT INTO users VALUES</span><br><span class="line">(1, &#39;362422199401014501&#39;, &#39;张三&#39;, 40, 0, &#39;1994-01-01&#39;, &#39;&#39;),</span><br><span class="line">(2, &#39;362422199402024502&#39;, &#39;李四&#39;, 27, 0, &#39;1994-02-02&#39;, &#39;&#39;),</span><br><span class="line">(3, &#39;362422199403034503&#39;, &#39;王五&#39;, 27, 1, &#39;1994-03-03&#39;, &#39;&#39;),</span><br><span class="line">(4, &#39;362422199404044504&#39;, &#39;赵六&#39;, 27, 1, &#39;1994-04-04&#39;, &#39;&#39;),</span><br><span class="line">(5, &#39;362422199505054505&#39;, &#39;王五&#39;, 26, 1, &#39;1994-05-05&#39;, &#39;&#39;);</span><br></pre></td></tr></table></figure>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%B4%A2%E5%BC%95-%E4%BA%8C/#more" rel="contents">
@@ -633,7 +630,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2023-02-12 17:09:40" itemprop="dateModified" datetime="2023-02-12T17:09:40+08:00">2023-02-12</time>
+                <time title="Modified: 2023-02-15 22:36:11" itemprop="dateModified" datetime="2023-02-15T22:36:11+08:00">2023-02-15</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -657,7 +654,6 @@
 
       
           <h4 id="什么是索引"><a href="#什么是索引" class="headerlink" title="什么是索引"></a>什么是索引</h4><p>在日常开发中，如果遇到一个 SQL 查询比较慢的时候，我们可能会说给这个 SQL 的查询字段加个索引，那为什么给字段加个索引查询就变快了，索引到底是什么？或许只有清楚的知道索引是什么我们才能明白为什么加上索引之后查询就变快了。</p>
-<p>索引，简单的来说就像是一本书的目录，通过目录你能很快就知道其中一篇文章具体是在哪一页，而如果没有目录的话那你只能随机去翻，或者一页一页去翻直到翻到你想找的那篇文章为止。当然这样对比来说的话你可能只是脑子里有这样一个概念，知道索引可以加快查找速度而已，但其实还是没有弄清楚索引到底是什么。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%B4%A2%E5%BC%95-%E4%B8%80/#more" rel="contents">
@@ -797,7 +793,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2023-02-13 15:34:54" itemprop="dateModified" datetime="2023-02-13T15:34:54+08:00">2023-02-13</time>
+                <time title="Modified: 2023-02-15 22:36:40" itemprop="dateModified" datetime="2023-02-15T22:36:40+08:00">2023-02-15</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -821,7 +817,6 @@
 
       
           <p>对于 MySQL 事务，可能我们大家都不陌生，事务是对数据库中数据操作保证数据逻辑一致的最小操作单位，一个事务中可能包含多条语句，但这些语句作为一个整体，由事务来保证这个整体的操作要么都成功，要么都失败，不存在部分成功部分失败的情况。</p>
-<p>同时事务还具备 ACID 的特性，分别是原子性(Atomicity)，一致性(Consistency)，隔离性(Isolation)，持久性(Durability)。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E4%BA%8B%E5%8A%A1%E5%8E%9F%E7%90%86/#more" rel="contents">
@@ -879,7 +874,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2023-02-13 15:34:54" itemprop="dateModified" datetime="2023-02-13T15:34:54+08:00">2023-02-13</time>
+                <time title="Modified: 2023-02-15 22:36:56" itemprop="dateModified" datetime="2023-02-15T22:36:56+08:00">2023-02-15</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -903,7 +898,6 @@
 
       
           <p>对于 MySQL 的认识，我们大部分人可能都还只是停留在增删改查的阶段，当然我们接触的更多的也就是页面上输入一些信息，调用后台接口保存到数据库，然后再从数据库查询得到值后返回给前端展示在页面上，这也就是业界俗称的 CRUD 工程师。怎么说呢，如果我们日常只能接触到这些 CRUD 的需求，那就算是 CRUD，我们也要努力将 CRUD 做到极致。</p>
-<p>怎么个极致法呢？那就是我们要对我们日常写的这些 CRUD 语句做到心里有数，每写出一个 SQL 我们脑海里都能够知道这个 SQL 经历了哪些过程才得到我们想要的数据，具体体现在 MySQL 在收到我们发出的 SQL 语句之后是怎么执行的，走了哪个索引，为什么选择这个索引，大概需要扫描多少行记录，执行这个 SQL 加了哪些锁，以及为什么有时需要开启事务，不同事务之间看到的数据为什么不一样等等，这些东西都需要我们去了解和熟悉，这样才能在遇到更复杂的需求的时候从容应对。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3-MySQL-%E7%9A%84-SQL-%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B/#more" rel="contents">

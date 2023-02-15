@@ -225,7 +225,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2023-02-12 16:51:15" itemprop="dateModified" datetime="2023-02-12T16:51:15+08:00">2023-02-12</time>
+                <time title="Modified: 2023-02-15 22:38:17" itemprop="dateModified" datetime="2023-02-15T22:38:17+08:00">2023-02-15</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -249,7 +249,6 @@
 
       
           <p>对于枚举，不知道你对它的使用了解多少，说实话在刚开始使用它的时候，我对它的印象仅次于帮助我们在代码中定义一个对象的字段特定的几种状态，便于我们理解代码中该字段有哪些值，又分别代表哪些含义。</p>
-<p>也就是说当一个对象的某个字段只有特定的几种含义的时候，与其直接通过 Integer 类型来定义该字段，然后采取  1，2，3，4 每个数字来代表其中一种含义的方式来标记该字段的含义，倒不如使用枚举来标记该字段所代表的含义，这样能够更好地理解，同时也将该字段的含义包裹在你所定义的枚举类中。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/Java-%E4%B8%AD%E6%9E%9A%E4%B8%BE%E8%AE%A9%E4%BB%A3%E7%A0%81%E6%9B%B4%E4%BC%98%E9%9B%85/#more" rel="contents">
@@ -787,10 +786,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2020-08-31 21:02:11 / Modified: 21:03:16" itemprop="dateCreated datePublished" datetime="2020-08-31T21:02:11+08:00">2020-08-31</time>
+              <time title="Created: 2020-08-31 21:02:11" itemprop="dateCreated datePublished" datetime="2020-08-31T21:02:11+08:00">2020-08-31</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-02-15 22:39:55" itemprop="dateModified" datetime="2023-02-15T22:39:55+08:00">2023-02-15</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -813,8 +818,6 @@
 
       
           <p>redis 在我们的日常开发中其实还是用的比较多的，常用来做缓存或者存放一些热点数据，主要为了提高系统的响应速度。在我们平常使用中，我们可能都习惯的使用 keys * 命令来查询数据库中的数据存储情况。</p>
-<p>这时也许我们都是在开发环境执行，开发环境 redis 中的数据量不是很多，redis 也很快的能给我们响应。但是如果你要查询的 redis 中存储了非常大的数据量，这时候你还能愉快的使用这个命令吗？</p>
-<p>首先，我们来大概了解下 keys 命令是用来干嘛的，它是用来查找所有符合给定模式 pattern 的 key ，上面的 * 表示匹配所有数据，同时还有下面几种用法:</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/%E4%BD%A0%E8%BF%98%E5%9C%A8%E4%B9%A0%E6%83%AF%E7%9A%84%E4%BD%BF%E7%94%A8-keys-%E6%9F%A5%E7%9C%8B-redis-%E4%B8%AD%E7%9A%84%E6%89%80%E6%9C%89%E6%95%B0%E6%8D%AE%E5%90%97/#more" rel="contents">
@@ -946,10 +949,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2020-08-12 21:31:20 / Modified: 21:33:05" itemprop="dateCreated datePublished" datetime="2020-08-12T21:31:20+08:00">2020-08-12</time>
+              <time title="Created: 2020-08-12 21:31:20" itemprop="dateCreated datePublished" datetime="2020-08-12T21:31:20+08:00">2020-08-12</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2023-02-15 22:40:16" itemprop="dateModified" datetime="2023-02-15T22:40:16+08:00">2023-02-15</time>
+              </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
                 <i class="far fa-folder"></i>
@@ -973,7 +982,6 @@
       
           <p>在上一篇文章中我们谈到了数据库批量插入，如果你已经亲自实践过了的话你会发现有个问题，就是我们在第一次执行完测试之后，再次执行的话会报错，除非你删掉数据库中的数据再执行。</p>
 <p>那是因为 activity_stats 表中 activity_id 是表的主键，第二次执行的话就会因为主键重复而报错了，当然你也可以选择去掉这个主键的限制来进行测试。</p>
-<p>但真正在项目中可就不能这么做了，项目中我们可能就是想要 activity_id 字段作为主键，不允许插入重复数据。</p>
           <!--noindex-->
             <div class="post-button">
               <a class="btn" href="/%E5%85%B3%E4%BA%8E%E6%89%B9%E9%87%8F%E6%8F%92%E5%85%A5%E7%9A%84%E6%95%B0%E6%8D%AE%E9%87%8D%E5%A4%8D%E9%97%AE%E9%A2%98/#more" rel="contents">
