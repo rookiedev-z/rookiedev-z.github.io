@@ -27,13 +27,13 @@
 <meta property="og:site_name" content="rookiedev">
 <meta property="og:description" content="nginx 服务器在开发中我们用的比较多的有 nginx 的负载均衡，nginx 负载均衡主要是利用反向代理来实现，也就是表面上我们访问的是这个服务，其实访问的是该服务背后支撑的众多服务器中的其中一台。比如说全世界同一时间有这么多人同时在访问百度这个网站，它是怎么能够承受的住这么大的访问量呢，这时我们就应该知道其实百度这个网站的背后有很多的服务器在支撑着众多的用户的访问。">
 <meta property="og:locale">
-<meta property="og:image" content="http://images.rookiezhou.top/polling.png">
+<meta property="og:image" content="http://rookiedev.top/images/polling.png">
 <meta property="article:published_time" content="2018-06-22T15:26:45.000Z">
-<meta property="article:modified_time" content="2020-08-10T14:42:14.605Z">
+<meta property="article:modified_time" content="2023-02-13T15:36:24.326Z">
 <meta property="article:author" content="rookiedev">
 <meta property="article:tag" content="Java MySQL Life">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://images.rookiezhou.top/polling.png">
+<meta name="twitter:image" content="http://rookiedev.top/images/polling.png">
 
 <link rel="canonical" href="http://rookiedev.top/nginx-%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1%E7%AD%96%E7%95%A5%E4%B9%8B%E5%86%85%E7%BD%AE%E7%AD%96%E7%95%A5/">
 
@@ -229,7 +229,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-08-10 22:42:14" itemprop="dateModified" datetime="2020-08-10T22:42:14+08:00">2020-08-10</time>
+                <time title="Modified: 2023-02-13 23:36:24" itemprop="dateModified" datetime="2023-02-13T23:36:24+08:00">2023-02-13</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -282,7 +282,7 @@
 
 
 <p>部分配置文件截图如下：</p>
-<p><img src="http://images.rookiezhou.top/polling.png" alt="轮询策略配置"></p>
+<p><img src="/images/polling.png" alt="轮询策略配置"></p>
 <p>这样也就配置好了最基本的负载均衡，默认采用轮询的策略将请求分发给后台服务器，当我们访问 localhost:10080 这个地址时页面轮流的展示 192.168.1.110 和 192.168.1.111 这两台主机的 nginx 服务器的欢迎页面，这里为了区分这两个欢迎页面需要修改一下这两台主机的 nginx 服务器的欢迎页面信息，欢迎页面默认存放在 /usr/local/nginx/html/ 目录下的 index.html 页面。我们只要稍微修改一下这两台主机的 nginx 欢迎页面使得每次访问的页面都是不同的，便于我们区分访问的是哪台主机的 nginx 服务器。</p>
 <h2 id="加权轮询"><a href="#加权轮询" class="headerlink" title="加权轮询"></a>加权轮询</h2><p>加权轮询则是在第一种轮询的基础上对后台的每台服务赋予权重，服务器的权重比例越大，被分发到的概率也就越大，配置如下：</p>
 <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">upstream loadserver &#123;</span><br><span class="line">    server 192.168.1.110:10080 weight&#x3D;3;</span><br><span class="line">    server 192.168.1.111:10080 weight&#x3D;1;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
