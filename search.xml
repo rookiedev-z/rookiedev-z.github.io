@@ -584,42 +584,6 @@
       </categories>
   </entry>
   <entry>
-    <title>Java 中通过枚举实现单例和策略模式</title>
-    <url>/Java-%E4%B8%AD%E9%80%9A%E8%BF%87%E6%9E%9A%E4%B8%BE%E5%AE%9E%E7%8E%B0%E5%8D%95%E4%BE%8B%E5%92%8C%E7%AD%96%E7%95%A5%E6%A8%A1%E5%BC%8F/</url>
-    <content><![CDATA[<p>在上篇文章中主要介绍了 Java 中对于枚举的合理使用能让我们的代码看起来更优雅，但其实枚举还有一个特异功能，可以实现设计模式中的单例模式。</p>
-<p>先来看我们最熟悉的单例模式，我们之前看到的最多的单例模式实现是像下面这种，线程安全的双重检查锁懒汉单例。</p>
-<a id="more"></a> 
-
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ThreadSafeSingleton</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">static</span> ThreadSafeSingleton singleton;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="title">ThreadSafeSingleton</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> ThreadSafeSingleton <span class="title">getInstance</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (singleton != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> singleton;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">synchronized</span> (ThreadSafeSingleton.class) &#123;</span><br><span class="line">            <span class="keyword">if</span> (singleton == <span class="keyword">null</span>) &#123;</span><br><span class="line">                singleton = <span class="keyword">new</span> ThreadSafeSingleton();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> singleton;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>上面这种实现方式是懒汉式单例，同时通过双重检查锁规避了线程安全问题和性能问题，同时利用 volatile 关键字杜绝 JVM 的指令重排，避免了多线程情况下可能出现 NPE 的问题，上面的实现方式既做到了线程安全，同时又不失性能的单例实现。</p>
-<p>那么这里我么说到通过枚举来实现单例又是如何实现的呢，其实很简单，比如下面的代码就是使用枚举来实现的一个单例。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> DeployEnvSingleton &#123;</span><br><span class="line"></span><br><span class="line">    INSTANCE;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>上面代码实现了一个很简单的单例模式，虽然看起来非常简单，但是做的事情一点也不比上面开头提出的单例模式少，甚至在某些极端情况下还有特殊的效果。先来看看这个简单的单例做到了哪些事情：</p>
-<ul>
-<li>只会创建一个实例，因为枚举类型可确保 JVM 中仅存在所定义的常量的一个实例</li>
-<li>线程安全，因为 Java 虚拟机在加载枚举类的时候，会使用 ClassLoader 的 loadClass 方法，而这个方法使用了同步代码块来保证线程安全</li>
-<li>反射安全，因为JVM 会阻止反射获取枚举类的私有构造方法，而其他的单例实现是可以通过反射来创建对象的</li>
-<li>序列化/反序列化安全，你用序列化工具对该实例进行序列化然后再反序列化会发现得到值是同一个</li>
-<li>优雅简单，从代码就可以看出来实现非常简单</li>
-</ul>
-<p>从列举的这些可以看出使用枚举来实现单例是非常好的选择，当然唯一的一个缺点是不能实现懒加载，枚举中的实例不管我们有没有用到它，它都已经创建好了在那里。</p>
-<p>说完单例，再看下策略模式又是怎样的。一般我们实现策略模式是通过实现接口的方式来实现的，每加一个新的策略就加一个子类实现相应的接口</p>
-<p><img src="/images/strategy_uml.png" alt="strategy_uml"></p>
-<p>上面就是策略模式的 UML 图，Strategy 是接口，ConcreteStrategyA 和 ConcreteStrategyB 是具体的策略实现，增加的新的策略则再加一个子类实现 Strategy 接口，然后我们再看采用枚举的实现方式。</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> EnvEnum &#123;</span><br><span class="line"></span><br><span class="line">    DEVELOPMENT&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span> </span>&#123;</span><br><span class="line">            System.out.println(issue.getId() + <span class="string">&quot; issue will deploy to DEVELOPMENT&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;,</span><br><span class="line"></span><br><span class="line">    TESTING&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span> </span>&#123;</span><br><span class="line">            System.out.println(issue.getId() + <span class="string">&quot; issue will deploy to TESTING&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;,</span><br><span class="line"></span><br><span class="line">    PRODUCTION&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span> </span>&#123;</span><br><span class="line">            System.out.println(issue.getId() + <span class="string">&quot; issue will deploy to PRODUCTION&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>上面的代码就是一个简易的策略模式，预先定义了三个环境，dev，test，prod，后期如果想要再加一个环境 staging 只需要在枚举类中再加一个 STAGING 实例即可。</p>
-<p>整体看下来是不是觉得枚举这个类型还是可以做到很多特性的，不过我最喜欢枚举的一点还是它能够帮助我们写出易于阅读同时又非常优雅的代码。所以说好好利用枚举这个类型，也让你代码实现更优雅一些吧。</p>
-<p>完整测试代码地址：<a href="https://github.com/rookiedev-z/sample/tree/master/java-basic-sample">Java basic sample</a></p>
-<p>参考：<a href="https://www.baeldung.com/a-guide-to-java-enums">https://www.baeldung.com/a-guide-to-java-enums</a></p>
-]]></content>
-      <categories>
-        <category>Java</category>
-      </categories>
-  </entry>
-  <entry>
     <title>Java 细粒度锁续篇</title>
     <url>/Java-%E7%BB%86%E7%B2%92%E5%BA%A6%E9%94%81%E7%BB%AD%E7%AF%87/</url>
     <content><![CDATA[<p>在上篇文章中大概介绍了 Java 中细粒度锁的几种实现方式，并且针对每种方式都做了优缺点说明，在使用的时候就需要根据业务需求选择更合适的一种。上篇文章中的最后一种弱引用锁的实现方式，我在里面也说了其实还有更优雅的实现，其实也算不上更优雅，只是看起来更优雅，原理还是一样的，今天我打算用一篇文章的篇幅来好好说下。</p>
@@ -667,6 +631,42 @@
 <p>这种同步方式业务代码看起来简单些，对于一些简单的需求就可以直接使用这种方式，当然如果需要提供 API 级别的加锁方式或者需要构建带条件的加锁方式那还是使用 ReentrantLock。</p>
 <p>对于加锁这一块虽然说了这么多，也许你已经打算采用这些方式去实现你想要的效果了，可是呢随着微服务大行其道，一个系统往往启动了好几个实例，每个实例对应一个 JVM 虚拟机，而我们前面说的这些都是在只有一个虚拟机的前提下才有用，这就意味着我们前面说的这些加锁方式基本上已经派不上用场了。</p>
 <p>那随之而来的解决方案就是我们经常听到并且感觉很高大上，却很少用到的分布式锁了，这一块我虽然使用过，也去查阅过相关资料，但我自认为没有完全真正掌握底层的原理，还需要进一步的实践，只好再找机会整理整理后再输出了。</p>
+]]></content>
+      <categories>
+        <category>Java</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>Java 中通过枚举实现单例和策略模式</title>
+    <url>/Java-%E4%B8%AD%E9%80%9A%E8%BF%87%E6%9E%9A%E4%B8%BE%E5%AE%9E%E7%8E%B0%E5%8D%95%E4%BE%8B%E5%92%8C%E7%AD%96%E7%95%A5%E6%A8%A1%E5%BC%8F/</url>
+    <content><![CDATA[<p>在上篇文章中主要介绍了 Java 中对于枚举的合理使用能让我们的代码看起来更优雅，但其实枚举还有一个特异功能，可以实现设计模式中的单例模式。</p>
+<p>先来看我们最熟悉的单例模式，我们之前看到的最多的单例模式实现是像下面这种，线程安全的双重检查锁懒汉单例。</p>
+<a id="more"></a> 
+
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">ThreadSafeSingleton</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="keyword">static</span> ThreadSafeSingleton singleton;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">private</span> <span class="title">ThreadSafeSingleton</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> ThreadSafeSingleton <span class="title">getInstance</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (singleton != <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> singleton;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">synchronized</span> (ThreadSafeSingleton.class) &#123;</span><br><span class="line">            <span class="keyword">if</span> (singleton == <span class="keyword">null</span>) &#123;</span><br><span class="line">                singleton = <span class="keyword">new</span> ThreadSafeSingleton();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> singleton;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面这种实现方式是懒汉式单例，同时通过双重检查锁规避了线程安全问题和性能问题，同时利用 volatile 关键字杜绝 JVM 的指令重排，避免了多线程情况下可能出现 NPE 的问题，上面的实现方式既做到了线程安全，同时又不失性能的单例实现。</p>
+<p>那么这里我么说到通过枚举来实现单例又是如何实现的呢，其实很简单，比如下面的代码就是使用枚举来实现的一个单例。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> DeployEnvSingleton &#123;</span><br><span class="line"></span><br><span class="line">    INSTANCE;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面代码实现了一个很简单的单例模式，虽然看起来非常简单，但是做的事情一点也不比上面开头提出的单例模式少，甚至在某些极端情况下还有特殊的效果。先来看看这个简单的单例做到了哪些事情：</p>
+<ul>
+<li>只会创建一个实例，因为枚举类型可确保 JVM 中仅存在所定义的常量的一个实例</li>
+<li>线程安全，因为 Java 虚拟机在加载枚举类的时候，会使用 ClassLoader 的 loadClass 方法，而这个方法使用了同步代码块来保证线程安全</li>
+<li>反射安全，因为JVM 会阻止反射获取枚举类的私有构造方法，而其他的单例实现是可以通过反射来创建对象的</li>
+<li>序列化/反序列化安全，你用序列化工具对该实例进行序列化然后再反序列化会发现得到值是同一个</li>
+<li>优雅简单，从代码就可以看出来实现非常简单</li>
+</ul>
+<p>从列举的这些可以看出使用枚举来实现单例是非常好的选择，当然唯一的一个缺点是不能实现懒加载，枚举中的实例不管我们有没有用到它，它都已经创建好了在那里。</p>
+<p>说完单例，再看下策略模式又是怎样的。一般我们实现策略模式是通过实现接口的方式来实现的，每加一个新的策略就加一个子类实现相应的接口</p>
+<p><img src="/images/strategy_uml.png" alt="strategy_uml"></p>
+<p>上面就是策略模式的 UML 图，Strategy 是接口，ConcreteStrategyA 和 ConcreteStrategyB 是具体的策略实现，增加的新的策略则再加一个子类实现 Strategy 接口，然后我们再看采用枚举的实现方式。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">enum</span> EnvEnum &#123;</span><br><span class="line"></span><br><span class="line">    DEVELOPMENT&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span> </span>&#123;</span><br><span class="line">            System.out.println(issue.getId() + <span class="string">&quot; issue will deploy to DEVELOPMENT&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;,</span><br><span class="line"></span><br><span class="line">    TESTING&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span> </span>&#123;</span><br><span class="line">            System.out.println(issue.getId() + <span class="string">&quot; issue will deploy to TESTING&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;,</span><br><span class="line"></span><br><span class="line">    PRODUCTION&#123;</span><br><span class="line">        <span class="meta">@Override</span></span><br><span class="line">        <span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span> </span>&#123;</span><br><span class="line">            System.out.println(issue.getId() + <span class="string">&quot; issue will deploy to PRODUCTION&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title">deploy</span><span class="params">(Issue issue)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面的代码就是一个简易的策略模式，预先定义了三个环境，dev，test，prod，后期如果想要再加一个环境 staging 只需要在枚举类中再加一个 STAGING 实例即可。</p>
+<p>整体看下来是不是觉得枚举这个类型还是可以做到很多特性的，不过我最喜欢枚举的一点还是它能够帮助我们写出易于阅读同时又非常优雅的代码。所以说好好利用枚举这个类型，也让你代码实现更优雅一些吧。</p>
+<p>完整测试代码地址：<a href="https://github.com/rookiedev-z/sample/tree/master/java-basic-sample">Java basic sample</a></p>
+<p>参考：<a href="https://www.baeldung.com/a-guide-to-java-enums">https://www.baeldung.com/a-guide-to-java-enums</a></p>
 ]]></content>
       <categories>
         <category>Java</category>
@@ -2040,6 +2040,96 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
       </categories>
   </entry>
   <entry>
+    <title>接口采用异步的方式执行</title>
+    <url>/%E6%8E%A5%E5%8F%A3%E9%87%87%E7%94%A8%E5%BC%82%E6%AD%A5%E7%9A%84%E6%96%B9%E5%BC%8F%E6%89%A7%E8%A1%8C/</url>
+    <content><![CDATA[<h3 id="不需要返回结果的接口"><a href="#不需要返回结果的接口" class="headerlink" title="不需要返回结果的接口"></a>不需要返回结果的接口</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;asyncEndpoint&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">asyncEndpoint</span><span class="params">()</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received async endpoint request&quot;</span>);</span><br><span class="line">    <span class="keyword">this</span>.taskService.asyncExecute();</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<a id="more"></a>
+
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@SneakyThrows</span></span><br><span class="line"><span class="meta">@Async</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">asyncExecute</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== task async execute start&quot;</span>);</span><br><span class="line">    TimeUnit.SECONDS.sleep(<span class="number">5</span>);</span><br><span class="line">    log.info(<span class="string">&quot;========== task async execute end&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面 asyncEndpoint 是一个不需要返回结果的接口，主要是通过 @Async 注解来实现的，请求到了后台，从 Tomcat 服务器处理请求的线程池中获取一个线程 A 处理该请求，在该线程中执行到调用 asyncExecute 方法的时候，由于 asyncExecute 方法的上面由 @Async 注解所标注，这样的话该方法会以异步的方式来执行，也就是说在 asyncEndpoint 方法中调用 asyncExecute 方法以异步的方式执行，asyncExecute 方法中的代码在另一个线程 B 中执行，线程 A 继续往下执行，打印完最后一行日志之后，整个请求就结束了，线程 A 也就释放了，可以继续处理其他的请求了。 而比较耗时的方法 asyncExecute 继续在线程 B 中执行。</p>
+<p>请求 asyncEndpoint 接口，通过以下日志可以看出来：</p>
+<p><img src="/images/asyncEndpoint_log.png" alt="asyncEndpoint_log"></p>
+<h3 id="有返回值的接口之-Callable-作为返回值"><a href="#有返回值的接口之-Callable-作为返回值" class="headerlink" title="有返回值的接口之 Callable 作为返回值"></a>有返回值的接口之 Callable 作为返回值</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;callableEndpoint&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Callable&lt;String&gt; <span class="title">callableEndpoint</span><span class="params">()</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received callable endpoint request&quot;</span>);</span><br><span class="line">    Callable&lt;String&gt; callable = <span class="keyword">this</span>.taskService ::execute;</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> callable;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@SneakyThrows</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">execute</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== task execute start&quot;</span>);</span><br><span class="line">    TimeUnit.SECONDS.sleep(<span class="number">5</span>);</span><br><span class="line">    log.info(<span class="string">&quot;========== task execute end&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;task execute success&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>上面 callableEndpoint 接口，它的返回值是 Callable<String>，这里就需要注意了，他在这里同样也会以异步的方式将结果返回给客户端请求，但这里和上面的这种方式又有所不同，这种方式稍微复杂一点。上面的方式更多的是由于我们不关心方法执行的返回值，我们自己在业务逻辑层面来控制方法以异步的方式执行，然后处理请求的线程执行结束，应用程序线程继续异步执行。</p>
+<p>而在这里，主要是利用了 Servlet 3.0 中引入了对于异步的支持，至于 Servlet 3.0 中引入的对异步的支持，下次再用一篇文章详细介绍下，我们先大概了解以 Callable 作为返回值的接口为什么会以异步的方式执行。</p>
+<p>这里首先后台收到 asyncEndpoint 请求后，同样从 Tomcat 容器处理请求的线程池中获取一个线程处理该请求。这里大概说下，我们是使用的 SpringMVC 的那一套请求执行流程，SpringMVC 中有一个 DispatcherServlet 类里面的 doDispatch 方法是请求的统一入口，通过它来协调其它组件来处理前端请求。</p>
+<p>比如说通过处理器映射器 HandlerMapping 查找对应的 Handler 处理器 Controller，然后再通过请求适配器 HandlerAdapter 对处理器进行执行，在处理器执行之后得到一个返回值结果，SpringMVC 里面有一些处理返回值的 Handler 来对结果进行解析，根据返回值类型选取合适的 returnValueHandler 来处理。下面是直接到了处理器执行获取执行结果的代码。</p>
+<p><img src="/images/handler_return_value.png" alt="handler_return_value"></p>
+<p>至于选择处理范湖结果的 handler 的过程通过下面代码可以看出，是根据返回值的类型来从已经注册的 returnValueHandler 选择能处理当前返回值类型的 handler，</p>
+<p><img src="/images/handler_select_handler.png" alt="handler_select_handler"></p>
+<p><img src="/images/select_handler.png" alt="select_handler"></p>
+<p><img src="/images/support_return_value.png" alt="support_return_value"></p>
+<p>从上面第三段代码中可以看到由于返回值类型 Callable，最终会匹配到 CallableMethodReturnValueHandler 这个返回值处理器，在这个类中还有一个方法 handleReturnValue，也就是在选择好匹配的 returnValueHandler 之后调用的那个方法，异步的处理也就是在这个方法的最后一行代码中，</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">WebAsyncUtils.getAsyncManager(webRequest).startCallableProcessing(callable, mavContainer);</span><br></pre></td></tr></table></figure>
+
+<p>这行代码先是调用 getAsyncManager 获取到 WebAsyncManager，然后调用 startCallableProcessing 开始 Callable 结果的处理流程，而在 startCallableProcessing 方法里面又是调用了一个内部重载的方法，通过 WebAsyncTask 包装了以下 Callable 作为参数</p>
+<p><img src="/images/startCallableProcessing.png" alt="startCallableProcessing"></p>
+<p><img src="/images/set_concurrent_result_dispatch.png" alt="set_concurrent_result_dispatch"></p>
+<p>在 startCallableProcessing 方法中可以清楚的看到将 callable 交给 taskExecutor 来执行，然后设置并发执行得到的结果并且调用 dispatch 方法将请求再次分派到容器，以便应用程序线程中并发执行之后的恢复处理，其实也就是将并发执行的结果再次交给容器线程来恢复刚才的请求，将刚才的流程再执行一次。</p>
+<p>只不过在处理器执行的时候调用的不再是 Contrller 里面的方法，而是直接调用 Callable 的 call 方法拿刚才执行的结果，等到再执行到 handleReturnValue 方法的时候，这时由于 return value 是一个字符串，所以匹配到的 returnValueHandler 是 RequestResponseBodyMethodProcessor,这时会将 callable 的执行结果返回给客户端，本次请求结束。</p>
+<p>需要注意的是，应用程序的异步任务的执行时间过长会导致超时的问题，还记得上面的 startCallableProcessing 方法里面有 addTimeoutHandler，addErrorHandler，addCompletionHandler 三个回调，分别是超时，发生错误以及异步执行完成的回调处理。里面其实会去读 WebAsyncTask 中设置的超时时间，但里面没有设置，但我测试是有一个默认的超时时间 30s(我通过测试，发现 30s 没执行完就会 timeout)。</p>
+<p>还有一个就是需要注意的是在整个的处理过程中，服务端和客户端的连接是一直保持着的，所以需要注意连接超时的问题，虽然默认没有设置的话是无限的，但如果设置了就需要注意了，这个的超时时间必然要比异步执行里面的超时时间要大一些。</p>
+<p>上面的 taskExecutor 是 SpringBoot 中 TaskExecutionAutoConfiguration 自动配置的 ThreadPoolTaskExecutor，对于这个类的配置也可以在配置文件中进行配置，线程数，queue capacity 等。</p>
+<p>最终的执行打印日志如下：<br><img src="/images/callableEndpoint_log.png" alt="callableEndpoint_log"></p>
+<h3 id="有返回值的接口之-WebAsyncTask-作为返回值"><a href="#有返回值的接口之-WebAsyncTask-作为返回值" class="headerlink" title="有返回值的接口之 WebAsyncTask 作为返回值"></a>有返回值的接口之 WebAsyncTask 作为返回值</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;webAsyncTaskEndpoint&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> WebAsyncTask&lt;String&gt; <span class="title">webAsyncTaskEndpoint</span><span class="params">()</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received web async task endpoint request&quot;</span>);</span><br><span class="line">    Callable&lt;String&gt; callable = () -&gt; <span class="keyword">this</span>.taskService.execute();</span><br><span class="line">    WebAsyncTask&lt;String&gt; webAsyncTask = <span class="keyword">new</span> WebAsyncTask&lt;&gt;(<span class="number">3000</span>, callable);</span><br><span class="line">    webAsyncTask.onCompletion(() -&gt; log.info(<span class="string">&quot;========== execute finish&quot;</span>));</span><br><span class="line"></span><br><span class="line">    webAsyncTask.onTimeout(() -&gt; <span class="string">&quot;execute timeout&quot;</span>);</span><br><span class="line"></span><br><span class="line">    webAsyncTask.onError(() -&gt; <span class="string">&quot;execute error&quot;</span>);</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> webAsyncTask;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在理解了 Callable 作为接口返回值之后，就能够很好地理解这个流程了，大体的流程是一样的，只不过就是返回值的 Handler 处理器不一样，这里用到的处理器是 AsyncTaskMethodReturnValueHandler，在这个类中 handleReturnValue 方法调用的 startCallableProcessing 传的参数就是 Controller 里面返回的这个 webAsyncTask，这个 webAsyncTask 定义了三个回调函数，方便做特殊的处理。</p>
+<p>这里需要注意的是 onError 的回调并不是说异步任务里面执行出错了的回调，其实异步任务里面的出错的话已经 try catch 了，并且将异常信息作为结果返回，所以说如果异步任务里面抛异常了，并不会回调到这里，而且这里回调的是 onCompletion，只不过得到的结果是抛出的异常。至于这里的 onError 是哪里出现异常的回调呢，看 WebAsyncTask 类的 onError 方法上面的 doc 描述有一段这样的话：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">This method is called from a container thread when an error occurred while processing an async request before the &#123;@code Callable&#125; has completed</span><br></pre></td></tr></table></figure>
+<p>看意思是在异步任务执行完成之前，处理异步请求的过程中发生的异常会回调，具体有待测试。</p>
+<p>所以说 WebAsyncTask 作为接口返回值的话，扩展性更强一些，提供了更完善的超时，异常，异步执行完成的回调处理。</p>
+<p>最终的执行打印日志如下:</p>
+<p><img src="/images/webAsyncTaskEndpoint_log.png" alt="webAsyncTaskEndpoint_log"></p>
+<h3 id="有返回值的接口之-DeferredResult-作为返回值"><a href="#有返回值的接口之-DeferredResult-作为返回值" class="headerlink" title="有返回值的接口之 DeferredResult 作为返回值"></a>有返回值的接口之 DeferredResult 作为返回值</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;deferredResultEndpoint&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> DeferredResult&lt;String&gt; <span class="title">deferredResultEndpoint</span><span class="params">()</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received deferred result endpoint request&quot;</span>);</span><br><span class="line">    DeferredResult&lt;String&gt; deferredResult = <span class="keyword">new</span> DeferredResult&lt;&gt;();</span><br><span class="line">    CompletableFuture.supplyAsync(<span class="keyword">this</span>.taskService ::execute)</span><br><span class="line">            .whenCompleteAsync((result, throwable) -&gt; deferredResult.setResult(result));</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> deferredResult;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面这个接口的返回值是 DeferredResult，那么请求的处理流程和 Callable 是一样的，不同的地方也是在于<br>返回值的 Handler 处理器不一样，这里用到的处理器是 DeferredResultMethodReturnValueHandler，而且这个类里面的 handleReturnValue 方法和上面的 CallableMethodReturnValueHandler 以及 AsyncTaskMethodReturnValueHandler 方法又不一样，这里调用的是 WebAsyncManager 类中 startDeferredResultProcessing 方法</p>
+<p><img src="/images/startDeferredResultProcessing.png" alt="startDeferredResultProcessing"></p>
+<p>startDeferredResultProcessing 方法和 startCallableProcessing 差不多，前面都是设置超时时间，设置超时，错误，完成的回调，最后有点不同，在 startCallableProcessing 方法里面是开始通过 taskExecutor 来执行异步任务。</p>
+<p>而在这里是为 deferredResult 设置了一个 resultHandler，然后在 resultHandler 里面调用 setConcurrentResultAndDispatch，来设置结果并且将请求再次分派到容器恢复请求过程返回结果给客户端。至于这里的 resultHandler 的用处是 Controller 里面异步任务执行完成后为 deferredResult 设置结果的时候调用 setResult 方法里面会用到。</p>
+<p><img src="/images/setResult.png" alt="setResult"></p>
+<p>从上面可以看出在设置结果之后，会调用在 startDeferredResultProcessing 设置好的 resultHandler ，也就是执行 setConcurrentResultAndDispatch，到这里就又和上面的流程一样了，调用 dispatch 方法将请求再次分派到容器，执行之后的恢复过程返回结果给客户端。</p>
+<p>对于 DeferredResult 作为接口返回值还有个不同的地方就是异步任务的执行完全是由开发人员自己控制了，而不是像之前的那样交给应用程序默认的 ThreadPoolTaskExecutor 来执行，这其实就给开发人员很大的灵活性了。</p>
+<p>采用这种异步方式的好处：<br>一般来说，我们写的更多的是阻塞同步式的接口，但有时候如果我们碰到比较耗时任务的接口，这时候我们如果还采用阻塞同步式的写法的话，那么前端请求到后台，首先 Tomcat 服务器从处理请求的线程池中获取一个线程 A 来处理该请求，</p>
+<p>然后由于这个接口要执行的任务耗时比较长，耗时任务一直在线程 A 中执行，直到任务执行完成才得到释放，对于并发量比较小的程序来说那还好，线程占着也就占着了，但如果是并发量比较大的程序，容器中大量的处理请求的线程将一直被占用，如果突然请求的高峰到来，那么容器中处理请求的线程有可能被耗尽，就不能再处理更多请求了，也就是说这严重影响了系统的并发吞吐量。</p>
+<p>而如果我们采取的是异步的方式来处理的话，这时就像我们前面所介绍的一样，请求到了后台，由于是异步的方式，处理请求的线程在处理完请求之后就被释放了，可以继续处理其他请求，等到异步任务执行完之后再移交给容器线程返回结果给客户端，这样的话就很大的提高了系统的并发量。</p>
+<p>最终的执行打印日志如下：<br><img src="/images/deferredResultEndpoint_log.png" alt="deferredResultEndpoint_log"></p>
+<h3 id="各自的适用场景，"><a href="#各自的适用场景，" class="headerlink" title="各自的适用场景，"></a>各自的适用场景，</h3><p>首先一个前提就是要执行的任务是耗时的任务，或者需要等第三方的通知的任务</p>
+<ol>
+<li>通过 @Async 注解的方式</li>
+</ol>
+<ul>
+<li>不需要关注任务执行的结果</li>
+</ul>
+<ol start="2">
+<li>以 Callable 作为接口的返回值</li>
+</ol>
+<ul>
+<li>需要知道任务执行的结果，并且将该结果返回给前端</li>
+</ul>
+<ol start="3">
+<li>以 WebAsyncTask 作为接口的返回值</li>
+</ol>
+<ul>
+<li>需要知道任务执行的结果，并且将该结果返回给前端，同时希望控制异步任务的超时时间，任务执行结束时要做特殊处理，以及捕获处理请求的过程中发生了异常的回调。</li>
+</ul>
+<ol start="4">
+<li>以 DeferredResult 作为接口的返回值</li>
+</ol>
+<ul>
+<li><p>需要知道任务执行的结果，并且将该结果返回给前端，同时希望控制异步任务的超时时间，任务执行结束时要做特殊处理，以及捕获处理请求的过程中发生了异常的回调。</p>
+</li>
+<li><p>需要控制异步任务的执行，自己维护处理返回结果的线程。</p>
+</li>
+</ul>
+<p>比如说，接口需要等第三方服务的处理结果才能设置返回给前端的结果。Client 请求服务 A，服务 A 通过消息队列发送任务给服务 B，同时监听服务 B 的处理结果队列，服务 B 处理完成之后将结果塞回给服务 A 的结果队列，服务 A 收到结果后再返回给 Client，这个流程就很适合用采用 DeferredResult 作为接口的返回值。</p>
+]]></content>
+      <categories>
+        <category>Java</category>
+      </categories>
+  </entry>
+  <entry>
     <title>我的第一篇博客</title>
     <url>/%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E7%AF%87%E5%8D%9A%E5%AE%A2/</url>
     <content><![CDATA[<h2 id="好的开始是成功的一半"><a href="#好的开始是成功的一半" class="headerlink" title="好的开始是成功的一半"></a><center>好的开始是成功的一半</center></h2><h1 id="欢迎使用Markdown编辑器写博客"><a href="#欢迎使用Markdown编辑器写博客" class="headerlink" title="欢迎使用Markdown编辑器写博客"></a>欢迎使用Markdown编辑器写博客</h1><p>本Markdown编辑器使用<a href="https://github.com/benweet/stackedit">StackEdit</a>修改而来，用它写博客，将会带来全新的体验哦：</p>
@@ -2169,96 +2259,6 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
 ]]></content>
       <categories>
         <category>Markdown</category>
-      </categories>
-  </entry>
-  <entry>
-    <title>接口采用异步的方式执行</title>
-    <url>/%E6%8E%A5%E5%8F%A3%E9%87%87%E7%94%A8%E5%BC%82%E6%AD%A5%E7%9A%84%E6%96%B9%E5%BC%8F%E6%89%A7%E8%A1%8C/</url>
-    <content><![CDATA[<h3 id="不需要返回结果的接口"><a href="#不需要返回结果的接口" class="headerlink" title="不需要返回结果的接口"></a>不需要返回结果的接口</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;asyncEndpoint&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">asyncEndpoint</span><span class="params">()</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received async endpoint request&quot;</span>);</span><br><span class="line">    <span class="keyword">this</span>.taskService.asyncExecute();</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<a id="more"></a>
-
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@SneakyThrows</span></span><br><span class="line"><span class="meta">@Async</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">asyncExecute</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== task async execute start&quot;</span>);</span><br><span class="line">    TimeUnit.SECONDS.sleep(<span class="number">5</span>);</span><br><span class="line">    log.info(<span class="string">&quot;========== task async execute end&quot;</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>上面 asyncEndpoint 是一个不需要返回结果的接口，主要是通过 @Async 注解来实现的，请求到了后台，从 Tomcat 服务器处理请求的线程池中获取一个线程 A 处理该请求，在该线程中执行到调用 asyncExecute 方法的时候，由于 asyncExecute 方法的上面由 @Async 注解所标注，这样的话该方法会以异步的方式来执行，也就是说在 asyncEndpoint 方法中调用 asyncExecute 方法以异步的方式执行，asyncExecute 方法中的代码在另一个线程 B 中执行，线程 A 继续往下执行，打印完最后一行日志之后，整个请求就结束了，线程 A 也就释放了，可以继续处理其他的请求了。 而比较耗时的方法 asyncExecute 继续在线程 B 中执行。</p>
-<p>请求 asyncEndpoint 接口，通过以下日志可以看出来：</p>
-<p><img src="/images/asyncEndpoint_log.png" alt="asyncEndpoint_log"></p>
-<h3 id="有返回值的接口之-Callable-作为返回值"><a href="#有返回值的接口之-Callable-作为返回值" class="headerlink" title="有返回值的接口之 Callable 作为返回值"></a>有返回值的接口之 Callable 作为返回值</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;callableEndpoint&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> Callable&lt;String&gt; <span class="title">callableEndpoint</span><span class="params">()</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received callable endpoint request&quot;</span>);</span><br><span class="line">    Callable&lt;String&gt; callable = <span class="keyword">this</span>.taskService ::execute;</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> callable;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@SneakyThrows</span></span><br><span class="line"><span class="meta">@Override</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> String <span class="title">execute</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== task execute start&quot;</span>);</span><br><span class="line">    TimeUnit.SECONDS.sleep(<span class="number">5</span>);</span><br><span class="line">    log.info(<span class="string">&quot;========== task execute end&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&quot;task execute success&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>上面 callableEndpoint 接口，它的返回值是 Callable<String>，这里就需要注意了，他在这里同样也会以异步的方式将结果返回给客户端请求，但这里和上面的这种方式又有所不同，这种方式稍微复杂一点。上面的方式更多的是由于我们不关心方法执行的返回值，我们自己在业务逻辑层面来控制方法以异步的方式执行，然后处理请求的线程执行结束，应用程序线程继续异步执行。</p>
-<p>而在这里，主要是利用了 Servlet 3.0 中引入了对于异步的支持，至于 Servlet 3.0 中引入的对异步的支持，下次再用一篇文章详细介绍下，我们先大概了解以 Callable 作为返回值的接口为什么会以异步的方式执行。</p>
-<p>这里首先后台收到 asyncEndpoint 请求后，同样从 Tomcat 容器处理请求的线程池中获取一个线程处理该请求。这里大概说下，我们是使用的 SpringMVC 的那一套请求执行流程，SpringMVC 中有一个 DispatcherServlet 类里面的 doDispatch 方法是请求的统一入口，通过它来协调其它组件来处理前端请求。</p>
-<p>比如说通过处理器映射器 HandlerMapping 查找对应的 Handler 处理器 Controller，然后再通过请求适配器 HandlerAdapter 对处理器进行执行，在处理器执行之后得到一个返回值结果，SpringMVC 里面有一些处理返回值的 Handler 来对结果进行解析，根据返回值类型选取合适的 returnValueHandler 来处理。下面是直接到了处理器执行获取执行结果的代码。</p>
-<p><img src="/images/handler_return_value.png" alt="handler_return_value"></p>
-<p>至于选择处理范湖结果的 handler 的过程通过下面代码可以看出，是根据返回值的类型来从已经注册的 returnValueHandler 选择能处理当前返回值类型的 handler，</p>
-<p><img src="/images/handler_select_handler.png" alt="handler_select_handler"></p>
-<p><img src="/images/select_handler.png" alt="select_handler"></p>
-<p><img src="/images/support_return_value.png" alt="support_return_value"></p>
-<p>从上面第三段代码中可以看到由于返回值类型 Callable，最终会匹配到 CallableMethodReturnValueHandler 这个返回值处理器，在这个类中还有一个方法 handleReturnValue，也就是在选择好匹配的 returnValueHandler 之后调用的那个方法，异步的处理也就是在这个方法的最后一行代码中，</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line">WebAsyncUtils.getAsyncManager(webRequest).startCallableProcessing(callable, mavContainer);</span><br></pre></td></tr></table></figure>
-
-<p>这行代码先是调用 getAsyncManager 获取到 WebAsyncManager，然后调用 startCallableProcessing 开始 Callable 结果的处理流程，而在 startCallableProcessing 方法里面又是调用了一个内部重载的方法，通过 WebAsyncTask 包装了以下 Callable 作为参数</p>
-<p><img src="/images/startCallableProcessing.png" alt="startCallableProcessing"></p>
-<p><img src="/images/set_concurrent_result_dispatch.png" alt="set_concurrent_result_dispatch"></p>
-<p>在 startCallableProcessing 方法中可以清楚的看到将 callable 交给 taskExecutor 来执行，然后设置并发执行得到的结果并且调用 dispatch 方法将请求再次分派到容器，以便应用程序线程中并发执行之后的恢复处理，其实也就是将并发执行的结果再次交给容器线程来恢复刚才的请求，将刚才的流程再执行一次。</p>
-<p>只不过在处理器执行的时候调用的不再是 Contrller 里面的方法，而是直接调用 Callable 的 call 方法拿刚才执行的结果，等到再执行到 handleReturnValue 方法的时候，这时由于 return value 是一个字符串，所以匹配到的 returnValueHandler 是 RequestResponseBodyMethodProcessor,这时会将 callable 的执行结果返回给客户端，本次请求结束。</p>
-<p>需要注意的是，应用程序的异步任务的执行时间过长会导致超时的问题，还记得上面的 startCallableProcessing 方法里面有 addTimeoutHandler，addErrorHandler，addCompletionHandler 三个回调，分别是超时，发生错误以及异步执行完成的回调处理。里面其实会去读 WebAsyncTask 中设置的超时时间，但里面没有设置，但我测试是有一个默认的超时时间 30s(我通过测试，发现 30s 没执行完就会 timeout)。</p>
-<p>还有一个就是需要注意的是在整个的处理过程中，服务端和客户端的连接是一直保持着的，所以需要注意连接超时的问题，虽然默认没有设置的话是无限的，但如果设置了就需要注意了，这个的超时时间必然要比异步执行里面的超时时间要大一些。</p>
-<p>上面的 taskExecutor 是 SpringBoot 中 TaskExecutionAutoConfiguration 自动配置的 ThreadPoolTaskExecutor，对于这个类的配置也可以在配置文件中进行配置，线程数，queue capacity 等。</p>
-<p>最终的执行打印日志如下：<br><img src="/images/callableEndpoint_log.png" alt="callableEndpoint_log"></p>
-<h3 id="有返回值的接口之-WebAsyncTask-作为返回值"><a href="#有返回值的接口之-WebAsyncTask-作为返回值" class="headerlink" title="有返回值的接口之 WebAsyncTask 作为返回值"></a>有返回值的接口之 WebAsyncTask 作为返回值</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;webAsyncTaskEndpoint&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> WebAsyncTask&lt;String&gt; <span class="title">webAsyncTaskEndpoint</span><span class="params">()</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received web async task endpoint request&quot;</span>);</span><br><span class="line">    Callable&lt;String&gt; callable = () -&gt; <span class="keyword">this</span>.taskService.execute();</span><br><span class="line">    WebAsyncTask&lt;String&gt; webAsyncTask = <span class="keyword">new</span> WebAsyncTask&lt;&gt;(<span class="number">3000</span>, callable);</span><br><span class="line">    webAsyncTask.onCompletion(() -&gt; log.info(<span class="string">&quot;========== execute finish&quot;</span>));</span><br><span class="line"></span><br><span class="line">    webAsyncTask.onTimeout(() -&gt; <span class="string">&quot;execute timeout&quot;</span>);</span><br><span class="line"></span><br><span class="line">    webAsyncTask.onError(() -&gt; <span class="string">&quot;execute error&quot;</span>);</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> webAsyncTask;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>在理解了 Callable 作为接口返回值之后，就能够很好地理解这个流程了，大体的流程是一样的，只不过就是返回值的 Handler 处理器不一样，这里用到的处理器是 AsyncTaskMethodReturnValueHandler，在这个类中 handleReturnValue 方法调用的 startCallableProcessing 传的参数就是 Controller 里面返回的这个 webAsyncTask，这个 webAsyncTask 定义了三个回调函数，方便做特殊的处理。</p>
-<p>这里需要注意的是 onError 的回调并不是说异步任务里面执行出错了的回调，其实异步任务里面的出错的话已经 try catch 了，并且将异常信息作为结果返回，所以说如果异步任务里面抛异常了，并不会回调到这里，而且这里回调的是 onCompletion，只不过得到的结果是抛出的异常。至于这里的 onError 是哪里出现异常的回调呢，看 WebAsyncTask 类的 onError 方法上面的 doc 描述有一段这样的话：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">This method is called from a container thread when an error occurred while processing an async request before the &#123;@code Callable&#125; has completed</span><br></pre></td></tr></table></figure>
-<p>看意思是在异步任务执行完成之前，处理异步请求的过程中发生的异常会回调，具体有待测试。</p>
-<p>所以说 WebAsyncTask 作为接口返回值的话，扩展性更强一些，提供了更完善的超时，异常，异步执行完成的回调处理。</p>
-<p>最终的执行打印日志如下:</p>
-<p><img src="/images/webAsyncTaskEndpoint_log.png" alt="webAsyncTaskEndpoint_log"></p>
-<h3 id="有返回值的接口之-DeferredResult-作为返回值"><a href="#有返回值的接口之-DeferredResult-作为返回值" class="headerlink" title="有返回值的接口之 DeferredResult 作为返回值"></a>有返回值的接口之 DeferredResult 作为返回值</h3><figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="meta">@GetMapping(&quot;deferredResultEndpoint&quot;)</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> DeferredResult&lt;String&gt; <span class="title">deferredResultEndpoint</span><span class="params">()</span></span>&#123;</span><br><span class="line">    log.info(<span class="string">&quot;========== received deferred result endpoint request&quot;</span>);</span><br><span class="line">    DeferredResult&lt;String&gt; deferredResult = <span class="keyword">new</span> DeferredResult&lt;&gt;();</span><br><span class="line">    CompletableFuture.supplyAsync(<span class="keyword">this</span>.taskService ::execute)</span><br><span class="line">            .whenCompleteAsync((result, throwable) -&gt; deferredResult.setResult(result));</span><br><span class="line">    log.info(<span class="string">&quot;========== the servlet thread that received the request has been released&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span> deferredResult;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>上面这个接口的返回值是 DeferredResult，那么请求的处理流程和 Callable 是一样的，不同的地方也是在于<br>返回值的 Handler 处理器不一样，这里用到的处理器是 DeferredResultMethodReturnValueHandler，而且这个类里面的 handleReturnValue 方法和上面的 CallableMethodReturnValueHandler 以及 AsyncTaskMethodReturnValueHandler 方法又不一样，这里调用的是 WebAsyncManager 类中 startDeferredResultProcessing 方法</p>
-<p><img src="/images/startDeferredResultProcessing.png" alt="startDeferredResultProcessing"></p>
-<p>startDeferredResultProcessing 方法和 startCallableProcessing 差不多，前面都是设置超时时间，设置超时，错误，完成的回调，最后有点不同，在 startCallableProcessing 方法里面是开始通过 taskExecutor 来执行异步任务。</p>
-<p>而在这里是为 deferredResult 设置了一个 resultHandler，然后在 resultHandler 里面调用 setConcurrentResultAndDispatch，来设置结果并且将请求再次分派到容器恢复请求过程返回结果给客户端。至于这里的 resultHandler 的用处是 Controller 里面异步任务执行完成后为 deferredResult 设置结果的时候调用 setResult 方法里面会用到。</p>
-<p><img src="/images/setResult.png" alt="setResult"></p>
-<p>从上面可以看出在设置结果之后，会调用在 startDeferredResultProcessing 设置好的 resultHandler ，也就是执行 setConcurrentResultAndDispatch，到这里就又和上面的流程一样了，调用 dispatch 方法将请求再次分派到容器，执行之后的恢复过程返回结果给客户端。</p>
-<p>对于 DeferredResult 作为接口返回值还有个不同的地方就是异步任务的执行完全是由开发人员自己控制了，而不是像之前的那样交给应用程序默认的 ThreadPoolTaskExecutor 来执行，这其实就给开发人员很大的灵活性了。</p>
-<p>采用这种异步方式的好处：<br>一般来说，我们写的更多的是阻塞同步式的接口，但有时候如果我们碰到比较耗时任务的接口，这时候我们如果还采用阻塞同步式的写法的话，那么前端请求到后台，首先 Tomcat 服务器从处理请求的线程池中获取一个线程 A 来处理该请求，</p>
-<p>然后由于这个接口要执行的任务耗时比较长，耗时任务一直在线程 A 中执行，直到任务执行完成才得到释放，对于并发量比较小的程序来说那还好，线程占着也就占着了，但如果是并发量比较大的程序，容器中大量的处理请求的线程将一直被占用，如果突然请求的高峰到来，那么容器中处理请求的线程有可能被耗尽，就不能再处理更多请求了，也就是说这严重影响了系统的并发吞吐量。</p>
-<p>而如果我们采取的是异步的方式来处理的话，这时就像我们前面所介绍的一样，请求到了后台，由于是异步的方式，处理请求的线程在处理完请求之后就被释放了，可以继续处理其他请求，等到异步任务执行完之后再移交给容器线程返回结果给客户端，这样的话就很大的提高了系统的并发量。</p>
-<p>最终的执行打印日志如下：<br><img src="/images/deferredResultEndpoint_log.png" alt="deferredResultEndpoint_log"></p>
-<h3 id="各自的适用场景，"><a href="#各自的适用场景，" class="headerlink" title="各自的适用场景，"></a>各自的适用场景，</h3><p>首先一个前提就是要执行的任务是耗时的任务，或者需要等第三方的通知的任务</p>
-<ol>
-<li>通过 @Async 注解的方式</li>
-</ol>
-<ul>
-<li>不需要关注任务执行的结果</li>
-</ul>
-<ol start="2">
-<li>以 Callable 作为接口的返回值</li>
-</ol>
-<ul>
-<li>需要知道任务执行的结果，并且将该结果返回给前端</li>
-</ul>
-<ol start="3">
-<li>以 WebAsyncTask 作为接口的返回值</li>
-</ol>
-<ul>
-<li>需要知道任务执行的结果，并且将该结果返回给前端，同时希望控制异步任务的超时时间，任务执行结束时要做特殊处理，以及捕获处理请求的过程中发生了异常的回调。</li>
-</ul>
-<ol start="4">
-<li>以 DeferredResult 作为接口的返回值</li>
-</ol>
-<ul>
-<li><p>需要知道任务执行的结果，并且将该结果返回给前端，同时希望控制异步任务的超时时间，任务执行结束时要做特殊处理，以及捕获处理请求的过程中发生了异常的回调。</p>
-</li>
-<li><p>需要控制异步任务的执行，自己维护处理返回结果的线程。</p>
-</li>
-</ul>
-<p>比如说，接口需要等第三方服务的处理结果才能设置返回给前端的结果。Client 请求服务 A，服务 A 通过消息队列发送任务给服务 B，同时监听服务 B 的处理结果队列，服务 B 处理完成之后将结果塞回给服务 A 的结果队列，服务 A 收到结果后再返回给 Client，这个流程就很适合用采用 DeferredResult 作为接口的返回值。</p>
-]]></content>
-      <categories>
-        <category>Java</category>
       </categories>
   </entry>
   <entry>
@@ -3039,11 +3039,12 @@ Class<?> klass = 对象.class; 或者 Class<?> klass = 对象.getClass();
   <entry>
     <title>Dubbo 远程调用链路源码分析</title>
     <url>/Dubbo-%E8%BF%9C%E7%A8%8B%E8%B0%83%E7%94%A8%E9%93%BE%E8%B7%AF%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</url>
-    <content><![CDATA[<h3 id="服务端定义和实现"><a href="#服务端定义和实现" class="headerlink" title="服务端定义和实现"></a>服务端定义和实现</h3><p>这里用的是 Dubbo 官方最简单的一个 dubbo 接口请求的例子，服务端接口定义如下：</p>
-<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">GreetingsService</span> </span>&#123;</span><br><span class="line">    <span class="function">String <span class="title">sayHi</span><span class="params">(String name)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<p>服务端接口实现如下：</p>
+    <content><![CDATA[<p>首先声明，由于 Dubbo 目前一直在不断迭代更新中，尤其对于一些比较老的版本实现方式可能完全是不一样的，就算新的版本之间也有一些细微的差别，而我下面的源码分析用的是 Dubbo 官方的消费端发起请求调用服务端接口的一个例子来进行源码分析，而且是基于 Dubbo 3.2.0-beta.4 的版本。</p>
+<h3 id="服务端定义和实现"><a href="#服务端定义和实现" class="headerlink" title="服务端定义和实现"></a>服务端定义和实现</h3><p>这里用的是 Dubbo 官方最简单的一个 dubbo 接口请求的例子，服务端接口定义如下：</p>
 <a id="more"></a>
 
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">GreetingsService</span> </span>&#123;</span><br><span class="line">    <span class="function">String <span class="title">sayHi</span><span class="params">(String name)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>服务端接口实现如下：</p>
 <figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">GreetingsServiceImpl</span> <span class="keyword">implements</span> <span class="title">GreetingsService</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">sayHi</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;hi, &quot;</span> + name;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <h3 id="服务端接口暴露"><a href="#服务端接口暴露" class="headerlink" title="服务端接口暴露"></a>服务端接口暴露</h3><p>服务端接口定义好之后，需要将接口注册到注册中心暴露出去，这样消费端就可以通过注册中心获取到服务端的接口定义和请求地址，接口注册到 zookeeper 并启动服务端:</p>
