@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="default">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"rookiedev.top","root":"/","scheme":"Mist","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="服务端定义和实现这里用的是 Dubbo 官方最简单的一个 dubbo 接口请求的例子，服务端接口定义如下： 123public interface GreetingsService &amp;#123;    String sayHi(String name);&amp;#125; 服务端接口实现如下：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Dubbo 远程调用链路源码分析">
+<meta property="og:url" content="http://rookiedev.top/Dubbo-%E8%BF%9C%E7%A8%8B%E8%B0%83%E7%94%A8%E9%93%BE%E8%B7%AF%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/index.html">
+<meta property="og:site_name" content="rookiedev">
+<meta property="og:description" content="服务端定义和实现这里用的是 Dubbo 官方最简单的一个 dubbo 接口请求的例子，服务端接口定义如下： 123public interface GreetingsService &amp;#123;    String sayHi(String name);&amp;#125; 服务端接口实现如下：">
+<meta property="og:locale">
+<meta property="og:image" content="http://rookiedev.top/images/dubbo_consumer_proxy_obj.png">
+<meta property="article:published_time" content="2023-03-12T14:49:51.000Z">
+<meta property="article:modified_time" content="2023-03-12T08:07:26.928Z">
+<meta property="article:author" content="rookiedev">
+<meta property="article:tag" content="Java MySQL Life">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://rookiedev.top/images/dubbo_consumer_proxy_obj.png">
+
+<link rel="canonical" href="http://rookiedev.top/Dubbo-%E8%BF%9C%E7%A8%8B%E8%B0%83%E7%94%A8%E9%93%BE%E8%B7%AF%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'default'
+  };
+</script>
+
+  <title>Dubbo 远程调用链路源码分析 | rookiedev</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <a target="_blank" rel="noopener" href="https://github.com/rookiedev-z"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">rookiedev</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+      <p class="site-subtitle" itemprop="description">just do it</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="user fa-fw"></i>About</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>Search
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="default">
+    <link itemprop="mainEntityOfPage" href="http://rookiedev.top/Dubbo-%E8%BF%9C%E7%A8%8B%E8%B0%83%E7%94%A8%E9%93%BE%E8%B7%AF%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="rookiedev">
+      <meta itemprop="description" content="daily development technology summary">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rookiedev">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Dubbo 远程调用链路源码分析
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2023-03-12 22:49:51 / Modified: 16:07:26" itemprop="dateCreated datePublished" datetime="2023-03-12T22:49:51+08:00">2023-03-12</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Dubbo/" itemprop="url" rel="index"><span itemprop="name">Dubbo</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="Views" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">Views: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h3 id="服务端定义和实现"><a href="#服务端定义和实现" class="headerlink" title="服务端定义和实现"></a>服务端定义和实现</h3><p>这里用的是 Dubbo 官方最简单的一个 dubbo 接口请求的例子，服务端接口定义如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">interface</span> <span class="title">GreetingsService</span> </span>&#123;</span><br><span class="line">    <span class="function">String <span class="title">sayHi</span><span class="params">(String name)</span></span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>服务端接口实现如下：</p>
+<a id="more"></a>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">GreetingsServiceImpl</span> <span class="keyword">implements</span> <span class="title">GreetingsService</span> </span>&#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="function"><span class="keyword">public</span> String <span class="title">sayHi</span><span class="params">(String name)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;hi, &quot;</span> + name;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="服务端接口暴露"><a href="#服务端接口暴露" class="headerlink" title="服务端接口暴露"></a>服务端接口暴露</h3><p>服务端接口定义好之后，需要将接口注册到注册中心暴露出去，这样消费端就可以通过注册中心获取到服务端的接口定义和请求地址，接口注册到 zookeeper 并启动服务端:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Application</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String ZOOKEEPER_HOST = System.getProperty(<span class="string">&quot;zookeeper.address&quot;</span>, <span class="string">&quot;127.0.0.1&quot;</span>);</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String ZOOKEEPER_PORT = System.getProperty(<span class="string">&quot;zookeeper.port&quot;</span>, <span class="string">&quot;2181&quot;</span>);</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String ZOOKEEPER_ADDRESS = <span class="string">&quot;zookeeper://&quot;</span> + ZOOKEEPER_HOST + <span class="string">&quot;:&quot;</span> + ZOOKEEPER_PORT;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 配置服务端接口</span></span><br><span class="line">        ServiceConfig&lt;GreetingsService&gt; service = <span class="keyword">new</span> ServiceConfig&lt;&gt;();</span><br><span class="line">        service.setInterface(GreetingsService.class);</span><br><span class="line">        service.setRef(<span class="keyword">new</span> GreetingsServiceImpl());</span><br><span class="line">        <span class="comment">// 暴露及注册当前服务</span></span><br><span class="line">        DubboBootstrap.getInstance()</span><br><span class="line">                .application(<span class="string">&quot;first-dubbo-provider&quot;</span>)</span><br><span class="line">                .registry(<span class="keyword">new</span> RegistryConfig(ZOOKEEPER_ADDRESS))</span><br><span class="line">                .protocol(<span class="keyword">new</span> ProtocolConfig(<span class="string">&quot;dubbo&quot;</span>, -<span class="number">1</span>))</span><br><span class="line">                .service(service)</span><br><span class="line">                .start()</span><br><span class="line">                .await();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="消费端发起调用"><a href="#消费端发起调用" class="headerlink" title="消费端发起调用"></a>消费端发起调用</h3><p>服务端将自身接口定义信息注册到 zookeeper，消费端同样需要连接 zookeeper 获取到相关定义信息，然后发起远程请求调用：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">Application</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String ZOOKEEPER_HOST = System.getProperty(<span class="string">&quot;zookeeper.address&quot;</span>, <span class="string">&quot;127.0.0.1&quot;</span>);</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String ZOOKEEPER_PORT = System.getProperty(<span class="string">&quot;zookeeper.port&quot;</span>, <span class="string">&quot;2181&quot;</span>);</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> String ZOOKEEPER_ADDRESS = <span class="string">&quot;zookeeper://&quot;</span> + ZOOKEEPER_HOST + <span class="string">&quot;:&quot;</span> + ZOOKEEPER_PORT;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> IOException </span>&#123;</span><br><span class="line">        <span class="comment">// 引用远程服务端接口，此实例很重，封装了与注册中心的连接以及与提供者的连接，需自行缓存，否则可能造成内存和连接泄漏</span></span><br><span class="line">        ReferenceConfig&lt;GreetingsService&gt; reference = <span class="keyword">new</span> ReferenceConfig&lt;&gt;();</span><br><span class="line">        reference.setInterface(GreetingsService.class);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 连接注册中心配置</span></span><br><span class="line">        DubboBootstrap.getInstance()</span><br><span class="line">                .application(<span class="string">&quot;first-dubbo-consumer&quot;</span>)</span><br><span class="line">                .registry(<span class="keyword">new</span> RegistryConfig(ZOOKEEPER_ADDRESS))</span><br><span class="line">                .reference(reference)</span><br><span class="line">                .start();</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 消费端创建服务端接口代理对象，让使用者看起来像是调用本地方法一样</span></span><br><span class="line">        <span class="comment">// 该代理对象封装了所有和服务端通讯的细节，对象较重，需缓存复用</span></span><br><span class="line">        GreetingsService service = reference.get();</span><br><span class="line">        String message = service.sayHi(<span class="string">&quot;dubbo&quot;</span>);</span><br><span class="line">        System.out.println(<span class="string">&quot;Receive result ======&gt; &quot;</span> + message);</span><br><span class="line">        System.in.read();</span><br><span class="line">        System.exit(<span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>首先启动服务端，然后再启动消费端，正常的话就能在消费端的控制台打印如下信息：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Receive result ======&gt; hi, dubbo</span><br></pre></td></tr></table></figure>
+
+<p>上面就是一次完整的 RPC 请求，看起来似乎挺简单的，代码量也很少，但 dubbo 框架底层可是为我们做了大量的工作，我们可以尝试跟着消费端的请求链路一直到服务端处理请求，再到消费端接收响应，看看整个链路到底是怎样的。</p>
+<h3 id="消费端请求链路源码跟踪"><a href="#消费端请求链路源码跟踪" class="headerlink" title="消费端请求链路源码跟踪"></a>消费端请求链路源码跟踪</h3><p><img src="/images/dubbo_consumer_proxy_obj.png" alt="dubbo_consumer_proxy_obj"></p>
+<p>从上面断点处可以看到从 reference 里面获取到服务端对象是个代理对象，代理对象代理的是 InvokerInvocationHandler 属性对象，具体可以跟踪下 <code>reference.get</code> 方法，最后就是到 <code>JavassistProxyFactory</code> 类里面的 <code>getProxy</code> 方法，创建代理对象的代码如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">return</span> (T) Proxy.getProxy(interfaces).newInstance(<span class="keyword">new</span> InvokerInvocationHandler(invoker));</span><br></pre></td></tr></table></figure>
+
+<p>而 <code>InvokerInvocationHandler</code> 类里面只有一个 <code>invoke</code> 方法，先是做了一些特殊方法的校验，若是直接本地执行后返回，否则组装对应的请求参数，调用 InvocationUtil.invoke 方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"># InvokerInvocationHandler.invoke</span><br><span class="line"><span class="function"><span class="keyword">public</span> Object <span class="title">invoke</span><span class="params">(Object proxy, Method method, Object[] args)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (method.getDeclaringClass() == Object.class) &#123;</span><br><span class="line">        <span class="keyword">return</span> method.invoke(invoker, args);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 校验是否是一些特殊方法，若是，直接执行</span></span><br><span class="line">    String methodName = method.getName();</span><br><span class="line">    Class&lt;?&gt;[] parameterTypes = method.getParameterTypes();</span><br><span class="line">    <span class="keyword">if</span> (parameterTypes.length == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> (<span class="string">&quot;toString&quot;</span>.equals(methodName)) &#123;</span><br><span class="line">            <span class="keyword">return</span> invoker.toString();</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="string">&quot;$destroy&quot;</span>.equals(methodName)) &#123;</span><br><span class="line">            invoker.destroy();</span><br><span class="line">            <span class="keyword">return</span> <span class="keyword">null</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (<span class="string">&quot;hashCode&quot;</span>.equals(methodName)) &#123;</span><br><span class="line">            <span class="keyword">return</span> invoker.hashCode();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (parameterTypes.length == <span class="number">1</span> &amp;&amp; <span class="string">&quot;equals&quot;</span>.equals(methodName)) &#123;</span><br><span class="line">        <span class="keyword">return</span> invoker.equals(args[<span class="number">0</span>]);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 组装请求调用参数，</span></span><br><span class="line">    RpcInvocation rpcInvocation = <span class="keyword">new</span> RpcInvocation(serviceModel, method.getName(), invoker.getInterface().getName(), protocolServiceKey, method.getParameterTypes(), args);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (serviceModel <span class="keyword">instanceof</span> ConsumerModel) &#123;</span><br><span class="line">        rpcInvocation.put(Constants.CONSUMER_MODEL, serviceModel);</span><br><span class="line">        rpcInvocation.put(Constants.METHOD_MODEL, ((ConsumerModel) serviceModel).getMethodModel(method));</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 调用 InvocationUtil.invoke 方法，底层异步调用返回</span></span><br><span class="line">    <span class="keyword">return</span> InvocationUtil.invoke(invoker, rpcInvocation);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>到了 InvocationUtil.invoke 方法里面则是调用 invoker.invoke 方法，而 invoker 从上面可以看到是 MigrationInvoker 对象，也就是调用 MigrationInvoker 对象里面的 invoke 方法，里面主要是做了些校验然后继续调用 <code>MockClusterInvoker.invoke</code> 方法，再是 <code>AbstractCluster$ClusterFilterInvoker.invoke</code>，然后到 <code>FilterChainBuilder.CopyOfFilterChainNode.invoke</code> 方法，在 <code>FilterChainBuilder</code> 里面将会执行一系列的 Filter 链，这个后面单独再讲，这次主要是先跟着源码整体走一遍，等执行完这些 Filter 链后继续走到 <code>FailoverClusterInvoker.doInvoke</code> 方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"># FailoverClusterInvoker.doInvoke</span><br><span class="line"><span class="function"><span class="keyword">public</span> Result <span class="title">doInvoke</span><span class="params">(Invocation invocation, <span class="keyword">final</span> List&lt;Invoker&lt;T&gt;&gt; invokers, LoadBalance loadbalance)</span> <span class="keyword">throws</span> RpcException </span>&#123;</span><br><span class="line">        List&lt;Invoker&lt;T&gt;&gt; copyInvokers = invokers;</span><br><span class="line">        checkInvokers(copyInvokers, invocation);</span><br><span class="line">        String methodName = RpcUtils.getMethodName(invocation);</span><br><span class="line">        <span class="comment">// 计算方法调用失败时重试次数，默认重试 2 次，总共执行 3 次</span></span><br><span class="line">        <span class="keyword">int</span> len = calculateInvokeTimes(methodName);</span><br><span class="line">        <span class="comment">// retry loop.</span></span><br><span class="line">        RpcException le = <span class="keyword">null</span>; <span class="comment">// last exception.</span></span><br><span class="line">        List&lt;Invoker&lt;T&gt;&gt; invoked = <span class="keyword">new</span> ArrayList&lt;Invoker&lt;T&gt;&gt;(copyInvokers.size()); <span class="comment">// invoked invokers.</span></span><br><span class="line">        Set&lt;String&gt; providers = <span class="keyword">new</span> HashSet&lt;String&gt;(len);</span><br><span class="line">        <span class="comment">// 在这里进行循环调用</span></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; len; i++) &#123;</span><br><span class="line">            <span class="comment">//Reselect before retry to avoid a change of candidate `invokers`.</span></span><br><span class="line">            <span class="comment">//<span class="doctag">NOTE:</span> if `invokers` changed, then `invoked` also lose accuracy.</span></span><br><span class="line">            <span class="keyword">if</span> (i &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                checkWhetherDestroyed();</span><br><span class="line">                copyInvokers = list(invocation);</span><br><span class="line">                <span class="comment">// check again</span></span><br><span class="line">                checkInvokers(copyInvokers, invocation);</span><br><span class="line">            &#125;</span><br><span class="line">            Invoker&lt;T&gt; invoker = select(loadbalance, invocation, copyInvokers, invoked);</span><br><span class="line">            invoked.add(invoker);</span><br><span class="line">            RpcContext.getServiceContext().setInvokers((List) invoked);</span><br><span class="line">            <span class="keyword">boolean</span> success = <span class="keyword">false</span>;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="comment">// 带上 Context 调用 DubboInvoker.invoke 方法</span></span><br><span class="line">                Result result = invokeWithContext(invoker, invocation);</span><br><span class="line">                <span class="comment">// 请求成功，立即退出循环返回，否则继续循环调用</span></span><br><span class="line">                success = <span class="keyword">true</span>;</span><br><span class="line">                <span class="keyword">return</span> result;</span><br><span class="line">            &#125; <span class="keyword">catch</span> (RpcException e) &#123;</span><br><span class="line">            &#125; <span class="keyword">catch</span> (Throwable e) &#123;</span><br><span class="line">                le = <span class="keyword">new</span> RpcException(e.getMessage(), e);</span><br><span class="line">            &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (!success) &#123;</span><br><span class="line">                    providers.add(invoker.getUrl().getAddress());</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">      <span class="keyword">throw</span> <span class="keyword">new</span> RpcException();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从上面可以看到 Dubbo 里面的重试逻辑，通过获取方法上配置的重试次数进行相应的 for 循环调用，成功立即退出循环返回，for 循环里面调用的是 <code>DubboInvoker.invoke</code> 方法：DubboInvoker 继承了 AbstractInvoker 类，调用的是 AbstractInvoker 的 invoke 方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br></pre></td><td class="code"><pre><span class="line">#  AbstractInvoker.invoke</span><br><span class="line"><span class="function"><span class="keyword">public</span> Result <span class="title">invoke</span><span class="params">(Invocation inv)</span> <span class="keyword">throws</span> RpcException </span>&#123;</span><br><span class="line">    <span class="comment">// if invoker is destroyed due to address refresh from registry, let&#x27;s allow the current invoke to proceed</span></span><br><span class="line">    <span class="keyword">if</span> (isDestroyed()) &#123;</span><br><span class="line">        logger.warn(PROTOCOL_FAILED_REQUEST, <span class="string">&quot;&quot;</span>, <span class="string">&quot;&quot;</span>, <span class="string">&quot;Invoker for service &quot;</span> + <span class="keyword">this</span> + <span class="string">&quot; on consumer &quot;</span> + NetUtils.getLocalHost() + <span class="string">&quot; is destroyed, &quot;</span> + <span class="string">&quot;, dubbo version is &quot;</span> + Version.getVersion() + <span class="string">&quot;, this invoker should not be used any longer&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    RpcInvocation invocation = (RpcInvocation) inv;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 准备远程调用的一些参数</span></span><br><span class="line">    prepareInvocation(invocation);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 开始异步执行远程调用，返回得到异步的结果</span></span><br><span class="line">    AsyncRpcResult asyncResult = doInvokeAndReturn(invocation);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 这里要注意，针对上一步的返回结果，判断是哪种调用方式，决定是否需要阻塞等待执行结果</span></span><br><span class="line">    waitForResultIfSync(asyncResult, invocation);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> asyncResult;</span><br><span class="line">&#125;</span><br><span class="line"># DubboInvoker.doInvoke</span><br><span class="line"><span class="function"><span class="keyword">protected</span> Result <span class="title">doInvoke</span><span class="params">(<span class="keyword">final</span> Invocation invocation)</span> <span class="keyword">throws</span> Throwable </span>&#123;</span><br><span class="line">    RpcInvocation inv = (RpcInvocation) invocation;</span><br><span class="line">    <span class="keyword">final</span> String methodName = RpcUtils.getMethodName(invocation);</span><br><span class="line">    inv.setAttachment(PATH_KEY, getUrl().getPath());</span><br><span class="line">    inv.setAttachment(VERSION_KEY, version);</span><br><span class="line"></span><br><span class="line">    ExchangeClient currentClient;</span><br><span class="line">    <span class="keyword">if</span> (clients.length == <span class="number">1</span>) &#123;</span><br><span class="line">        currentClient = clients[<span class="number">0</span>];</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        currentClient = clients[index.getAndIncrement() % clients.length];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">boolean</span> isOneway = RpcUtils.isOneway(getUrl(), invocation);</span><br><span class="line"></span><br><span class="line">        <span class="comment">// 计算本次调用的超时时间</span></span><br><span class="line">        <span class="keyword">int</span> timeout = RpcUtils.calculateTimeout(getUrl(), invocation, methodName, DEFAULT_TIMEOUT);</span><br><span class="line">        <span class="keyword">if</span> (timeout &lt;= <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">// 发起调用前就已经超时了，直接返回超时调用终止异常</span></span><br><span class="line">            <span class="keyword">return</span> AsyncRpcResult.newDefaultAsyncResult(<span class="keyword">new</span> RpcException(RpcException.TIMEOUT_TERMINATE,</span><br><span class="line">                <span class="string">&quot;No time left for making the following call: &quot;</span> + invocation.getServiceName() + <span class="string">&quot;.&quot;</span></span><br><span class="line">                    + invocation.getMethodName() + <span class="string">&quot;, terminate directly.&quot;</span>), invocation);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        invocation.setAttachment(TIMEOUT_KEY, String.valueOf(timeout));</span><br><span class="line"></span><br><span class="line">        Integer payload = getUrl().getParameter(PAYLOAD, Integer.class);</span><br><span class="line">        <span class="comment">// 组装请求传输参数</span></span><br><span class="line">        Request request = <span class="keyword">new</span> Request();</span><br><span class="line">        <span class="keyword">if</span> (payload != <span class="keyword">null</span>) &#123;</span><br><span class="line">            request.setPayload(payload);</span><br><span class="line">        &#125;</span><br><span class="line">        request.setData(inv);</span><br><span class="line">        request.setVersion(Version.getProtocolVersion());</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (isOneway) &#123;</span><br><span class="line">            <span class="comment">// 单向请求，也就是不关心请求结果的调用，发出请求后立即返回</span></span><br><span class="line">            <span class="keyword">boolean</span> isSent = getUrl().getMethodParameter(methodName, Constants.SENT_KEY, <span class="keyword">false</span>);</span><br><span class="line">            request.setTwoWay(<span class="keyword">false</span>);</span><br><span class="line">            currentClient.send(request, isSent);</span><br><span class="line">            <span class="keyword">return</span> AsyncRpcResult.newDefaultAsyncResult(invocation);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// 双向请求，关心请求结果的调用，发出请求后需接收响应结果</span></span><br><span class="line">            request.setTwoWay(<span class="keyword">true</span>);</span><br><span class="line">            <span class="comment">// 构建一个回调 ExecutorService 来处理响应结果</span></span><br><span class="line">            ExecutorService executor = getCallbackExecutor(getUrl(), inv);</span><br><span class="line">            <span class="comment">// 请求 ReferenceCountExchangeClient.request-&gt; ReferenceCountExchangeClient.request</span></span><br><span class="line">            <span class="comment">// -&gt; HeaderExchangeClient.request -&gt; HeaderExchangeChannel.request</span></span><br><span class="line">            <span class="comment">// 注意这里返回的是 CompletableFuture 对象，用的是 concurrent 包下面的一个对象</span></span><br><span class="line">            CompletableFuture&lt;AppResponse&gt; appResponseFuture =</span><br><span class="line">                currentClient.request(request, timeout, executor).thenApply(AppResponse.class::cast);</span><br><span class="line">            <span class="comment">// save for 2.6.x compatibility, for example, TraceFilter in Zipkin uses com.alibaba.xxx.FutureAdapter</span></span><br><span class="line">            FutureContext.getContext().setCompatibleFuture(appResponseFuture);</span><br><span class="line">            AsyncRpcResult result = <span class="keyword">new</span> AsyncRpcResult(appResponseFuture, inv);</span><br><span class="line">            result.setExecutor(executor);</span><br><span class="line">            <span class="keyword">return</span> result;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (TimeoutException e) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"># DubboInvoker.getCallbackExecutor</span><br><span class="line"><span class="function"><span class="keyword">protected</span> ExecutorService <span class="title">getCallbackExecutor</span><span class="params">(URL url, Invocation inv)</span> </span>&#123;</span><br><span class="line">    ExecutorService sharedExecutor = ExtensionLoader.getExtensionLoader(ExecutorRepository.class).getDefaultExtension().getExecutor(url);</span><br><span class="line">    <span class="keyword">if</span> (InvokeMode.SYNC == RpcUtils.getInvokeMode(getUrl(), inv)) &#123;</span><br><span class="line">          <span class="comment">// 如果是同步调用每次创建 ThreadlessExecutor 返回，后面通过这个线程池来处理响应结果</span></span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">new</span> ThreadlessExecutor(sharedExecutor);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> sharedExecutor;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里做的逻辑就更多一些了，上面我列了一些，可能很多没有跟进去执行，比如上面计算超时时间，构建回调 ExecutorService 里面的逻辑都比较多，这里先把主流程熟悉，最后调用 currentClient.request 方法，请求的是 <code>ReferenceCountExchangeClient.request-&gt; ReferenceCountExchangeClient.request -&gt; HeaderExchangeClient.request -&gt; HeaderExchangeChannel.request</code>，最后到 <code>HeaderExchangeChannel.request</code> 方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"># HeaderExchangeChannel.request</span><br><span class="line"><span class="function"><span class="keyword">public</span> CompletableFuture&lt;Object&gt; <span class="title">request</span><span class="params">(Object request, <span class="keyword">int</span> timeout, ExecutorService executor)</span> <span class="keyword">throws</span> RemotingException </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (closed) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> RemotingException(<span class="keyword">this</span>.getLocalAddress(), <span class="keyword">null</span>, <span class="string">&quot;Failed to send request &quot;</span> + request + <span class="string">&quot;, cause: The channel &quot;</span> + <span class="keyword">this</span> + <span class="string">&quot; is closed!&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    Request req;</span><br><span class="line">    <span class="keyword">if</span> (request <span class="keyword">instanceof</span> Request) &#123;</span><br><span class="line">        req = (Request) request;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// create request.</span></span><br><span class="line">        req = <span class="keyword">new</span> Request();</span><br><span class="line">        req.setVersion(Version.getProtocolVersion());</span><br><span class="line">        req.setTwoWay(<span class="keyword">true</span>);</span><br><span class="line">        req.setData(request);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 构建 DefaultFuture 对象，设置响应结果处理线程池，同时配置响应超时检测</span></span><br><span class="line">    DefaultFuture future = DefaultFuture.newFuture(channel, req, timeout, executor);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 底层通过集成 netty 和服务端进行通讯，将消费端要请求服务端的方法以及参数传递到服务端</span></span><br><span class="line">        <span class="comment">// 这里可以看出来消费端是异步请求服务端的，将请求消息发出去之后立马就返回了，只不过返回的是 CompletableFuture 对象</span></span><br><span class="line">        channel.send(req);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (RemotingException e) &#123;</span><br><span class="line">        future.cancel();</span><br><span class="line">        <span class="keyword">throw</span> e;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> future;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>创建 DefaultFuture 对象也会做一些关联处理，以便收到服务端响应的时候能找到对应的请求进行匹配：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"># DefaultFuture</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> DefaultFuture <span class="title">newFuture</span><span class="params">(Channel channel, Request request, <span class="keyword">int</span> timeout, ExecutorService executor)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> DefaultFuture future = <span class="keyword">new</span> DefaultFuture(channel, request, timeout);</span><br><span class="line">    <span class="comment">// future 保存当前回调处理的线程池</span></span><br><span class="line">    future.setExecutor(executor);</span><br><span class="line">    <span class="comment">// 如果是 ThredlessExecutor 类型，也就是同步调用时，将 future 关联上当前线程池</span></span><br><span class="line">    <span class="keyword">if</span> (executor <span class="keyword">instanceof</span> ThreadlessExecutor) &#123;</span><br><span class="line">        ((ThreadlessExecutor) executor).setWaitingFuture(future);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 进行超时检测</span></span><br><span class="line">    timeoutCheck(future);</span><br><span class="line">    <span class="keyword">return</span> future;</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="title">DefaultFuture</span><span class="params">(Channel channel, Request request, <span class="keyword">int</span> timeout)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">this</span>.channel = channel;</span><br><span class="line">    <span class="keyword">this</span>.request = request;</span><br><span class="line">    <span class="keyword">this</span>.id = request.getId();</span><br><span class="line">    <span class="keyword">this</span>.timeout = timeout &gt; <span class="number">0</span> ? timeout : channel.getUrl().getPositiveParameter(TIMEOUT_KEY, DEFAULT_TIMEOUT);</span><br><span class="line">    <span class="comment">// 放入等待响应的 Future Map 集合，响应回来的时候通过这个可以设置请求结果</span></span><br><span class="line">    FUTURES.put(id, <span class="keyword">this</span>);</span><br><span class="line">      <span class="comment">// 放入等待响应 Channel 集合，优雅关闭的时候通过这个 Map 来判断是否还有等待响应的请求</span></span><br><span class="line">    CHANNELS.put(id, channel);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从上面的流程可以看到消费端在把请求发送给服务端后立马就返回了，返回的是一个 Future，Future 里面包含了当前回调处理的线程池以及超时检测任务，而并没有一直在等服务端的执行结果，这个过程是异步执行的，然后在下一步 waitForResultIfSync 里面来决定什么时候取服务端返回的结果:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">#  AbstractInvoker.invoke</span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">waitForResultIfSync</span><span class="params">(AsyncRpcResult asyncResult, RpcInvocation invocation)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (InvokeMode.SYNC != invocation.getInvokeMode()) &#123;</span><br><span class="line">          <span class="comment">// 如果不是同步调用，直接返回，不需要等待结果</span></span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * NOTICE!</span></span><br><span class="line"><span class="comment">         * must call &#123;@link java.util.concurrent.CompletableFuture#get(long, TimeUnit)&#125; because</span></span><br><span class="line"><span class="comment">         * &#123;@link java.util.concurrent.CompletableFuture#get()&#125; was proved to have serious performance drop.</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        Object timeout = invocation.getObjectAttachmentWithoutConvert(TIMEOUT_KEY);</span><br><span class="line">        <span class="keyword">if</span> (timeout <span class="keyword">instanceof</span> Integer) &#123;</span><br><span class="line">              <span class="comment">// 配置了超时时间，阻塞一定时间等待结果，超时则抛出异常，在下面进行捕获对应异常抛出</span></span><br><span class="line">            asyncResult.get((Integer) timeout, TimeUnit.MILLISECONDS);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// 没有配置超时时间，无限等待阻塞等待结果，一般不会无限等待，有默认的超时时间</span></span><br><span class="line">            asyncResult.get(Integer.MAX_VALUE, TimeUnit.MILLISECONDS);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">catch</span> (ExecutionException e) &#123;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"># AsyncRpcResult.get</span><br><span class="line"><span class="function"><span class="keyword">public</span> Result <span class="title">get</span><span class="params">(<span class="keyword">long</span> timeout, TimeUnit unit)</span> <span class="keyword">throws</span> InterruptedException, ExecutionException, TimeoutException </span>&#123;</span><br><span class="line">      <span class="comment">// 获取刚才设置的回调处理线程池，同步调用则是调用 threadlessExecutor 里面的 waitAndDrain 来阻塞等待结果</span></span><br><span class="line">    <span class="keyword">if</span> (executor != <span class="keyword">null</span> &amp;&amp; executor <span class="keyword">instanceof</span> ThreadlessExecutor) &#123;</span><br><span class="line">        ThreadlessExecutor threadlessExecutor = (ThreadlessExecutor) executor;</span><br><span class="line">        threadlessExecutor.waitAndDrain();</span><br><span class="line">    &#125;</span><br><span class="line">      <span class="comment">// 否则直接通过 CompletableFuture 里面的 get 方法阻塞等结果</span></span><br><span class="line">    <span class="keyword">return</span> responseFuture.get(timeout, unit);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>如果不是同步调用则直接返回，不需要阻塞等待执行结果，同样直接返回给业务代码一个 Future，业务代码拿到 Future 后自行决定在什么地方拿执行结果，或者也可以直接绑定回调；如果是同步调用的话根据超时时间配置来阻塞等待一定时间等待响应结果，具体阻塞方式根据调用方式的不同阻塞的方式也不同，同步调用采用的是 ThreadlessExecutor 线程池来阻塞，否则是 CompletableFuture 里面的 get 方法阻塞等结果。这里可能得先熟悉下 ThreadlessExecutor 这个类：</p>
+<p>1.正常线程池的作用是管理池中的线程和调度线程执行，而 ThreadlessExecutor 线程池则并不管理任何线程</p>
+<p>2.通过 execute 方法提交给这个执行器的任务并不会被安排线程执行，而正常的线程池是会进行执行调度的，对于 ThreadlessExecutor 线程池来说提交的任务直接存储在阻塞队列中，只有调用 waitAndDrain 方法时才会真正执行，而且执行任务的线程正是调用 waitAndDrain 方法的线程</p>
+<p>通过查看 ThreadlessExecutor 类中的 waitAndDrain 和 execute 方法就能知道该类是如何实现上面的特性了。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">final</span> BlockingQueue&lt;Runnable&gt; queue = <span class="keyword">new</span> LinkedBlockingQueue&lt;&gt;();</span><br><span class="line"><span class="comment">// 通常，#waitAndDrain 方法只会被调用一次。它第一次阻止响应，一旦响应结果到达，正在执行 waitAndDrain 等待的线程将会立即返回，然后整个请求过程然后完成。</span></span><br><span class="line"><span class="comment">// 对 #waitAndDrain 方法的后续调用（如果有的话）都会立即返回</span></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">waitAndDrain</span><span class="params">()</span> <span class="keyword">throws</span> InterruptedException </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (isFinished()) &#123;</span><br><span class="line">          <span class="comment">// 如果任务状态已经完成，直接返回不做任何处理</span></span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    Runnable runnable;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line"></span><br><span class="line">          <span class="comment">// 从阻塞队列里面取要执行的任务，如果队列为空则阻塞等待，主要通过 LinkedBlockingQueue 里面的 ReentrantLock 来实现阻塞</span></span><br><span class="line">          <span class="comment">// 等待直到有任务，则继续往下执行任务和所有排队的任务（如果有的话）</span></span><br><span class="line">        runnable = queue.take();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">        setWaiting(<span class="keyword">false</span>);</span><br><span class="line">        <span class="keyword">throw</span> e;</span><br><span class="line">    &#125;</span><br><span class="line">        <span class="comment">// 获取对象锁，设置状态，开始执行任务，注意这里并没有再开线程执行，而是直接由调用 waitAndDrain 方法的线程来执行</span></span><br><span class="line">    <span class="keyword">synchronized</span> (lock) &#123;</span><br><span class="line">        setWaiting(<span class="keyword">false</span>);</span><br><span class="line">        runnable.run();</span><br><span class="line">    &#125;</span><br><span class="line">        <span class="comment">// 如果队列里面还有任务则继续执行</span></span><br><span class="line">    runnable = queue.poll();</span><br><span class="line">    <span class="keyword">while</span> (runnable != <span class="keyword">null</span>) &#123;</span><br><span class="line">        runnable.run();</span><br><span class="line">        runnable = queue.poll();</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 任务状态设置已完成</span></span><br><span class="line">    setFinished(<span class="keyword">true</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">execute</span><span class="params">(Runnable runnable)</span> </span>&#123;</span><br><span class="line">    runnable = <span class="keyword">new</span> RunnableWrapper(runnable);</span><br><span class="line">      <span class="comment">// 获取对象锁，判断调用线程是否还在等待回调任务，如果是则将该任务加入阻塞队列，然后上面 waitAndDrain 方法里面的阻塞结束，拿到任务后往下执行</span></span><br><span class="line">      <span class="comment">// 否则，直接在当前线程中执行完成，这也间接说明了当 waitAndDrain 被调用结束，已经将 waiting 状态设置为 true 后，就不会再往队列里面添加任务</span></span><br><span class="line">    <span class="keyword">synchronized</span> (lock) &#123;</span><br><span class="line">        <span class="keyword">if</span> (!isWaiting()) &#123;</span><br><span class="line">            runnable.run();</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        queue.add(runnable);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>综上也就能看出，如果是同步调用的话，消费端在将请求信息发送给服务端后，通过调用 ThreadlessExecutor 类里面的  waitAndDrain 进行阻塞等待服务端的响应结果。那么后续消费端在接收到服务端的响应结果后必然会调用 execute 方法来唤醒阻塞等待结果的地方继续往下执行。</p>
+<p>到这里消费端的请求流程就算是结束了，然后就是服务端收到请求执行相应方法然后响应返回给消费端，消费端这里拿到结果之后继续往下走，返回给业务代码相应的执行结果，下面看看服务端收到消费端的请求后的流程。</p>
+<h3 id="服务端处理请求链路源码跟踪"><a href="#服务端处理请求链路源码跟踪" class="headerlink" title="服务端处理请求链路源码跟踪"></a>服务端处理请求链路源码跟踪</h3><p>首先，Dubbo 底层集成的改造后 Netty 通讯框架，端点收到消息后将数据解析出来，通过 <code>AllChannelHandler.received</code> 方法来处理，首先获取一个线程池，这里要注意的是如果作为服务端收到的是请求消息，则是获取共享线程池中的线程来进行处理，如果是作为消费端收到的是响应消息，那就是获取在请求时创建的回调处理线程池。</p>
+<p>拿到线程池后将消息封装成 ChannelEventRunnable 任务提交到线程池中执行，在 <code>ChannelEventRunnable</code> 线程中处理各种连接和断开连接以及请求响应的消息，再通过 Handler 来根据不同消息做不同的逻辑处理，这里对应的是 HeaderExchangeHandler 处理器，服务端收到的是请求消息，对应的也就是请求消息处理逻辑，后面消费端接收响应的代码逻辑也是在这里，只不过对应的是响应消息，走的是响应消息的处理分支。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"># AllChannelHandler.received</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">received</span><span class="params">(Channel channel, Object message)</span> <span class="keyword">throws</span> RemotingException </span>&#123;</span><br><span class="line">    <span class="comment">// 获取线程池处理消息，如果是请求消息则从共享线程池中获取，但如果是响应消息的话这里返回的就是在请求时创建的回调处理线程池</span></span><br><span class="line">    ExecutorService executor = getPreferredExecutorService(message);</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">           <span class="comment">// 将消息封装成 ChannelEventRunnable 任务提交到线程池</span></span><br><span class="line">        executor.execute(<span class="keyword">new</span> ChannelEventRunnable(channel, handler, ChannelState.RECEIVED, message));</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Throwable t) &#123;</span><br><span class="line">        <span class="keyword">if</span>(message <span class="keyword">instanceof</span> Request &amp;&amp; t <span class="keyword">instanceof</span> RejectedExecutionException)&#123;</span><br><span class="line">            sendFeedback(channel, (Request) message, t);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> ExecutionException(message, channel, getClass() + <span class="string">&quot; error when process received event .&quot;</span>, t);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"># ChannelEventRunnable.received</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">received</span><span class="params">(Channel channel, Object message)</span> <span class="keyword">throws</span> RemotingException </span>&#123;</span><br><span class="line">    <span class="keyword">final</span> ExchangeChannel exchangeChannel = HeaderExchangeChannel.getOrAddChannel(channel);</span><br><span class="line">    <span class="keyword">if</span> (message <span class="keyword">instanceof</span> Request) &#123;</span><br><span class="line">        <span class="comment">// 作为服务端接收到请求消息，执行请求消息处理逻辑</span></span><br><span class="line">        Request request = (Request) message;</span><br><span class="line">        <span class="keyword">if</span> (request.isEvent()) &#123;</span><br><span class="line">            <span class="comment">// 事件处理</span></span><br><span class="line">            handlerEvent(channel, request);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (request.isTwoWay()) &#123;</span><br><span class="line">                  <span class="comment">// 双向请求，需要返回结果,调用 DubboProtocol.reply 方法得到一个异步结果，绑定回调，结果出来后立马将结果发送给消费端</span></span><br><span class="line">                  <span class="comment">// reply 方法里面紧接着调用 FilterChainBuilder.CallbackRegistrationInvoker.invoke 方法，</span></span><br><span class="line">                  <span class="comment">// 在里面根据请求的方法和参数异步执行真正的方法，同时绑定一系列 Filter 过滤器回调，异步结果出来后立马执行</span></span><br><span class="line">                handleRequest(exchangeChannel, request);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">// 单向请求，不需要返回结果</span></span><br><span class="line">                handler.received(exchangeChannel, request.getData());</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (message <span class="keyword">instanceof</span> Response) &#123;</span><br><span class="line">          <span class="comment">// 作为消费端收到服务端的调用响应，执行响应消息处理逻辑</span></span><br><span class="line">        handleResponse(channel, (Response) message);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (message <span class="keyword">instanceof</span> String) &#123;</span><br><span class="line">        <span class="keyword">if</span> (isClientSide(channel)) &#123;</span><br><span class="line">            Exception e = <span class="keyword">new</span> Exception(<span class="string">&quot;Dubbo client can not supported string message: &quot;</span> + message + <span class="string">&quot; in channel: &quot;</span> + channel + <span class="string">&quot;, url: &quot;</span> + channel.getUrl());</span><br><span class="line">            logger.error(TRANSPORT_UNSUPPORTED_MESSAGE, <span class="string">&quot;&quot;</span>, <span class="string">&quot;&quot;</span>, e.getMessage(), e);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            String echo = handler.telnet(channel, (String) message);</span><br><span class="line">            <span class="keyword">if</span> (StringUtils.isNotEmpty(echo)) &#123;</span><br><span class="line">                channel.send(echo);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        handler.received(exchangeChannel, message);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这里我们先看作为服务端收到请求消息的处理链路:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"># ChannelEventRunnable.handleRequest</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">handleRequest</span><span class="params">(<span class="keyword">final</span> ExchangeChannel channel, Request req)</span> <span class="keyword">throws</span> RemotingException </span>&#123;</span><br><span class="line">    <span class="comment">// 构建响应消息</span></span><br><span class="line">    Response res = <span class="keyword">new</span> Response(req.getId(), req.getVersion());</span><br><span class="line">    <span class="comment">// find handler by message class.</span></span><br><span class="line">    Object msg = req.getData();</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">// 调用 DubboProtocol 里面 reply 方法得到异步 Future</span></span><br><span class="line">        CompletionStage&lt;Object&gt; future = handler.reply(channel, msg);</span><br><span class="line">        <span class="comment">// 绑定异步完成回调，将执行结果发送给消费端</span></span><br><span class="line">        future.whenComplete((appResult, t) -&gt; &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (t == <span class="keyword">null</span>) &#123;</span><br><span class="line">                    res.setStatus(Response.OK);</span><br><span class="line">                    res.setResult(appResult);</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    res.setStatus(Response.SERVICE_ERROR);</span><br><span class="line">                    res.setErrorMessage(StringUtils.toString(t));</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="comment">// 发送响应结果给消费端</span></span><br><span class="line">                channel.send(res);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (RemotingException e) &#123;</span><br><span class="line">                logger.warn(TRANSPORT_FAILED_RESPONSE, <span class="string">&quot;&quot;</span>, <span class="string">&quot;&quot;</span>, <span class="string">&quot;Send result to consumer failed, channel is &quot;</span> + channel + <span class="string">&quot;, msg is &quot;</span> + e);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Throwable e) &#123;</span><br><span class="line">        res.setStatus(Response.SERVICE_ERROR);</span><br><span class="line">        res.setErrorMessage(StringUtils.toString(e));</span><br><span class="line">        channel.send(res);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>从这里可以看到服务端在收到消费的请求消息后，调用相应 DubboProtocol 的 reply 方法得到异步 Future，然后在 Future 上绑定一个执行完成的回调，执行完成后将结果发送给消费端，说明服务端也是异步去执行消费端的请求方法逻辑，等到执行完成后异步返回给消费端。而在 <code>DubboProtocol.reply</code> 方法里面调用的是<code>FilterChainBuilder.CallbackRegistrationInvoker.invoke</code> 方法，紧接着请求 <code>FilterChainBuilder.CopyOfFilterChainNode.invoke</code> 方法，在里面执行一系列的Filter 链，然后通过反射执行最终要执行的方法，当然执行结果也是异步返回的，返回的是一个异步 Future，然后同样在 Future 上绑定一系列的回调过滤器。</p>
+<h3 id="消费端接收响应链路源码跟踪"><a href="#消费端接收响应链路源码跟踪" class="headerlink" title="消费端接收响应链路源码跟踪"></a>消费端接收响应链路源码跟踪</h3><p>如刚才所说 Dubbo 底层集成的是改造后 Netty 通讯框架，同样消费端收到响应消息后将数据解析出来，然后通过 <code>AllChannelHandler.received</code> 方法来处理，获取线程池时由于是作为消费端接收的是响应消息，那么这里拿到的线程池就是发起请求时创建的回调处理线程池，而且如果是同步调用的话返回的就是 ThreadlessExecutor，然后调用 ThreadlessExecutor 的 execute 方法将消息封装成 ChannelEventRunnable 任务加入到阻塞队列，然后刚才请求时阻塞地方被唤醒，拿到提交 ChannelEventRunnable 任务开始往下执行，在 ChannelEventRunnable 里面判断是响应消息，执行响应消息处理逻辑。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"># AllChannelHandler.getPreferredExecutorService</span><br><span class="line"><span class="function"><span class="keyword">public</span> ExecutorService <span class="title">getPreferredExecutorService</span><span class="params">(Object msg)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (msg <span class="keyword">instanceof</span> Response) &#123;</span><br><span class="line">          <span class="comment">// 收到的是响应消息</span></span><br><span class="line">        Response response = (Response) msg;</span><br><span class="line">        DefaultFuture responseFuture = DefaultFuture.getFuture(response.getId());</span><br><span class="line">        <span class="comment">// 根据响应消息id获取对应请求时在 DefaultFuture 里面通过 Map 关联的 future，</span></span><br><span class="line">        <span class="comment">// 当然这里可能由于超时等原因 future 已经被移除了，然后通过共享线程池来处理</span></span><br><span class="line">        <span class="keyword">if</span> (responseFuture == <span class="keyword">null</span>) &#123;</span><br><span class="line">            <span class="keyword">return</span> getSharedExecutorService();</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">              <span class="comment">// 通过 future 获取请求时设置的回调线程池，如果是同步调用的话返回的是 ThreadlessExecutor，</span></span><br><span class="line">              <span class="comment">// 然后将消息封装成 ChannelEventRunnable 任务提交给它去执行设置返回结果，之前阻塞的地方阻塞结束，拿到执行结果后继续往下执行</span></span><br><span class="line">            ExecutorService executor = responseFuture.getExecutor();</span><br><span class="line">            <span class="keyword">if</span> (executor == <span class="keyword">null</span> || executor.isShutdown()) &#123;</span><br><span class="line">                executor = getSharedExecutorService(msg);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">return</span> executor;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> getSharedExecutorService(msg);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line"># HeaderExchangeHandler.handleResponse</span><br><span class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">handleResponse</span><span class="params">(Channel channel, Response response)</span> <span class="keyword">throws</span> RemotingException </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (response != <span class="keyword">null</span> &amp;&amp; !response.isHeartbeat()) &#123;</span><br><span class="line">        DefaultFuture.received(channel, response);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"># DefaultFuture.received</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">received</span><span class="params">(Channel channel, Response response)</span> </span>&#123;</span><br><span class="line">    received(channel, response, <span class="keyword">false</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"># DefaultFuture.received</span><br><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">received</span><span class="params">(Channel channel, Response response, <span class="keyword">boolean</span> timeout)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">          <span class="comment">// 通过请求响应id映射请求时的 future</span></span><br><span class="line">        DefaultFuture future = FUTURES.remove(response.getId());</span><br><span class="line">        <span class="keyword">if</span> (future != <span class="keyword">null</span>) &#123;</span><br><span class="line">            Timeout t = future.timeoutCheckTask;</span><br><span class="line">            <span class="keyword">if</span> (!timeout) &#123;</span><br><span class="line">                <span class="comment">// 如果收到响应结果后还没有超时，将超时检测任务取消</span></span><br><span class="line">                t.cancel();</span><br><span class="line">            &#125;</span><br><span class="line">            future.doReceived(response);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">              <span class="comment">// 没有匹配到说明服务端执行可能已经超时了，消费端已经返回，不再处理超时的响应结果</span></span><br><span class="line">            logger.warn(PROTOCOL_TIMEOUT_SERVER, <span class="string">&quot;&quot;</span>, <span class="string">&quot;&quot;</span>, <span class="string">&quot;The timeout response finally returned at &quot;</span></span><br><span class="line">                + (<span class="keyword">new</span> SimpleDateFormat(<span class="string">&quot;yyyy-MM-dd HH:mm:ss.SSS&quot;</span>).format(<span class="keyword">new</span> Date()))</span><br><span class="line">                + <span class="string">&quot;, response status is &quot;</span> + response.getStatus()</span><br><span class="line">                + (channel == <span class="keyword">null</span> ? <span class="string">&quot;&quot;</span> : <span class="string">&quot;, channel: &quot;</span> + channel.getLocalAddress()</span><br><span class="line">                + <span class="string">&quot; -&gt; &quot;</span> + channel.getRemoteAddress()) + <span class="string">&quot;, please check provider side for detailed result.&quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        CHANNELS.remove(response.getId());</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"># DefaultFuture.doReceived</span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">void</span> <span class="title">doReceived</span><span class="params">(Response res)</span> </span>&#123;</span><br><span class="line">    <span class="keyword">if</span> (res == <span class="keyword">null</span>) &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalStateException(<span class="string">&quot;response cannot be null&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (res.getStatus() == Response.OK) &#123;</span><br><span class="line">          <span class="comment">// 响应成功，将 future 状态设置已完成并设置结果</span></span><br><span class="line">        <span class="keyword">this</span>.complete(res.getResult());</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (res.getStatus() == Response.CLIENT_TIMEOUT || res.getStatus() == Response.SERVER_TIMEOUT) &#123;</span><br><span class="line">        <span class="keyword">this</span>.completeExceptionally(<span class="keyword">new</span> TimeoutException(res.getStatus() == Response.SERVER_TIMEOUT, channel, res.getErrorMessage()));</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">this</span>.completeExceptionally(<span class="keyword">new</span> RemotingException(channel, res.getErrorMessage()));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">      <span class="comment">// 如果回调处理线程池是 ThreadlessExecutor，可能由于某种原因 ThreadlessExecutor 还在等待结果，需要通知该线程池结果已经返回</span></span><br><span class="line">    <span class="keyword">if</span> (executor != <span class="keyword">null</span> &amp;&amp; executor <span class="keyword">instanceof</span> ThreadlessExecutor) &#123;</span><br><span class="line">        ThreadlessExecutor threadlessExecutor = (ThreadlessExecutor) executor;</span><br><span class="line">        <span class="keyword">if</span> (threadlessExecutor.isWaiting()) &#123;</span><br><span class="line">            threadlessExecutor.notifyReturn(<span class="keyword">new</span> IllegalStateException(<span class="string">&quot;The result has returned, but the biz thread is still waiting&quot;</span> +</span><br><span class="line">                <span class="string">&quot; which is not an expected state, interrupt the thread manually by returning an exception.&quot;</span>));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>在处理响应之前需先找到当前响应是对应哪个请求，通过请求和响应 id 进行匹配，将当时保存在 Map 中的映射关系移出，如果没有匹配上，说明服务端响应超时，则不在处理该响应结果，打印出告警日志，如果能匹配上说明还没有超时，继续往下执行，判断超时检测任务是否还存在，如果在则将超时检测任务取消， 获取到请求时的 future 将状态设置为已完成并设置响应结果，这样刚才阻塞那里的第二步就能够获取到执行结果了：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"># AsyncRpcResult.get</span><br><span class="line"><span class="function"><span class="keyword">public</span> Result <span class="title">get</span><span class="params">(<span class="keyword">long</span> timeout, TimeUnit unit)</span> <span class="keyword">throws</span> InterruptedException, ExecutionException, TimeoutException </span>&#123;</span><br><span class="line">      <span class="comment">// 获取刚才设置的回调处理线程池，同步调用则是调用 threadlessExecutor 里面的 waitAndDrain 来阻塞等待结果</span></span><br><span class="line">    <span class="keyword">if</span> (executor != <span class="keyword">null</span> &amp;&amp; executor <span class="keyword">instanceof</span> ThreadlessExecutor) &#123;</span><br><span class="line">        ThreadlessExecutor threadlessExecutor = (ThreadlessExecutor) executor;</span><br><span class="line">          <span class="comment">// 阻塞等待响应任务入队列</span></span><br><span class="line">        threadlessExecutor.waitAndDrain();</span><br><span class="line">    &#125;</span><br><span class="line">      <span class="comment">// 通过 CompletableFuture 里面的 get 获取响应结果</span></span><br><span class="line">    <span class="keyword">return</span> responseFuture.get(timeout, unit);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>到这里从消费端发起请求，服务端接收请求，处理请求并返回执行结果给消费端，再到消费端收到响应结果整个链路的分析就结束了，里面还是涉及到比较多的东西的，当然这里只是把 Dubbo 请求的整体主链路走通了，还有很多一些细节的地方没有深入的分析，比如说 Dubbo 的负载均衡，过滤器链，异步调用流程处理，线程池模型等等，这些等后续再针对具体的功能来进行分析研究了，下面再列一下 Dubbo 里面整体主链路涉及的一些类和方法：</p>
+<p>consumer:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">request:</span><br><span class="line">InvokerInvocationHandler.invoke-&gt;RpcInvocation-&gt;InvocationUtil.invoke-&gt;MigrationInvoker.invoke-&gt;MockClusterInvoker.invoke-&gt;AbstractCluster$ClusterFilterInvoker.invoke-&gt;FilterChainBuilder.CopyOfFilterChainNode.invoke(执行一系列的Filter链)-&gt;FailoverClusterInvoker.doInvoke-&gt;DubboInvoker.doInvoke-&gt;ReferenceCountExchangeClient.request-&gt;HeaderExchangeClient.request-&gt;AsyncRpcResult.get</span><br><span class="line"></span><br><span class="line">response:</span><br><span class="line">AllChannelHandler.received-&gt;AllChannelHandler.getPreferredExecutorService-&gt;ChannelEventRunnable.run-&gt;HeaderExchangeHandler.received-&gt;HeaderExchangeHandler.handleResponse-&gt;DefaultFuture.received-&gt;DefaultFuture.doReceived</span><br></pre></td></tr></table></figure>
+
+<p>provider:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">AllChannelHandler.received-&gt;AllChannelHandler.getPreferredExecutorService-&gt;ChannelEventRunnable.run-&gt;HeaderExchangeHandler.received-&gt;HeaderExchangeHandler.handleRequest-&gt;DubboProtocol.reply-&gt;FilterChainBuilder.CallbackRegistrationInvoker.invoke-&gt;FilterChainBuilder.CopyOfFilterChainNode.invoke(执行一系列的Filter链)-&gt;绑定一系列回调过滤器-&gt;future.whenComplete</span><br></pre></td></tr></table></figure>
+
+
+
+    </div>
+
+    
+    
+    
+        
+  <div id="wechat_subscriber" style="display: block; padding: 10px 0; margin: 20px auto; width: 100%; text-align: center">
+    <img id="wechat_subscriber_qcode" src="/images/qrcode_for_rookiedev_258.jpg" alt=" wechat" style="width: auto; height:250px; max-width: 100%;"/>
+    <div>扫描上面图中二维码关注微信公众号</div>
+  </div>
+<!-- 
+  <div class="followme">
+    <p>Welcome to my other publishing channels</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="/images/qrcode_for_rookiedev_258.jpg">
+            <span class="icon">
+              <i class="wechat"></i>
+            </span>
+
+            <span class="label">WeChat</span>
+          </a>
+        </div>
+    </div>
+  </div>
+-->
+
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/Dubbo-%E6%A1%86%E6%9E%B6%E6%95%B4%E4%BD%93%E4%BB%8B%E7%BB%8D/" rel="prev" title="Dubbo 框架整体介绍">
+      <i class="fa fa-chevron-left"></i> Dubbo 框架整体介绍
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E7%AB%AF%E5%AE%9A%E4%B9%89%E5%92%8C%E5%AE%9E%E7%8E%B0"><span class="nav-number">1.</span> <span class="nav-text">服务端定义和实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E7%AB%AF%E6%8E%A5%E5%8F%A3%E6%9A%B4%E9%9C%B2"><span class="nav-number">2.</span> <span class="nav-text">服务端接口暴露</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B6%88%E8%B4%B9%E7%AB%AF%E5%8F%91%E8%B5%B7%E8%B0%83%E7%94%A8"><span class="nav-number">3.</span> <span class="nav-text">消费端发起调用</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B6%88%E8%B4%B9%E7%AB%AF%E8%AF%B7%E6%B1%82%E9%93%BE%E8%B7%AF%E6%BA%90%E7%A0%81%E8%B7%9F%E8%B8%AA"><span class="nav-number">4.</span> <span class="nav-text">消费端请求链路源码跟踪</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9C%8D%E5%8A%A1%E7%AB%AF%E5%A4%84%E7%90%86%E8%AF%B7%E6%B1%82%E9%93%BE%E8%B7%AF%E6%BA%90%E7%A0%81%E8%B7%9F%E8%B8%AA"><span class="nav-number">5.</span> <span class="nav-text">服务端处理请求链路源码跟踪</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B6%88%E8%B4%B9%E7%AB%AF%E6%8E%A5%E6%94%B6%E5%93%8D%E5%BA%94%E9%93%BE%E8%B7%AF%E6%BA%90%E7%A0%81%E8%B7%9F%E8%B8%AA"><span class="nav-number">6.</span> <span class="nav-text">消费端接收响应链路源码跟踪</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">rookiedev</p>
+  <div class="site-description" itemprop="description">daily development technology summary</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">57</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/rookiedev-z" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;rookiedev-z" rel="noopener" target="_blank"><i class="github fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2018 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rookiedev</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://mist.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Mist</a>
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="Total Visitors">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="Total Views">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
